@@ -12,6 +12,7 @@ window.addEventListener('load', () => {
 });
 
 document.addEventListener("DOMContentLoaded", inicializarPortal);
+document.addEventListener("layout:ready", inicializarNavbarFlutuante);
 
 let cursosDestaqueDisponiveis = [];
 let indiceDestaqueAtual = 0;
@@ -52,6 +53,7 @@ async function inicializarPortal() {
             }
 
             ativarBotoesCategoria();
+            aplicarFiltros();
         }
     } catch (error) {
         console.warn("Aviso: Falha ao inicializar alguns módulos.", error);
@@ -61,6 +63,8 @@ async function inicializarPortal() {
 function inicializarNavbarFlutuante() {
     const navbar = document.querySelector(".light-navbar");
     if (!navbar) return;
+    if (navbar.dataset.floatInitialized === "true") return;
+    navbar.dataset.floatInitialized = "true";
 
     let ultimoScroll = window.scrollY || 0;
     let ticking = false;
@@ -134,8 +138,12 @@ function ativarBotoesCategoria() {
 
     pills.forEach(pill => {
         pill.addEventListener('click', () => {
-            pills.forEach(p => p.classList.remove('active'));
+            pills.forEach(p => {
+                p.classList.remove('active');
+                p.setAttribute('aria-selected', 'false');
+            });
             pill.classList.add('active');
+            pill.setAttribute('aria-selected', 'true');
 
             if (selectCategoria) selectCategoria.value = ""; 
             aplicarFiltros();
@@ -144,7 +152,10 @@ function ativarBotoesCategoria() {
 
     if (selectCategoria) {
         selectCategoria.addEventListener('change', () => {
-            pills.forEach(p => p.classList.remove('active')); 
+            pills.forEach(p => {
+                p.classList.remove('active');
+                p.setAttribute('aria-selected', 'false');
+            });
             aplicarFiltros();
         });
     }
@@ -165,6 +176,7 @@ function aplicarFiltros() {
 
     const cards = document.querySelectorAll(".curso-card-novo");
     let encontrouAlgum = false;
+    let totalEncontrados = 0;
 
     cards.forEach(card => {
         const min = parseInt(card.dataset.idadeMin) || 0;
@@ -215,11 +227,19 @@ function aplicarFiltros() {
         if (bateIdade && bateCategoria && bateLocal) {
             card.style.display = "flex";
             encontrouAlgum = true;
+            totalEncontrados += 1;
         } else {
             card.style.display = "none";
         }
     });
 
+    atualizarResumoFiltros({
+        totalEncontrados,
+        idadeSel,
+        localSel,
+        categoriaSel,
+        textoPill
+    });
     gerenciarMensagemVazia(encontrouAlgum);
 }
 
@@ -229,9 +249,37 @@ function limparFiltros() {
     if(document.getElementById("filtro-local")) document.getElementById("filtro-local").value = "";
     
     const pills = document.querySelectorAll('.category-pills .pill');
-    pills.forEach(p => p.classList.remove('active'));
+    pills.forEach(p => {
+        p.classList.remove('active');
+        p.setAttribute('aria-selected', 'false');
+    });
 
     aplicarFiltros();
+}
+
+function atualizarResumoFiltros({ totalEncontrados = 0, idadeSel = "", localSel = "", categoriaSel = "", textoPill = "" }) {
+    const countEl = document.getElementById("discoveryCount");
+    const activeFiltersEl = document.getElementById("activeFilters");
+    if (countEl) {
+        countEl.textContent = String(totalEncontrados);
+    }
+
+    if (!activeFiltersEl) return;
+
+    const filtros = [];
+    if (textoPill) filtros.push(textoPill);
+    if (categoriaSel) filtros.push(categoriaSel);
+    if (idadeSel) filtros.push(`${idadeSel} anos`);
+    if (localSel) filtros.push(localSel);
+
+    if (!filtros.length) {
+        activeFiltersEl.innerHTML = '<span class="active-filter empty">Nenhum filtro aplicado</span>';
+        return;
+    }
+
+    activeFiltersEl.innerHTML = filtros
+        .map((filtro) => `<span class="active-filter">${filtro}</span>`)
+        .join("");
 }
 
 function gerenciarMensagemVazia(temCursos) {

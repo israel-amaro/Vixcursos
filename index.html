@@ -1,5 +1,15 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR"
+      data-layout-base="public"
+      data-home-url="index.html"
+      data-courses-url="#cursos"
+      data-vocational-url="public/pages/vocacional.html"
+      data-about-url="public/pages/informacoes.html"
+      data-contact-url="#rodape"
+      data-logo-src="public/imagem/VIxcursos.png"
+      data-gov-logo-src="public/imagem/prefeitura.png"
+      data-admin-url="public/admin/menu.html"
+      data-current-page="home">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -38,21 +48,7 @@
             <div class="hero-background-overlay"></div>
         </div>
 
-        <nav class="light-navbar">
-            <div class="ln-container">
-                <div class="ln-brand">
-                    <img src="public/imagem/VIxcursos.png" class="ln-brand-logo" alt="Logo Vix Cursos">
-                </div>
-                <div class="ln-links">
-                    <a href="#cursos">Cursos</a>
-                    <a href="public/pages/informacoes.html">Sobre</a>
-                    <a href="#rodape">Contato</a>
-                </div>
-                <a href="https://vitoria.es.gov.br" target="_blank" rel="noopener noreferrer" class="ln-gov-logo-link" aria-label="Prefeitura de Vitoria">
-                    <img src="public/imagem/prefeitura.png" class="ln-gov-logo" alt="Logo Prefeitura de Vitoria">
-                </a>
-            </div>
-        </nav>
+        <div data-site-header></div>
 
         <header class="light-hero">
             <div class="lh-left">
@@ -73,51 +69,59 @@
 
                 <div class="lh-actions">
                     <a href="#cursos" class="lh-btn-primary">Explorar Cursos</a>
-                    <a href="https://vitoria.es.gov.br" target="_blank" class="lh-btn-play">
-                        <div class="play-circle">&#9654;</div>
-                        Assistir Video
                     </a>
                 </div>
             </div>
         </header>
 
-        <div class="wave-transition">
-            <svg data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
-                <path d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V120H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z" fill="#1a5874"></path>
-            </svg>
-        </div>
     </div>
 
     <main class="conteudo-principal" id="cursos">
-        <section class="section-wrapper">
-            <div class="section-header">
-                <h2>Encontre seu curso</h2>
-                <p>Filtre por categoria, local e faixa etaria</p>
-            </div>
+        <section class="section-wrapper section-discovery">
+            <div class="discovery-shell">
+                <div class="section-header discovery-header">
+                    <span class="discovery-kicker">Hub de descoberta</span>
+                    <h2>Encontre seu curso</h2>
+                    <p>Explore as areas mais procuradas e refine sua busca com filtros inteligentes.</p>
+                </div>
 
-            <div class="category-pills">
-                <div class="pill active"><i class="bi bi-cpu" aria-hidden="true"></i> Tecnologia</div>
-                <div class="pill"><i class="bi bi-clipboard-data" aria-hidden="true"></i> Administracao</div>
-                <div class="pill"><i class="bi bi-heart-pulse" aria-hidden="true"></i> Saude</div>
-                <div class="pill"><i class="bi bi-translate" aria-hidden="true"></i> Idiomas</div>
-                <div class="pill"><i class="bi bi-palette" aria-hidden="true"></i> Artesanato</div>
-                <div class="pill"><i class="bi bi-egg-fried" aria-hidden="true"></i> Gastronomia</div>
-            </div>
+                <div class="category-pills category-tabs" role="tablist" aria-label="Categorias de cursos">
+                    <div class="pill active" role="tab" aria-selected="true"><i class="bi bi-cpu" aria-hidden="true"></i> Tecnologia</div>
+                    <div class="pill" role="tab" aria-selected="false"><i class="bi bi-clipboard-data" aria-hidden="true"></i> Administracao</div>
+                    <div class="pill" role="tab" aria-selected="false"><i class="bi bi-heart-pulse" aria-hidden="true"></i> Saude</div>
+                    <div class="pill" role="tab" aria-selected="false"><i class="bi bi-translate" aria-hidden="true"></i> Idiomas</div>
+                    <div class="pill" role="tab" aria-selected="false"><i class="bi bi-palette" aria-hidden="true"></i> Artesanato</div>
+                    <div class="pill" role="tab" aria-selected="false"><i class="bi bi-egg-fried" aria-hidden="true"></i> Gastronomia</div>
+                </div>
 
-            <div class="filter-form">
-                <div class="filter-group">
-                    <label>Faixa Etaria</label>
-                    <select id="filtro-idade" class="v0-select"></select>
+                <div class="filter-form discovery-filters">
+                    <div class="filter-group">
+                        <label>Faixa Etaria</label>
+                        <select id="filtro-idade" class="v0-select"></select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Categoria</label>
+                        <select id="filtro-categoria" class="v0-select"></select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Regiao/Local</label>
+                        <select id="filtro-local" class="v0-select"></select>
+                    </div>
+                    <button id="btn-limpar" class="btn btn-outline" style="height: 40px;">Limpar Filtros</button>
                 </div>
-                <div class="filter-group">
-                    <label>Categoria</label>
-                    <select id="filtro-categoria" class="v0-select"></select>
+
+                <div class="discovery-meta" aria-live="polite">
+                    <div class="discovery-count">
+                        <span class="meta-label">Cursos encontrados</span>
+                        <strong id="discoveryCount">0</strong>
+                    </div>
+                    <div class="discovery-active">
+                        <span class="meta-label">Filtros ativos</span>
+                        <div id="activeFilters" class="active-filters-list">
+                            <span class="active-filter empty">Nenhum filtro aplicado</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="filter-group">
-                    <label>Regiao/Local</label>
-                    <select id="filtro-local" class="v0-select"></select>
-                </div>
-                <button id="btn-limpar" class="btn btn-outline" style="height: 40px;">Limpar Filtros</button>
             </div>
         </section>
 
@@ -125,41 +129,9 @@
             <div id="containerCursos" class="courses-grid"></div>
         </section>
 
-        <section class="section-wrapper" id="quiz">
-            <div class="quiz-banner">
-                <h2>Nao sabe por onde comecar?</h2>
-                <p>Nosso quiz vocacional analisa seus interesses e habilidades para recomendar os cursos ideais para sua jornada profissional. Rapido, gratuito e personalizado.</p>
-                <button class="btn btn-primary" id="btnAbrirQuiz" style="height: 48px; padding: 0 32px;">Fazer o Quiz Agora</button>
-            </div>
-        </section>
     </main>
 
-    <footer class="footer" id="rodape">
-        <div class="footer-grid">
-            <div class="footer-brand">
-                <div class="nav-brand" style="margin-bottom: 16px;">
-                    <img src="public/imagem/VIxcursos.png" class="footer-brand-logo" alt="Logo Vix Cursos">
-                </div>
-                <p>Conectando cidadaos as melhores oportunidades de qualificacao profissional gratuita em Vitoria-ES.</p>
-            </div>
-            <div class="footer-col">
-                <h4>Navegacao</h4>
-                <a href="#cursos">Cursos</a>
-                <a href="public/pages/informacoes.html">Sobre</a>
-                <a href="#quiz">Quiz Vocacional</a>
-            </div>
-            <div class="footer-col">
-                <h4>Contato</h4>
-                <a href="https://www.google.com/maps/place/Prefeitura+Municipal+de+Vit%C3%B3ria/@-20.3176348,-40.3112411,17z/data=!4m15!1m8!3m7!1s0xb817d76dc19c8f:0x4ae18dbdf2677fd9!2sAv.+Mal.+Mascarenhas+de+Moraes,+1927+-+Bento+Ferreira,+Vit%C3%B3ria+-+ES,+29050-625!3b1!8m2!3d-20.3174603!4d-40.3100591!16s%2Fg%2F11bw444050!3m5!1s0xb817ce682b7b4d:0x325cfa98f8828786!8m2!3d-20.3178577!4d-40.3100258!16s%2Fg%2F1td01q_b?entry=ttu&g_ep=EgoyMDI2MDMzMS4wIKXMDSoASAFQAw%3D%3D">Av. Marechal Mascarenhas, 1927</a>
-                <a href="#">atendimento@vixcursos.gov.br</a>
-                <a href="#">(27) 3382-6000</a>
-                <a href="public/admin/menu.html" style="color: #FF8A5A;">Painel do Servidor</a>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <p>&copy; 2026 Vix Cursos. Todos os direitos reservados. Desenvolvido pela PMV.</p>
-        </div>
-    </footer>
+    <div data-site-footer></div>
 
     <div id="avatarImg">
         <img id="avatarMascote" src="public/imagem/Vitoruga.png" alt="Mascote Assistente">
@@ -179,38 +151,7 @@
         </div>
     </div>
 
-    <div id="quizModal" class="modal-overlay">
-        <div class="modal-content">
-            <button id="fecharQuiz" class="close-modal">
-                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            </button>
-            <div class="quiz-header">
-                <h2>Descubra seu Perfil!</h2>
-                <p>Responda rapido e veja qual area tem a sua cara.</p>
-            </div>
-            <div id="quizBody"></div>
-
-            <div id="quizResultado" style="display: none;">
-                <h3 id="resultadoTitulo">Seu perfil e...</h3>
-                <p id="resultadoTexto">Descricao...</p>
-                <div class="lead-form">
-                    <h4>Quer ser avisado sobre vagas na sua regiao?</h4>
-                    <input type="text" id="leadNome" placeholder="Seu Nome Completo" required>
-                    <input type="tel" id="leadWhatsapp" placeholder="Seu WhatsApp" required>
-                    <input type="email" id="leadEmail" placeholder="Seu E-mail" required>
-                    <select id="leadRegiao" required>
-                        <option value="">Selecione sua Regiao...</option>
-                        <option value="centro">Centro</option>
-                        <option value="maruipe">Maruipe</option>
-                        <option value="sao_pedro">Sao Pedro</option>
-                        <option value="jardim_camburi">Jardim Camburi</option>
-                    </select>
-                    <button id="btnSalvarLead" class="btn btn-primary" style="width: 100%; margin-top: 10px;">Me Avise!</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    <script src="public/script/layout.js"></script>
     <script src="public/script/script.js"></script>
     <div vw class="enabled">
         <div vw-access-button class="active"></div>
