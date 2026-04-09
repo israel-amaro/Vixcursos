@@ -14,6 +14,9 @@ window.addEventListener('load', () => {
 document.addEventListener("DOMContentLoaded", inicializarPortal);
 document.addEventListener("layout:ready", inicializarNavbarFlutuante);
 
+let deferredInstallPrompt = null;
+let pwaInstallUiCriada = false;
+
 let cursosDestaqueDisponiveis = [];
 let indiceDestaqueAtual = 0;
 let timerRotacaoDestaque = null;
@@ -21,6 +24,7 @@ let timerAtualizacaoDestaque = null;
 
 async function inicializarPortal() {
     try {
+        inicializarPwa();
         inicializarNavbarFlutuante();
 
         const containerCursos = document.getElementById("containerCursos");
@@ -58,6 +62,79 @@ async function inicializarPortal() {
     } catch (error) {
         console.warn("Aviso: Falha ao inicializar alguns módulos.", error);
     }
+}
+
+function inicializarPwa() {
+    if ("serviceWorker" in navigator && !window.__vixSwRegistrado) {
+        window.__vixSwRegistrado = true;
+        window.addEventListener("load", () => {
+            navigator.serviceWorker.register("/sw.js").catch((error) => {
+                console.warn("Aviso: nao foi possivel registrar o service worker.", error);
+            });
+        });
+    }
+
+    if (!window.__vixPwaEventos) {
+        window.__vixPwaEventos = true;
+
+        window.addEventListener("beforeinstallprompt", (event) => {
+            event.preventDefault();
+            deferredInstallPrompt = event;
+            mostrarBannerInstalacaoPwa();
+        });
+
+        window.addEventListener("appinstalled", () => {
+            deferredInstallPrompt = null;
+            removerBannerInstalacaoPwa();
+        });
+    }
+}
+
+function mostrarBannerInstalacaoPwa() {
+    if (pwaInstallUiCriada || !deferredInstallPrompt) return;
+    if (window.matchMedia("(display-mode: standalone)").matches) return;
+    if (localStorage.getItem("vix-pwa-dismissed") === "true") return;
+
+    const banner = document.createElement("div");
+    banner.className = "pwa-install-banner";
+    banner.innerHTML = `
+        <div class="pwa-install-copy">
+            <strong>Instalar aplicativo</strong>
+            <span>Adicione o VIX Cursos a tela inicial para abrir mais rapido.</span>
+        </div>
+        <div class="pwa-install-actions">
+            <button type="button" class="pwa-install-btn">Instalar</button>
+            <button type="button" class="pwa-dismiss-btn" aria-label="Fechar aviso">Agora nao</button>
+        </div>
+    `;
+
+    const instalarBtn = banner.querySelector(".pwa-install-btn");
+    const fecharBtn = banner.querySelector(".pwa-dismiss-btn");
+
+    instalarBtn.addEventListener("click", async () => {
+        if (!deferredInstallPrompt) return;
+        deferredInstallPrompt.prompt();
+        const escolha = await deferredInstallPrompt.userChoice;
+        if (escolha && escolha.outcome !== "accepted") {
+            localStorage.setItem("vix-pwa-dismissed", "true");
+        }
+        deferredInstallPrompt = null;
+        removerBannerInstalacaoPwa();
+    });
+
+    fecharBtn.addEventListener("click", () => {
+        localStorage.setItem("vix-pwa-dismissed", "true");
+        removerBannerInstalacaoPwa();
+    });
+
+    document.body.appendChild(banner);
+    pwaInstallUiCriada = true;
+}
+
+function removerBannerInstalacaoPwa() {
+    const banner = document.querySelector(".pwa-install-banner");
+    if (banner) banner.remove();
+    pwaInstallUiCriada = false;
 }
 
 function inicializarNavbarFlutuante() {

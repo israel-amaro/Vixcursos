@@ -14,6 +14,14 @@
       "use": "@vercel/static"
     },
     {
+      "src": "manifest.webmanifest",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "sw.js",
+      "use": "@vercel/static"
+    },
+    {
       "src": "public/**",
       "use": "@vercel/static"
     }
@@ -30,6 +38,14 @@
     {
       "src": "^/style\\.css$",
       "dest": "/style.css"
+    },
+    {
+      "src": "^/manifest\\.webmanifest$",
+      "dest": "/manifest.webmanifest"
+    },
+    {
+      "src": "^/sw\\.js$",
+      "dest": "/sw.js"
     },
     {
       "src": "^/vocacional$",
