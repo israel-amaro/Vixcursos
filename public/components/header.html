@@ -3,7 +3,12 @@
         <a class="ln-brand" href="{{HOME_URL}}" aria-label="Ir para a pagina inicial">
             <img src="{{LOGO_SRC}}" class="ln-brand-logo" alt="Logo VIX Cursos">
         </a>
-        <div class="ln-links">
+        <button class="ln-menu-toggle" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="site-nav-links">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        <div class="ln-links" id="site-nav-links">
             <a href="{{COURSES_URL}}" data-nav-item="courses">Cursos</a>
             <a href="{{VOCATIONAL_URL}}" data-nav-item="vocational">Vocacional</a>
             <a href="{{ABOUT_URL}}" data-nav-item="about">Sobre</a>

@@ -62,9 +62,39 @@ async function inicializarPortal() {
 
 function inicializarNavbarFlutuante() {
     const navbar = document.querySelector(".light-navbar");
+    const menuToggle = navbar ? navbar.querySelector(".ln-menu-toggle") : null;
+    const navLinks = navbar ? navbar.querySelector(".ln-links") : null;
     if (!navbar) return;
     if (navbar.dataset.floatInitialized === "true") return;
     navbar.dataset.floatInitialized = "true";
+
+    const fecharMenuMobile = () => {
+        navbar.classList.remove("nav-menu-open");
+        if (menuToggle) {
+            menuToggle.setAttribute("aria-expanded", "false");
+            menuToggle.setAttribute("aria-label", "Abrir menu");
+        }
+    };
+
+    const alternarMenuMobile = () => {
+        const aberto = navbar.classList.toggle("nav-menu-open");
+        if (menuToggle) {
+            menuToggle.setAttribute("aria-expanded", aberto ? "true" : "false");
+            menuToggle.setAttribute("aria-label", aberto ? "Fechar menu" : "Abrir menu");
+        }
+    };
+
+    if (menuToggle && navLinks) {
+        menuToggle.addEventListener("click", alternarMenuMobile);
+        navLinks.querySelectorAll("a").forEach((link) => {
+            link.addEventListener("click", fecharMenuMobile);
+        });
+        window.addEventListener("resize", () => {
+            if (window.innerWidth > 900) {
+                fecharMenuMobile();
+            }
+        });
+    }
 
     let ultimoScroll = window.scrollY || 0;
     let ticking = false;
@@ -80,6 +110,7 @@ function inicializarNavbarFlutuante() {
             navbar.classList.remove("nav-hidden");
         } else if (descendo) {
             navbar.classList.add("nav-hidden");
+            fecharMenuMobile();
         }
 
         ultimoScroll = scrollAtual;
