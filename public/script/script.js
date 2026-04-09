@@ -20,6 +20,8 @@ let timerAtualizacaoDestaque = null;
 
 async function inicializarPortal() {
     try {
+        inicializarNavbarFlutuante();
+
         const containerCursos = document.getElementById("containerCursos");
         const temFiltros = document.getElementById("filtro-idade");
 
@@ -54,6 +56,39 @@ async function inicializarPortal() {
     } catch (error) {
         console.warn("Aviso: Falha ao inicializar alguns módulos.", error);
     }
+}
+
+function inicializarNavbarFlutuante() {
+    const navbar = document.querySelector(".light-navbar");
+    if (!navbar) return;
+
+    let ultimoScroll = window.scrollY || 0;
+    let ticking = false;
+
+    const atualizarNavbar = () => {
+        const scrollAtual = window.scrollY || 0;
+        const descendo = scrollAtual > ultimoScroll + 8;
+        const subindo = scrollAtual < ultimoScroll - 8;
+
+        navbar.classList.toggle("nav-scrolled", scrollAtual > 24);
+
+        if (scrollAtual <= 24 || subindo) {
+            navbar.classList.remove("nav-hidden");
+        } else if (descendo) {
+            navbar.classList.add("nav-hidden");
+        }
+
+        ultimoScroll = scrollAtual;
+        ticking = false;
+    };
+
+    window.addEventListener("scroll", () => {
+        if (ticking) return;
+        ticking = true;
+        window.requestAnimationFrame(atualizarNavbar);
+    }, { passive: true });
+
+    atualizarNavbar();
 }
 
 /* =========================================================
