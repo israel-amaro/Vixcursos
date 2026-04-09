@@ -6,6 +6,14 @@
       "use": "@vercel/node"
     },
     {
+      "src": "index.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "style.css",
+      "use": "@vercel/static"
+    },
+    {
       "src": "public/**",
       "use": "@vercel/static"
     }
@@ -13,7 +21,11 @@
   "routes": [
     {
       "src": "^/$",
-      "dest": "/public/pages/index.html"
+      "dest": "/index.html"
+    },
+    {
+      "src": "^/vocacional$",
+      "dest": "/public/pages/vocacional.html"
     },
     {
       "src": "^/detalhes$",
@@ -52,6 +64,10 @@
       "dest": "/public/pages/$1"
     },
     {
+      "src": "^/public/(.*)$",
+      "dest": "/public/$1"
+    },
+    {
       "src": "^/favicon\\.ico$",
       "dest": "/public/favicon.png"
     },
@@ -69,7 +85,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/public/pages/index.html"
+      "dest": "/index.html"
     }
   ]
 }
