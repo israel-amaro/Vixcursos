@@ -24,6 +24,14 @@
       "dest": "/index.html"
     },
     {
+      "src": "^/index\\.html$",
+      "dest": "/index.html"
+    },
+    {
+      "src": "^/style\\.css$",
+      "dest": "/style.css"
+    },
+    {
       "src": "^/vocacional$",
       "dest": "/public/pages/vocacional.html"
     },
