@@ -103,10 +103,13 @@ function inicializarNavbarFlutuante() {
         const scrollAtual = window.scrollY || 0;
         const descendo = scrollAtual > ultimoScroll + 8;
         const subindo = scrollAtual < ultimoScroll - 8;
+        const mobileAtivo = window.innerWidth <= 900;
 
         navbar.classList.toggle("nav-scrolled", scrollAtual > 24);
 
-        if (scrollAtual <= 24 || subindo) {
+        if (mobileAtivo) {
+            navbar.classList.remove("nav-hidden");
+        } else if (scrollAtual <= 24 || subindo) {
             navbar.classList.remove("nav-hidden");
         } else if (descendo) {
             navbar.classList.add("nav-hidden");
