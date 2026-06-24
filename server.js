@@ -1,4 +1,4 @@
-const express = require("express");
+﻿const express = require("express");
 const fs = require("fs");
 const { Pool } = require("pg");
 const cors = require("cors");
@@ -6,7 +6,10 @@ const path = require("path");
 const nodemailer = require("nodemailer");
 const jwt = require("jsonwebtoken");
 const twilio = require("twilio");
+const XLSX = require("xlsx");
+const { LOCAL_PUBLIC_CURSOS, createLocalDb } = require("./local-db");
 require("dotenv").config();
+require("dotenv").config({ path: ".env.local", override: true });
 
 const app = express();
 app.use(cors());
@@ -35,12 +38,17 @@ const EMAIL_SOCKET_TIMEOUT = Number(process.env.EMAIL_SOCKET_TIMEOUT || 15000);
 const EMAIL_USER = limparEnv(process.env.EMAIL_USER);
 const EMAIL_PASS = limparEnv(process.env.EMAIL_PASS);
 const EMAIL_FROM = limparEnv(process.env.EMAIL_FROM) || (EMAIL_USER ? `\"Vix Cursos\" <${EMAIL_USER}>` : "");
+const IS_VERCEL = Boolean(process.env.VERCEL);
+const IS_PRODUCTION = process.env.NODE_ENV === "production" || IS_VERCEL;
+const DB_DISABLED = String(process.env.DB_DISABLED || "true").toLowerCase() !== "false";
 const SUPABASE_DB_HOST = limparEnv(process.env.SUPABASE_DB_HOST || process.env.POSTGRES_HOST);
 const SUPABASE_DB_USER = limparEnv(process.env.SUPABASE_DB_USER || process.env.POSTGRES_USER);
 const SUPABASE_DB_PASSWORD = limparEnv(process.env.SUPABASE_DB_PASSWORD || process.env.POSTGRES_PASSWORD);
 const SUPABASE_DB_NAME = limparEnv(process.env.SUPABASE_DB_NAME || process.env.POSTGRES_DATABASE) || "postgres";
 const SUPABASE_DB_PORT = Number(process.env.SUPABASE_DB_PORT || process.env.POSTGRES_PORT || 5432);
 const DATABASE_URL_RAW =
+    process.env.SUPABASE_POOLER_URL ||
+    process.env.SUPABASE_POOLER_DATABASE_URL ||
     process.env.DATABASE_URL ||
     process.env.SUPABASE_DB_URL ||
     process.env.SUPABASE_DATABASE_URL ||
@@ -67,15 +75,17 @@ const DB_SSL_ENABLED = String(process.env.DB_SSL_ENABLED || "true").toLowerCase(
 const DB_SSL_REJECT_UNAUTHORIZED = String(process.env.DB_SSL_REJECT_UNAUTHORIZED || "false").toLowerCase() === "true";
 const DB_CONNECT_TIMEOUT = Number(process.env.DB_CONNECT_TIMEOUT || 6000);
 const DB_QUERY_TIMEOUT = Number(process.env.DB_QUERY_TIMEOUT || 7000);
-const DB_CONNECTION_LIMIT = Number(process.env.DB_CONNECTION_LIMIT || 10);
+const DB_CONNECTION_LIMIT = Number(process.env.DB_CONNECTION_LIMIT || (IS_PRODUCTION ? 1 : 10));
+const DB_IDLE_TIMEOUT = Number(process.env.DB_IDLE_TIMEOUT || (IS_PRODUCTION ? 10000 : 30000));
 const DB_HOST_REF = `${SUPABASE_DB_HOST} ${DATABASE_URL}`.toLowerCase();
 const DB_IS_SUPABASE = DB_HOST_REF.includes("supabase.co") || DB_HOST_REF.includes("supabase.com");
+const DB_IS_POOLER = DB_HOST_REF.includes("pooler.supabase.com") || DB_HOST_REF.includes(":6543");
 const EMAIL_CONFIGURADO = Boolean(EMAIL_USER && EMAIL_PASS && EMAIL_FROM);
 
 const ADMIN_COOKIE_NAME = "porto_admin_token";
 const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET || "porto-admin-secret-change-me";
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+const ADMIN_USERNAME = "admin@vixcursos.com";
+const ADMIN_PASSWORD = "admin123";
 const SERVER_PORT = Number(process.env.PORT) || 3000;
 
 function lerCookie(req, nome) {
@@ -124,6 +134,7 @@ function limparCookieAdmin() {
 
 function eErroTimeoutBanco(erro) {
     const code = erro && erro.code;
+    const message = String(erro?.message || "").toLowerCase();
     return Boolean(
         code && [
             "ETIMEDOUT",
@@ -131,8 +142,18 @@ function eErroTimeoutBanco(erro) {
             "ECONNREFUSED",
             "ENOTFOUND",
             "EHOSTUNREACH",
-            "PROTOCOL_ENQUEUE_AFTER_FATAL_ERROR"
+            "PROTOCOL_ENQUEUE_AFTER_FATAL_ERROR",
+            "57P01",
+            "57P02",
+            "57P03"
         ].includes(code)
+    ) || Boolean(
+        message.includes("connection terminated due to connection timeout") ||
+        message.includes("connection timeout") ||
+        message.includes("timeout exceeded when trying to connect") ||
+        message.includes("timeout expired") ||
+        message.includes("connect timeout") ||
+        message.includes("connection terminated unexpectedly")
     );
 }
 
@@ -197,44 +218,59 @@ app.use((req, res, next) => {
 let baseUrl = process.env.PUBLIC_BASE_URL || `http://localhost:${SERVER_PORT}`;
 
 // Servir frontend
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "dist")));
 
 async function createApp() {
     // ======================================
-    // POSTGRESQL / SUPABASE
+    // BANCO LOCAL / POSTGRESQL
     // ======================================
-    console.log("[db] Iniciando configuracao da pool PostgreSQL");
-    console.log("[db] Connection limit:", DB_CONNECTION_LIMIT);
-    console.log("[db] connectTimeout:", DB_CONNECT_TIMEOUT);
-    console.log("[db] queryTimeout:", DB_QUERY_TIMEOUT);
-    console.log("[db] SSL habilitado:", DB_SSL_ENABLED);
-    console.log("[db] SSL rejectUnauthorized:", DB_SSL_REJECT_UNAUTHORIZED);
-    console.log("[db] Host Supabase detectado:", DB_IS_SUPABASE);
-    console.log("[db] Database URL configurada:", Boolean(DATABASE_URL));
+    let pgPool = null;
+    let db;
 
-    const pgPool = new Pool({
-        connectionString: DATABASE_URL || undefined,
-        max: DB_CONNECTION_LIMIT,
-        connectionTimeoutMillis: DB_CONNECT_TIMEOUT,
-        statement_timeout: DB_QUERY_TIMEOUT,
-        ssl: DB_SSL_ENABLED
-            ? { rejectUnauthorized: DB_IS_SUPABASE ? false : DB_SSL_REJECT_UNAUTHORIZED }
-            : false
-    });
-
-    const db = {
-        query: async (sql, values) => {
-            const text = typeof sql === "string" ? converterPlaceholdersSql(sql) : sql;
-            const result = await pgPool.query(text, values);
-            return [result.rows, result.fields];
-        },
-        getConnection: async () => {
-            const client = await pgPool.connect();
-            return {
-                release: () => client.release()
-            };
+    if (DB_DISABLED) {
+        console.log("[db] Banco externo desconectado. Usando dados locais em memoria carregados do banco.sql.");
+        db = createLocalDb();
+    } else {
+        console.log("[db] Iniciando configuracao da pool PostgreSQL");
+        console.log("[db] Connection limit:", DB_CONNECTION_LIMIT);
+        console.log("[db] connectTimeout:", DB_CONNECT_TIMEOUT);
+        console.log("[db] queryTimeout:", DB_QUERY_TIMEOUT);
+        console.log("[db] idleTimeout:", DB_IDLE_TIMEOUT);
+        console.log("[db] SSL habilitado:", DB_SSL_ENABLED);
+        console.log("[db] SSL rejectUnauthorized:", DB_SSL_REJECT_UNAUTHORIZED);
+        console.log("[db] Host Supabase detectado:", DB_IS_SUPABASE);
+        console.log("[db] Pooler Supabase detectado:", DB_IS_POOLER);
+        console.log("[db] Database URL configurada:", Boolean(DATABASE_URL));
+        if (IS_PRODUCTION && DB_IS_SUPABASE && !DB_IS_POOLER) {
+            console.warn("[db] Ambiente serverless detectado com conexao direta ao Supabase. Use o Transaction Pooler na porta 6543.");
         }
-    };
+
+        pgPool = new Pool({
+            connectionString: DATABASE_URL || undefined,
+            max: DB_CONNECTION_LIMIT,
+            connectionTimeoutMillis: DB_CONNECT_TIMEOUT,
+            idleTimeoutMillis: DB_IDLE_TIMEOUT,
+            allowExitOnIdle: true,
+            statement_timeout: DB_QUERY_TIMEOUT,
+            ssl: DB_SSL_ENABLED
+                ? { rejectUnauthorized: DB_IS_SUPABASE ? false : DB_SSL_REJECT_UNAUTHORIZED }
+                : false
+        });
+
+        db = {
+            query: async (sql, values) => {
+                const text = typeof sql === "string" ? converterPlaceholdersSql(sql) : sql;
+                const result = await pgPool.query(text, values);
+                return [result.rows, result.fields];
+            },
+            getConnection: async () => {
+                const client = await pgPool.connect();
+                return {
+                    release: () => client.release()
+                };
+            }
+        };
+    }
 
     let bancoDisponivelNaInicializacao = false;
 
@@ -266,6 +302,135 @@ async function createApp() {
             await garantirIndice("pre_inscricoes", "idx_pre_inscricoes_cpf", "cpf");
             await garantirIndiceUnico("pre_inscricoes", "uk_pre_inscricoes_curso_cpf", "curso_id, cpf");
 
+            // ==========================================
+            // MIGRATIONS - NOVOS CAMPOS E CONFIGURAÃ‡Ã•ES
+            // ==========================================
+            await db.query(`
+                CREATE TABLE IF NOT EXISTS configuracoes (
+                    id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                    limite_inscricoes_semestre INT DEFAULT 4,
+                    prazo_confirmacao_horas INT DEFAULT 48
+                )
+            `);
+            const [configRows] = await db.query(`SELECT COUNT(*) AS total FROM configuracoes`);
+            if (configRows[0].total === 0) {
+                await db.query(`INSERT INTO configuracoes (limite_inscricoes_semestre, prazo_confirmacao_horas) VALUES (4, 48)`);
+            }
+
+            // pre_inscricoes columns
+            await garantirColuna("pre_inscricoes", "status_inscricao", "VARCHAR(20) DEFAULT 'titular'");
+            await garantirColuna("pre_inscricoes", "objetivo", "VARCHAR(200) NULL");
+            await garantirColuna("pre_inscricoes", "autoriza_lgpd", "VARCHAR(3) DEFAULT 'sim'");
+            await garantirColuna("pre_inscricoes", "data_nascimento", "DATE NULL");
+            await garantirColuna("pre_inscricoes", "genero", "VARCHAR(30) NULL");
+            await garantirColuna("pre_inscricoes", "raca_cor", "VARCHAR(30) NULL");
+            await garantirColuna("pre_inscricoes", "telefone_alternativo", "VARCHAR(20) NULL");
+            await garantirColuna("pre_inscricoes", "responsavel_nome", "VARCHAR(120) NULL");
+            await garantirColuna("pre_inscricoes", "responsavel_cpf", "VARCHAR(14) NULL");
+            await garantirColuna("pre_inscricoes", "responsavel_parentesco", "VARCHAR(50) NULL");
+            await garantirColuna("pre_inscricoes", "responsavel_telefone", "VARCHAR(20) NULL");
+            await garantirColuna("pre_inscricoes", "responsavel_email", "VARCHAR(120) NULL");
+            await garantirColuna("pre_inscricoes", "responsavel_autorizacao", "VARCHAR(3) NULL");
+            await garantirColuna("pre_inscricoes", "deficiencia_adaptacoes", "TEXT NULL");
+            await garantirColuna("pre_inscricoes", "deficiencia_recursos", "TEXT NULL");
+            await garantirColuna("pre_inscricoes", "nota_satisfacao_instrutor", "INT NULL");
+            await garantirColuna("pre_inscricoes", "nota_satisfacao_estrutura", "INT NULL");
+            await garantirColuna("pre_inscricoes", "nota_satisfacao_material", "INT NULL");
+            await garantirColuna("pre_inscricoes", "nota_satisfacao_geral", "INT NULL");
+            await garantirColuna("pre_inscricoes", "comentario_satisfacao", "TEXT NULL");
+            await garantirColuna("pre_inscricoes", "emprego_pos_curso", "VARCHAR(15) NULL");
+            await garantirColuna("pre_inscricoes", "contribuicao_profissional", "INT NULL");
+            await garantirColuna("pre_inscricoes", "recomendaria", "VARCHAR(3) NULL");
+            await garantirColuna("pre_inscricoes", "beneficio_principal", "TEXT NULL");
+            await garantirColuna("pre_inscricoes", "pesquisa_satisfacao_respondida", "SMALLINT DEFAULT 0");
+            await garantirColuna("pre_inscricoes", "questionario_conclusao_respondido", "SMALLINT DEFAULT 0");
+            await garantirColuna("pre_inscricoes", "convocado_em", "TIMESTAMP NULL");
+            await garantirColuna("pre_inscricoes", "vaga_expira_em", "TIMESTAMP NULL");
+
+            // cursos columns
+            await garantirColuna("cursos", "descricao", "TEXT NULL");
+            await garantirColuna("cursos", "video_url", "VARCHAR(255) NULL");
+            await garantirColuna("cursos", "faixa_salarial", "VARCHAR(100) NULL");
+            await garantirColuna("cursos", "areas_atuacao", "TEXT NULL");
+            await garantirColuna("cursos", "competencias", "TEXT NULL");
+            await garantirColuna("cursos", "pre_requisitos", "TEXT NULL");
+            await garantirColuna("cursos", "nivel_empregabilidade", "VARCHAR(50) NULL");
+            await garantirColuna("cursos", "data_publicacao", "TIMESTAMP NULL");
+            await garantirColuna("cursos", "data_abertura_inscricao", "TIMESTAMP NULL");
+            await garantirColuna("cursos", "data_encerramento_inscricao", "TIMESTAMP NULL");
+            await garantirColuna("cursos", "acessos_contador", "INT DEFAULT 0");
+
+            // filtro_modalidade column (categoria_id)
+            await garantirColuna("filtro_modalidade", "categoria_id", "INT NULL");
+
+            await garantirColuna("pre_inscricoes", "situacao_final", "VARCHAR(30) DEFAULT 'inscrito'");
+
+            // FAQ Table
+            await db.query(`
+                CREATE TABLE IF NOT EXISTS faq (
+                    id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                    pergunta TEXT NOT NULL,
+                    resposta TEXT NOT NULL,
+                    ordem INT DEFAULT 0
+                )
+            `);
+            const [faqCount] = await db.query(`SELECT COUNT(*) AS total FROM faq`);
+            if (faqCount[0].total === 0) {
+                const defaultFaqs = [
+                    { q: "Quem pode se inscrever?", a: "Os cursos do VixCursos sÃ£o destinados exclusivamente a moradores de VitÃ³ria - ES que atendam aos prÃ©-requisitos de idade e escolaridade do curso pretendido." },
+                    { q: "Como funciona a confirmaÃ§Ã£o de matrÃ­cula?", a: "ApÃ³s a prÃ©-inscriÃ§Ã£o online, o aluno titular recebe uma notificaÃ§Ã£o por e-mail/SMS com prazo de 24h ou 48h para confirmar sua matrÃ­cula. Caso nÃ£o confirme, a vaga Ã© liberada para o prÃ³ximo suplente." },
+                    { q: "O que acontece se eu for suplente?", a: "Caso as vagas imediatas estejam preenchidas, vocÃª entrarÃ¡ na fila de suplÃªncia automÃ¡tica. Se um candidato titular desistir ou nÃ£o confirmar a matrÃ­cula no prazo, o prÃ³ximo suplente da fila Ã© convocado por e-mail/SMS." },
+                    { q: "Qual o limite de cursos por semestre?", a: "Cada cidadÃ£o pode se inscrever em atÃ© 4 cursos por semestre. A partir da 3Âª inscriÃ§Ã£o simultÃ¢nea, a inscriÃ§Ã£o entra automaticamente como suplente para dar oportunidade a outros moradores." },
+                    { q: "Os cursos sÃ£o realmente gratuitos?", a: "Sim, todos os cursos oferecidos pelo portal VixCursos sÃ£o 100% gratuitos e contam com fornecimento de vale-transporte." },
+                    { q: "Menores de 18 anos podem se inscrever?", a: "Sim, desde que atendam a idade mÃ­nima do curso. No momento da inscriÃ§Ã£o, deverÃ£o ser informados os dados do responsÃ¡vel legal, que deverÃ¡ autorizar a participaÃ§Ã£o." }
+                ];
+                for (let i = 0; i < defaultFaqs.length; i++) {
+                    await db.query(`INSERT INTO faq (pergunta, resposta, ordem) VALUES (?, ?, ?)`, [defaultFaqs[i].q, defaultFaqs[i].a, i]);
+                }
+            }
+
+            // SugestÃµes Table
+            await db.query(`
+                CREATE TABLE IF NOT EXISTS sugestoes_cursos (
+                    id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                    cpf VARCHAR(14) NOT NULL,
+                    areas_interesse TEXT,
+                    sugestao_texto TEXT,
+                    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+
+            // Garantir que categorias existam
+            const cats = ['Beleza', 'ConfecÃ§Ã£o', 'Gastronomia', 'Humanas', 'VeÃ­culos'];
+            for (const cat of cats) {
+                const [exists] = await db.query("SELECT id FROM filtro_categoria WHERE categoria = ?", [cat]);
+                if (exists.length === 0) {
+                    await db.query("INSERT INTO filtro_categoria (categoria) VALUES (?)", [cat]);
+                }
+            }
+
+            // Associar modalidades Ã s categorias
+            const assoc = [
+                { cat: 'Beleza', mods: ['Barbeiro', 'Cuidador de Idoso'] },
+                { cat: 'ConfecÃ§Ã£o', mods: ['ConfecÃ§Ã£o Moda Praia', 'TÃ©cnicas de Costura e Acabamento'] },
+                { cat: 'Gastronomia', mods: ['Drinks para o VerÃ£o', 'TÃ©cnicas de Confeitaria BÃ¡sica'] }
+            ];
+
+            for (const item of assoc) {
+                const [catRow] = await db.query("SELECT id FROM filtro_categoria WHERE categoria = ?", [item.cat]);
+                if (catRow.length > 0) {
+                    const catId = catRow[0].id;
+                    for (const m of item.mods) {
+                        const [existsMod] = await db.query("SELECT id FROM filtro_modalidade WHERE modalidade = ?", [m]);
+                        if (existsMod.length === 0) {
+                            await db.query("INSERT INTO filtro_modalidade (modalidade, categoria_id) VALUES (?, ?)", [m, catId]);
+                        } else {
+                            await db.query("UPDATE filtro_modalidade SET categoria_id = ? WHERE modalidade = ?", [catId, m]);
+                        }
+                    }
+                }
+            }
+
             bancoDisponivelNaInicializacao = true;
             console.log("[db] Inicializacao do banco concluida com sucesso");
         } catch (erro) {
@@ -278,7 +443,12 @@ async function createApp() {
         }
     }
 
-    void inicializarBanco();
+    if (DB_DISABLED) {
+        bancoDisponivelNaInicializacao = true;
+        console.log("[db] Inicializacao local concluida. Nenhuma conexao externa sera aberta.");
+    } else {
+        void inicializarBanco();
+    }
 
     // ======================================
     // EMAIL
@@ -419,12 +589,12 @@ async function createApp() {
     function normalizarTelefoneE164(telefone) {
         const digitos = String(telefone || "").replace(/\D/g, "");
 
-        // BR com DDI já informado: 55 + DDD + numero (10 ou 11 dígitos locais)
+        // BR com DDI jÃ¡ informado: 55 + DDD + numero (10 ou 11 dÃ­gitos locais)
         if (digitos.startsWith("55") && (digitos.length === 12 || digitos.length === 13)) {
             return `+${digitos}`;
         }
 
-        // BR sem DDI: DDD + numero (10 ou 11 dígitos locais)
+        // BR sem DDI: DDD + numero (10 ou 11 dÃ­gitos locais)
         if (digitos.length === 10 || digitos.length === 11) {
             return `+55${digitos}`;
         }
@@ -469,17 +639,17 @@ async function createApp() {
 
     function montarTextoConfirmacao({ cursoNome, dataInicio, dataTermino, horaInicio, horaTermino, local }) {
         const periodo = dataInicio && dataTermino ? `de ${dataInicio} a ${dataTermino}` : null;
-        const horario = horaInicio && horaTermino ? `das ${horaInicio}h às ${horaTermino}h` : null;
+        const horario = horaInicio && horaTermino ? `das ${horaInicio}h Ã s ${horaTermino}h` : null;
 
         return [
-            `Recebemos sua pré-matrícula no curso de ${cursoNome}, Curso do Senai em parceria com a PMV${periodo ? `, que acontecerá ${periodo}` : ""}${horario ? `, ${horario}` : ""}${local ? ` no ${local}` : ""}.`,
+            `Recebemos sua prÃ©-matrÃ­cula no curso de ${cursoNome}, Curso do Senai em parceria com a PMV${periodo ? `, que acontecerÃ¡ ${periodo}` : ""}${horario ? `, ${horario}` : ""}${local ? ` no ${local}` : ""}.`,
             "",
-            "👉 Menores de idade devem estar acompanhados do responsável legal.",
-            "✨ O curso é 100% gratuito e dará direito a vale transporte.",
+            "ðŸ‘‰ Menores de idade devem estar acompanhados do responsÃ¡vel legal.",
+            "âœ¨ O curso Ã© 100% gratuito e darÃ¡ direito a vale transporte.",
             "",
-            local ? `📍 Endereço para matricula: ${local}.` : null,
+            local ? `ðŸ“ EndereÃ§o para matricula: ${local}.` : null,
             "",
-            "Esperamos por você! 🚀"
+            "Esperamos por vocÃª! ðŸš€"
         ].filter(Boolean).join("\n");
     }
 
@@ -488,10 +658,10 @@ async function createApp() {
     }
 
     const mapaPerfis = {
-        gastronomia: ['gastronomia', 'panificação / confeitaria', 'eventos', 'turismo / hotelaria'],
-        beleza: ['beleza', 'estética', 'moda', 'confecção', 'artesanato'],
-        manutencao: ['manutenção', 'mecânica', 'eletricista / energia', 'eletrônica', 'automação industrial', 'soldagem', 'construção civil / serviço', 'segurança do trabalho', 'meio ambiente'],
-        tecnologia: ['informática / tecnologia', 'programação / ti', 'redes / telecom', 'administração', 'gestão', 'comércio / gestão empresarial', 'recursos humanos', 'logística', 'vendas / marketing']
+        gastronomia: ['gastronomia', 'panificaÃ§Ã£o / confeitaria', 'eventos', 'turismo / hotelaria'],
+        beleza: ['beleza', 'estÃ©tica', 'moda', 'confecÃ§Ã£o', 'artesanato'],
+        manutencao: ['manutenÃ§Ã£o', 'mecÃ¢nica', 'eletricista / energia', 'eletrÃ´nica', 'automaÃ§Ã£o industrial', 'soldagem', 'construÃ§Ã£o civil / serviÃ§o', 'seguranÃ§a do trabalho', 'meio ambiente'],
+        tecnologia: ['informÃ¡tica / tecnologia', 'programaÃ§Ã£o / ti', 'redes / telecom', 'administraÃ§Ã£o', 'gestÃ£o', 'comÃ©rcio / gestÃ£o empresarial', 'recursos humanos', 'logÃ­stica', 'vendas / marketing']
     };
 
     function normalizarPerfil(perfil) {
@@ -510,7 +680,7 @@ async function createApp() {
     }
 
     function montarLinkPreInscricao(curso) {
-        return `${baseUrl}/pre_inscricao.html?id=${curso.id}&nome=${encodeURIComponent(curso.nome || 'curso')}`;
+        return `${baseUrl}/pre-inscricao/${curso.id}`;
     }
 
     const EMAIL_BRIDGE_CID = "vix-terceira-ponte";
@@ -627,7 +797,7 @@ async function createApp() {
         `;
 
         return {
-            subject: `Curso disponível: ${curso.nome || 'Nova oportunidade'}`,
+            subject: `Curso disponÃ­vel: ${curso.nome || 'Nova oportunidade'}`,
             html: montarLayoutEmailBase({
                 tituloSecao: "Curso disponivel para inscricao",
                 subtituloSecao: "Aviso de oportunidade",
@@ -641,12 +811,12 @@ async function createApp() {
     function montarSmsDisponibilidade({ nome, curso, perfil }) {
         const link = montarLinkPreInscricao(curso);
         return [
-            `Olá, ${nome}!`,
-            `O curso de ${curso.nome || 'Qualificação'} que combina com o seu perfil de ${perfil} está disponível.`,
+            `OlÃ¡, ${nome}!`,
+            `O curso de ${curso.nome || 'QualificaÃ§Ã£o'} que combina com o seu perfil de ${perfil} estÃ¡ disponÃ­vel.`,
             curso.local ? `Local: ${curso.local}.` : null,
-            curso.data_inicio && curso.data_termino ? `Período: ${curso.data_inicio} a ${curso.data_termino}.` : null,
-            curso.horario_inicio && curso.horario_termino ? `Horário: ${curso.horario_inicio}h às ${curso.horario_termino}h.` : null,
-            `Acesse para fazer sua pré-inscrição: ${link}`
+            curso.data_inicio && curso.data_termino ? `PerÃ­odo: ${curso.data_inicio} a ${curso.data_termino}.` : null,
+            curso.horario_inicio && curso.horario_termino ? `HorÃ¡rio: ${curso.horario_inicio}h Ã s ${curso.horario_termino}h.` : null,
+            `Acesse para fazer sua prÃ©-inscriÃ§Ã£o: ${link}`
         ].filter(Boolean).join(' ');
     }
 
@@ -859,7 +1029,7 @@ async function createApp() {
         await mailer.sendMail({
             from: EMAIL_FROM,
             to: email,
-            subject: `Pré-inscrição recebida - ${cursoNome}`,
+            subject: `PrÃ©-inscriÃ§Ã£o recebida - ${cursoNome}`,
             html: montarLayoutEmailBase({
                 tituloSecao: "Pre-inscricao recebida",
                 subtituloSecao: "Confirmacao de registro",
@@ -894,10 +1064,84 @@ async function createApp() {
         await mailer.sendMail({
             from: EMAIL_FROM,
             to: email,
-            subject: `Matrícula Confirmada - ${cursoNome}`,
+            subject: `MatrÃ­cula Confirmada - ${cursoNome}`,
             html: montarLayoutEmailBase({
                 tituloSecao: "Matricula confirmada",
                 subtituloSecao: "Dados da turma",
+                conteudoHtml,
+                exibirPonte: anexos.length > 0,
+                modoPonte: "cobertura"
+            }),
+            attachments: anexos
+        });
+    }
+
+    async function enviarEmailExpiracaoVaga({ nome, email, cursoNome }) {
+        if (!emailDisponivel) return;
+        const anexos = montarAnexosEmailPadrao();
+        const conteudoHtml = `
+            <p class="text">OlÃ¡, <span class="highlight">${nome}</span>.</p>
+            <p class="text">O seu prazo para confirmaÃ§Ã£o de matrÃ­cula no curso <span class="highlight">${cursoNome || "qualificaÃ§Ã£o"}</span> expirou.</p>
+            <p class="text">Como a confirmaÃ§Ã£o nÃ£o foi realizada a tempo, sua vaga foi liberada para o prÃ³ximo candidato na lista de suplentes.</p>
+        `;
+        await mailer.sendMail({
+            from: EMAIL_FROM,
+            to: email,
+            subject: `Vaga Expirada - VixCursos`,
+            html: montarLayoutEmailBase({
+                tituloSecao: "Prazo Expirado",
+                subtituloSecao: "MatrÃ­cula Cancelada",
+                conteudoHtml,
+                exibirPonte: anexos.length > 0,
+                modoPonte: "cobertura"
+            }),
+            attachments: anexos
+        });
+    }
+
+    async function enviarEmailPromocaoSuplente({ nome, email, cursoNome, prazoHoras }) {
+        if (!emailDisponivel) return;
+        const anexos = montarAnexosEmailPadrao();
+        const conteudoHtml = `
+            <p class="text">OlÃ¡, <span class="highlight">${nome}</span>.</p>
+            <p class="text">Boas notÃ­cias! VocÃª foi promovido da lista de suplentes para <span class="highlight">Titular</span> no curso <span class="highlight">${cursoNome || "qualificaÃ§Ã£o"}</span>.</p>
+            <p class="text">VocÃª tem o prazo de <strong>${prazoHoras} horas</strong> para confirmar sua matrÃ­cula no sistema.</p>
+        `;
+        await mailer.sendMail({
+            from: EMAIL_FROM,
+            to: email,
+            subject: `ConvocaÃ§Ã£o de Suplente - VixCursos`,
+            html: montarLayoutEmailBase({
+                tituloSecao: "Vaga DisponÃ­vel!",
+                subtituloSecao: "ConvocaÃ§Ã£o de Suplente",
+                conteudoHtml,
+                exibirPonte: anexos.length > 0,
+                modoPonte: "cobertura"
+            }),
+            attachments: anexos
+        });
+    }
+
+    async function enviarEmailConvocacaoMatricula({ nome, email, cursoNome, prazoHoras, local, protocolo }) {
+        if (!emailDisponivel) return;
+        const anexos = montarAnexosEmailPadrao();
+        const conteudoHtml = `
+            <p class="text">OlÃ¡, <span class="highlight">${nome}</span>.</p>
+            <p class="text">ParabÃ©ns! VocÃª foi convocado para a matrÃ­cula no curso <span class="highlight">${cursoNome}</span>.</p>
+            <p class="text">VocÃª tem o prazo de <strong>${prazoHoras} horas</strong> para confirmar sua matrÃ­cula online no VixCursos.</p>
+            <div class="info-box">
+                <p class="info-item"><span class="info-icon">&#9679;</span><strong>Protocolo:</strong> ${protocolo}</p>
+                <p class="info-item"><span class="info-icon">&#9679;</span><strong>Local:</strong> ${local || 'A definir'}</p>
+            </div>
+            <p class="text"><span class="highlight">Documentos necessÃ¡rios na matrÃ­cula:</span> CPF, RG e Comprovante de ResidÃªncia.</p>
+        `;
+        await mailer.sendMail({
+            from: EMAIL_FROM,
+            to: email,
+            subject: `ConvocaÃ§Ã£o para MatrÃ­cula - ${cursoNome}`,
+            html: montarLayoutEmailBase({
+                tituloSecao: "ConvocaÃ§Ã£o de MatrÃ­cula",
+                subtituloSecao: "AÃ§Ã£o requerida",
                 conteudoHtml,
                 exibirPonte: anexos.length > 0,
                 modoPonte: "cobertura"
@@ -941,26 +1185,189 @@ async function createApp() {
         local: "filtro_local"
     };
 
+    const FALLBACK_CURSOS = [
+        {
+            id: 1,
+            nome: "Cabeleireiro Profissional",
+            vagas_totais: 20,
+            inscritos: 0,
+            vagas_disponiveis: 20,
+            vagas: 20,
+            status: "ativo",
+            horario_inicio: "13:30",
+            horario_termino: "17:30",
+            data_inicio: "01/07/2026",
+            data_termino: "15/08/2026",
+            categoria: "Beleza",
+            idade_min: "16",
+            idade_max: "80",
+            modalidade: "Presencial",
+            local: "SENAI CÃ­cero Freire",
+            descricao: "Curso de tÃ©cnicas de cabeleireiro profissional, cortes modernos, escovaÃ§Ã£o e tratamento de fios.",
+            competencias: "Corte feminino, hidrataÃ§Ã£o avanÃ§ada, tÃ©cnicas de colorimetria bÃ¡sica",
+            pre_requisitos: "Ensino Fundamental completo e idade mÃ­nima de 16 anos",
+            carga_horaria: 80,
+            nivel_empregabilidade: "alta",
+            video_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            faixa_salarial_min: 1500.00,
+            faixa_salarial_max: 3500.00
+        },
+        {
+            id: 2,
+            nome: "Corte e Costura",
+            vagas_totais: 15,
+            inscritos: 0,
+            vagas_disponiveis: 15,
+            vagas: 15,
+            status: "ativo",
+            horario_inicio: "08:00",
+            horario_termino: "12:00",
+            data_inicio: "05/07/2026",
+            data_termino: "10/09/2026",
+            categoria: "Moda",
+            idade_min: "16",
+            idade_max: "80",
+            modalidade: "Presencial",
+            local: "SENAI Porto de Santana",
+            descricao: "Aprenda corte, costura bÃ¡sica e avanÃ§ada, modelagem de roupas e confecÃ§Ã£o de peÃ§as completas.",
+            competencias: "Modelagem plana, costura industrial, acabamento fino e regulagem de mÃ¡quinas",
+            pre_requisitos: "Ensino Fundamental completo e idade mÃ­nima de 16 anos",
+            carga_horaria: 120,
+            nivel_empregabilidade: "media",
+            video_url: null,
+            faixa_salarial_min: 1800.00,
+            faixa_salarial_max: 4000.00
+        },
+        {
+            id: 3,
+            nome: "CulinÃ¡ria BÃ¡sica",
+            vagas_totais: 18,
+            inscritos: 0,
+            vagas_disponiveis: 18,
+            vagas: 18,
+            status: "ativo",
+            horario_inicio: "18:30",
+            horario_termino: "22:30",
+            data_inicio: "10/07/2026",
+            data_termino: "30/08/2026",
+            categoria: "Gastronomia",
+            idade_min: "18",
+            idade_max: "80",
+            modalidade: "Presencial",
+            local: "SENAI CÃ­cero Freire",
+            descricao: "IntroduÃ§Ã£o Ã s artes culinÃ¡rias, tÃ©cnicas de corte de legumes, manipulaÃ§Ã£o de carnes e preparo de molhos clÃ¡ssicos.",
+            competencias: "TÃ©cnicas de facas, preparo de massas frescas, molhos e sobremesas finas",
+            pre_requisitos: "Ensino MÃ©dio completo e idade mÃ­nima de 18 anos",
+            carga_horaria: 100,
+            nivel_empregabilidade: "alta",
+            video_url: null,
+            faixa_salarial_min: 1600.00,
+            faixa_salarial_max: 3800.00
+        },
+        {
+            id: 4,
+            nome: "Desenvolvimento Web",
+            vagas_totais: 25,
+            inscritos: 0,
+            vagas_disponiveis: 25,
+            vagas: 25,
+            status: "ativo",
+            horario_inicio: "14:00",
+            horario_termino: "17:00",
+            data_inicio: "02/07/2026",
+            data_termino: "20/08/2026",
+            categoria: "Tecnologia",
+            idade_min: "14",
+            idade_max: "80",
+            modalidade: "HÃ­brido",
+            local: "SENAI Porto de Santana",
+            descricao: "Curso de lÃ³gica de programaÃ§Ã£o, banco de dados bÃ¡sico e desenvolvimento de sistemas web simples.",
+            competencias: "LÃ³gica de programaÃ§Ã£o com Javascript, fundamentos de bancos de dados relacionais, HTML5 e CSS3",
+            pre_requisitos: "Ensino Fundamental II completo e idade mÃ­nima de 14 anos",
+            carga_horaria: 60,
+            nivel_empregabilidade: "alta",
+            video_url: null,
+            faixa_salarial_min: 2200.00,
+            faixa_salarial_max: 6000.00
+        },
+        {
+            id: 5,
+            nome: "Primeiros Socorros",
+            vagas_totais: 30,
+            inscritos: 0,
+            vagas_disponiveis: 30,
+            vagas: 30,
+            status: "ativo",
+            horario_inicio: "08:00",
+            horario_termino: "12:00",
+            data_inicio: "12/07/2026",
+            data_termino: "30/09/2026",
+            categoria: "SaÃºde",
+            idade_min: "18",
+            idade_max: "80",
+            modalidade: "Presencial",
+            local: "Centro de FormaÃ§Ã£o Profissional do Senac VitÃ³ria",
+            descricao: "CapacitaÃ§Ã£o em atendimento de primeiros socorros em situaÃ§Ãµes de emergÃªncia domÃ©stica e profissional.",
+            competencias: "ReanimaÃ§Ã£o cardiopulmonar, curativos emergenciais, transporte seguro de vÃ­timas",
+            pre_requisitos: "Ensino Fundamental completo e idade mÃ­nima de 18 anos",
+            carga_horaria: 40,
+            nivel_empregabilidade: "media",
+            video_url: null,
+            faixa_salarial_min: 1400.00,
+            faixa_salarial_max: 2500.00
+        }
+    ];
+
     // ============================================================
     // FILTROS
     // ============================================================
     app.get("/public/:tipo", async (req, res) => {
         try {
             const tabela = tabelas[req.params.tipo];
-            if (!tabela) return res.status(400).json({ error: "Filtro inválido" });
+            if (!tabela) return res.status(400).json({ error: "Filtro invÃ¡lido" });
 
-            const [rows] = await db.query(`SELECT * FROM ${tabela} ORDER BY id ASC`);
-            
-            // Adiciona 'Geral' ao inicio da lista de categorias se não existir
-            if (req.params.tipo === 'categoria') {
-                const temGeral = rows.some(r => r.categoria === 'Geral');
-                if (!temGeral) {
-                    rows.unshift({ id: 0, categoria: 'Geral' });
-                }
+            let rows = [];
+            if (req.params.tipo === 'modalidade' && req.query.categoria_id) {
+                const [result] = await db.query(
+                    `SELECT * FROM filtro_modalidade WHERE categoria_id = ? ORDER BY id ASC`,
+                    [req.query.categoria_id]
+                );
+                rows = result;
+            } else {
+                const [result] = await db.query(`SELECT * FROM ${tabela} ORDER BY id ASC`);
+                rows = result;
             }
+            
             
             res.json(rows);
         } catch (err) {
+            if (eErroTimeoutBanco(err)) {
+                console.warn(`[db] Falha na conexao do banco ao buscar filtro ${req.params.tipo}, servindo fallback estÃ¡tico.`);
+                        { id: 3, categoria: "Gastronomia" },
+                        { id: 4, categoria: "Humanas" },
+                        { id: 5, categoria: "VeÃ­culos" }
+                    ]);
+                }
+                if (req.params.tipo === 'local') {
+                    return res.json([
+                        { id: 1, local: "Bento Ferreira" },
+                        { id: 2, local: "Centro" },
+                        { id: 3, local: "Jardim da Penha" },
+                        { id: 4, local: "Jardim Camburi" },
+                        { id: 5, local: "MaruÃ­pe" },
+                        { id: 6, local: "SÃ£o Pedro" },
+                        { id: 7, local: "Goiabeiras" },
+                        { id: 8, local: "Praia do Canto" }
+                    ]);
+                }
+                if (req.params.tipo === 'modalidade') {
+                    return res.json([
+                        { id: 1, modalidade: "Presencial" },
+                        { id: 2, modalidade: "HÃ­brido" },
+                        { id: 3, modalidade: "Online" }
+                    ]);
+                }
+            }
             return responderErroBanco(res, err, "Erro ao buscar filtro");
         }
     });
@@ -975,8 +1382,8 @@ async function createApp() {
                     c.id, 
                     COALESCE(fcurso.curso, 'Curso sem nome') AS nome, 
                     c.vagas AS vagas_totais, 
-                    COALESCE(COUNT(pi.id), 0) AS inscritos,
-                    (c.vagas - COALESCE(COUNT(pi.id), 0)) AS vagas_disponiveis,
+                    COALESCE(SUM(CASE WHEN pi.status_inscricao = 'titular' THEN 1 ELSE 0 END), 0) AS inscritos,
+                    (c.vagas - COALESCE(SUM(CASE WHEN pi.status_inscricao = 'titular' THEN 1 ELSE 0 END), 0)) AS vagas_disponiveis,
                     c.status,
                     TO_CHAR(c.horario_inicio, 'HH24:MI') AS horario_inicio, 
                     TO_CHAR(c.horario_termino, 'HH24:MI') AS horario_termino,
@@ -985,8 +1392,12 @@ async function createApp() {
                     COALESCE(fc.categoria, 'Geral') AS categoria, 
                     COALESCE(fiMin.idade::text, '-') AS idade_min, 
                     COALESCE(fiMax.idade::text, '-') AS idade_max,
-                    COALESCE(fm.modalidade, 'Não informada') AS modalidade, 
-                    COALESCE(fl.local, 'Vitória') AS local, 
+                    COALESCE(fm.modalidade, 'NÃ£o informada') AS modalidade, 
+                    COALESCE(fl.local, 'VitÃ³ria') AS local, 
+                    c.data_publicacao,
+                    c.data_abertura_inscricao,
+                    c.data_encerramento_inscricao,
+                    COALESCE(c.acessos_contador, 0) AS acessos_contador,
                     c.criado_em
                 FROM cursos c
                 LEFT JOIN filtro_curso fcurso ON fcurso.id = c.curso_id
@@ -996,6 +1407,7 @@ async function createApp() {
                 LEFT JOIN filtro_modalidade fm ON fm.id = c.modalidade_id
                 LEFT JOIN filtro_local fl ON fl.id = c.local_id
                 LEFT JOIN pre_inscricoes pi ON pi.curso_id = c.id
+                WHERE c.status = 'ativo' AND (c.data_publicacao IS NULL OR c.data_publicacao <= NOW())
                 GROUP BY
                     c.id,
                     fcurso.curso,
@@ -1010,34 +1422,44 @@ async function createApp() {
                     fiMax.idade,
                     fm.modalidade,
                     fl.local,
+                    c.data_publicacao,
+                    c.data_abertura_inscricao,
+                    c.data_encerramento_inscricao,
+                    c.acessos_contador,
                     c.criado_em
                 ORDER BY c.id DESC
             `;
             const [rows] = await db.query(querySql);
             
-            // Filtrar cursos esgotados e manter compatibilidade
-            const cursosFormatados = rows.map(curso => ({
-                ...curso,
-                vagas: curso.vagas_disponiveis, // Para compatibilidade com frontend
-                disponivel: curso.vagas_disponiveis > 0
-            }));
+            const cursosFormatados = rows.map(curso => {
+                const vagasDisponiveis = Number(curso.vagas_disponiveis);
+                return {
+                    ...curso,
+                    vagas: vagasDisponiveis,
+                    disponivel: vagasDisponiveis > 0
+                };
+            });
             
             res.json(cursosFormatados);
         } catch (err) {
+            if (eErroTimeoutBanco(err)) {
+                console.warn("[db] Falha na conexao do banco ao buscar cursos pÃºblicos, servindo fallback estÃ¡tico.");
+                return res.json(FALLBACK_CURSOS);
+            }
             return responderErroBanco(res, err, "Erro na rota /api/cursos-public:");
         }
     });
 
     app.get("/api/cursos-public/:id", async (req, res) => {
+        const { id } = req.params;
         try {
-            const { id } = req.params;
             const querySql = `
                 SELECT 
                     c.id, 
                     COALESCE(fcurso.curso, 'Curso sem nome') AS nome, 
                     c.vagas AS vagas_totais, 
-                    COALESCE(COUNT(pi.id), 0) AS inscritos,
-                    (c.vagas - COALESCE(COUNT(pi.id), 0)) AS vagas_disponiveis,
+                    COALESCE(SUM(CASE WHEN pi.status_inscricao = 'titular' THEN 1 ELSE 0 END), 0) AS inscritos,
+                    (c.vagas - COALESCE(SUM(CASE WHEN pi.status_inscricao = 'titular' THEN 1 ELSE 0 END), 0)) AS vagas_disponiveis,
                     c.status,
                     TO_CHAR(c.horario_inicio, 'HH24:MI') AS horario_inicio, 
                     TO_CHAR(c.horario_termino, 'HH24:MI') AS horario_termino,
@@ -1046,8 +1468,12 @@ async function createApp() {
                     COALESCE(fc.categoria, 'Geral') AS categoria, 
                     COALESCE(fiMin.idade::text, '-') AS idade_min, 
                     COALESCE(fiMax.idade::text, '-') AS idade_max,
-                    COALESCE(fm.modalidade, 'Não informada') AS modalidade, 
-                    COALESCE(fl.local, 'Vitória') AS local, 
+                    COALESCE(fm.modalidade, 'NÃ£o informada') AS modalidade, 
+                    COALESCE(fl.local, 'VitÃ³ria') AS local, 
+                    c.data_publicacao,
+                    c.data_abertura_inscricao,
+                    c.data_encerramento_inscricao,
+                    COALESCE(c.acessos_contador, 0) AS acessos_contador,
                     c.criado_em
                 FROM cursos c
                 LEFT JOIN filtro_curso fcurso ON fcurso.id = c.curso_id
@@ -1072,23 +1498,37 @@ async function createApp() {
                     fiMax.idade,
                     fm.modalidade,
                     fl.local,
+                    c.data_publicacao,
+                    c.data_abertura_inscricao,
+                    c.data_encerramento_inscricao,
+                    c.acessos_contador,
                     c.criado_em
             `;
             const [rows] = await db.query(querySql, [id]);
             
             if (rows.length === 0) {
-                return res.status(404).json({ error: "Curso não encontrado" });
+                return res.status(404).json({ error: "Curso nÃ£o encontrado" });
             }
             
-            // Adicionar campo para indicar se ainda tem vagas
+            const vagasDisponiveis = Number(rows[0].vagas_disponiveis);
             const curso = {
                 ...rows[0],
-                vagas: rows[0].vagas_disponiveis, // Para compatibilidade com frontend
-                disponivel: rows[0].vagas_disponiveis > 0
+                vagas: vagasDisponiveis,
+                disponivel: vagasDisponiveis > 0
             };
             
+            // Registrar buscas e cliques dos usuÃ¡rios no catÃ¡logo
+            await db.query("UPDATE cursos SET acessos_contador = COALESCE(acessos_contador, 0) + 1 WHERE id = ?", [id]);
+
             res.json(curso);
         } catch (err) {
+            if (eErroTimeoutBanco(err)) {
+                console.warn("[db] Falha na conexao do banco ao buscar detalhes do curso, servindo fallback estÃ¡tico.");
+                const fallbackCurso = FALLBACK_CURSOS.find(c => c.id === Number(id));
+                if (fallbackCurso) {
+                    return res.json(fallbackCurso);
+                }
+            }
             return responderErroBanco(res, err, "Erro na rota /api/cursos-public/:id:");
         }
     });
@@ -1115,7 +1555,7 @@ async function createApp() {
             `, [id]);
             
             if (rows.length === 0) {
-                return res.status(404).json({ error: "Curso não encontrado" });
+                return res.status(404).json({ error: "Curso nÃ£o encontrado" });
             }
             
             const resultado = rows[0];
@@ -1129,6 +1569,19 @@ async function createApp() {
                 status: resultado.status
             });
         } catch (err) {
+            if (eErroTimeoutBanco(err)) {
+                console.warn("[db] Falha na conexao do banco ao buscar vagas do curso, servindo fallback estÃ¡tico.");
+                const fallbackCurso = FALLBACK_CURSOS.find(c => c.id === Number(req.params.id));
+                if (fallbackCurso) {
+                    return res.json({
+                        disponivel: fallbackCurso.vagas_disponiveis > 0,
+                        vagas_disponiveis: fallbackCurso.vagas_disponiveis,
+                        vagas_totais: fallbackCurso.vagas_totais,
+                        inscritos: fallbackCurso.inscritos,
+                        status: fallbackCurso.status
+                    });
+                }
+            }
             return responderErroBanco(res, err, "Erro ao verificar vagas do curso:");
         }
     });
@@ -1150,8 +1603,8 @@ async function createApp() {
                     COALESCE(fc.categoria, 'Geral') AS categoria, 
                     COALESCE(fiMin.idade::text, '-') AS idade_min, 
                     COALESCE(fiMax.idade::text, '-') AS idade_max,
-                    COALESCE(fm.modalidade, 'Não informada') AS modalidade, 
-                    COALESCE(fl.local, 'Vitória') AS local, 
+                    COALESCE(fm.modalidade, 'NÃ£o informada') AS modalidade, 
+                    COALESCE(fl.local, 'VitÃ³ria') AS local, 
                     c.criado_em
                 FROM cursos c
                 LEFT JOIN filtro_curso fcurso ON fcurso.id = c.curso_id
@@ -1172,7 +1625,7 @@ async function createApp() {
     });
 
     // ============================================================
-    // CRIAR CURSO COM DISPARO AUTOMÁTICO VIA GMAIL (CORRIGIDO E BLINDADO)
+    // CRIAR CURSO COM DISPARO AUTOMÃTICO VIA GMAIL (CORRIGIDO E BLINDADO)
     // ============================================================
     app.post("/cursos", exigirAuthAdmin, async (req, res) => {
         try {
@@ -1181,7 +1634,7 @@ async function createApp() {
                 data_inicio, data_termino, horario_inicio, horario_termino, categoria_id 
             } = req.body;
 
-            if (!curso) return res.status(400).json({ error: "Campo 'curso' é obrigatório." });
+            if (!curso) return res.status(400).json({ error: "Campo 'curso' Ã© obrigatÃ³rio." });
 
             // 1. Grava o curso (Tratamento contra erro de "undefined")
             const [result] = await db.query(`
@@ -1212,9 +1665,9 @@ async function createApp() {
 
             const info = linhas[0];
 
-            // TRAVA DE SEGURANÇA: Se o curso não tiver categoria informada, pula a automação de email
+            // TRAVA DE SEGURANÃ‡A: Se o curso nÃ£o tiver categoria informada, pula a automaÃ§Ã£o de email
             if (!info || !info.categoria) {
-                return res.json({ status: "ok", msg: "Curso criado (sem avisos automáticos, pois a categoria estava vazia)." });
+                return res.json({ status: "ok", msg: "Curso criado (sem avisos automÃ¡ticos, pois a categoria estava vazia)." });
             }
 
                 const cursoCriado = {
@@ -1234,7 +1687,7 @@ async function createApp() {
             res.json({ status: "ok", msg: "Curso criado e avisos processados automaticamente." });
 
         } catch (err) {
-            return responderErroBanco(res, err, "Erro na automação:");
+            return responderErroBanco(res, err, "Erro na automaÃ§Ã£o:");
         }
     });
 
@@ -1249,54 +1702,64 @@ async function createApp() {
             return responderErroBanco(res, err, "Erro ao atualizar status");
         }
     });
-    
     // ============================================================
-    // INSCRIÇÃO
+    // INSCRIÃ‡ÃƒO
     // ============================================================
     app.post("/inscricao", async (req, res) => {
         try {
             const {
-                nome,
-                email,
-                telefone,
-                cpf,
-                rg,
-                curso_id,
-                mora_vitoria,
-                escolaridade,
-                cep,
-                numero,
-                rua,
-                bairro,
-                municipio,
-                possui_necessidade_especial,
-                tipo_necessidade_especial,
-                cpf_documento,
-                rg_documento
+                nome, email, telefone, cpf, rg, curso_id,
+                mora_vitoria, escolaridade, cep, numero, rua, bairro, municipio,
+                possui_necessidade_especial, tipo_necessidade_especial,
+                cpf_documento, rg_documento,
+                data_nascimento, genero, raca_cor, telefone_alternativo,
+                responsavel_nome, responsavel_cpf, responsavel_parentesco,
+                responsavel_telefone, responsavel_email, responsavel_autorizacao,
+                deficiencia_adaptacoes, deficiencia_recursos,
+                objetivo, autoriza_lgpd
             } = req.body;
 
             const cpfLimpo = normalizarCpf(cpf);
             const rgNormalizado = normalizarRg(rg);
+            
             const possuiNecessidadeEspecial = String(possui_necessidade_especial || "nao").toLowerCase() === "sim" ? "sim" : "nao";
-            const tipoNecessidadeEspecial = possuiNecessidadeEspecial === "sim"
-                ? String(tipo_necessidade_especial || "").trim().slice(0, 120)
-                : null;
+            const tipoNecessidadeEspecial = possuiNecessidadeEspecial === "sim" ? String(tipo_necessidade_especial || "").trim().slice(0, 120) : null;
 
             if (!nome || !email || !telefone || !cpfLimpo || !rgNormalizado || !curso_id || !cpf_documento || !rg_documento) {
-                return res.status(400).json({ error: "Preencha todos os campos obrigatórios, inclusive CPF, RG e as fotos dos dois documentos." });
+                return res.status(400).json({ error: "Preencha todos os campos obrigatÃ³rios, inclusive CPF, RG e as fotos dos dois documentos." });
             }
 
+            if (String(municipio || "").trim().toLowerCase() !== "vitoria") {
+                return res.status(400).json({ error: "Os cursos do VixCursos sÃ£o destinados exclusivamente a moradores de VitÃ³ria - ES. Seu endereÃ§o nÃ£o estÃ¡ dentro do municÃ­pio." });
+            }
+
+            // Check duplicate in same course
             const [inscricaoExistente] = await db.query(
-                `SELECT id
-                 FROM pre_inscricoes
-                 WHERE curso_id = ? AND cpf = ?
-                 LIMIT 1`,
+                `SELECT id FROM pre_inscricoes WHERE curso_id = ? AND cpf = ? LIMIT 1`,
                 [curso_id, cpfLimpo]
             );
 
             if (inscricaoExistente.length) {
                 return res.status(409).json({
-                    error: "Você já possui pré-inscrição para este curso com este CPF."
+                    error: "VocÃª jÃ¡ possui prÃ©-inscriÃ§Ã£o para este curso com este CPF."
+                });
+            }
+
+            // Limit check (MÃ³dulo 3.1 & 3.2)
+            const [inscricoesCpf] = await db.query(
+                `SELECT COUNT(*) as total FROM pre_inscricoes WHERE cpf = ?`,
+                [cpfLimpo]
+            );
+            const totalInscricoesCpf = inscricoesCpf[0].total;
+
+            const [configRows] = await db.query(`SELECT limite_inscricoes_semestre, prazo_confirmacao_horas FROM configuracoes LIMIT 1`);
+            const config = configRows[0] || { limite_inscricoes_semestre: 4, prazo_confirmacao_horas: 48 };
+            const limite = config.limite_inscricoes_semestre;
+            const prazoHoras = config.prazo_confirmacao_horas;
+
+            if (totalInscricoesCpf >= limite) {
+                return res.status(400).json({
+                    error: `VocÃª jÃ¡ possui o limite de ${limite} inscriÃ§Ãµes ativas neste perÃ­odo.`
                 });
             }
 
@@ -1316,33 +1779,77 @@ async function createApp() {
                 WHERE c.id = ?
             `, [curso_id]);
 
-            if (!curso.length) return res.status(404).json({ error: "Curso não encontrado" });
+            if (!curso.length) return res.status(404).json({ error: "Curso nÃ£o encontrado" });
 
-            // ======== VALIDAÇÃO DE VAGAS ========
-            const vagasDefinidas = curso[0].vagas;
-            
-            // Contar quantas inscrições já foram feitas neste curso
-            const [contagem] = await db.query(
-                `SELECT COUNT(*) as total FROM pre_inscricoes WHERE curso_id = ?`,
+            // Count current titulares
+            const [titularesRows] = await db.query(
+                `SELECT COUNT(*) as total FROM pre_inscricoes WHERE curso_id = ? AND status_inscricao = 'titular'`,
                 [curso_id]
             );
-            
-            const inscritosAtuais = contagem[0].total;
-            const vagasDisponiveis = vagasDefinidas - inscritosAtuais;
-            
-            // Se não há vagas ou o status está marcado como esgotado
-            if (vagasDisponiveis <= 0 || curso[0].status === 'esgotado') {
-                return res.status(400).json({ 
-                    error: "Este curso atingiu o número máximo de inscrições. Infelizmente, as vagas estão esgotadas.",
-                    vagas_disponiveis: 0,
-                    inscritos: inscritosAtuais,
-                    vagas_totais: vagasDefinidas
-                });
+            const titularesAtuais = titularesRows[0].total;
+            const vagasTotais = curso[0].vagas;
+            const vagasRestantes = vagasTotais - titularesAtuais;
+
+            // Determine status
+            let status_inscricao = "titular";
+            let aviso = null;
+
+            if (possuiNecessidadeEspecial === "sim") {
+                status_inscricao = "titular"; // guaranteed PcD
+            } else if (totalInscricoesCpf >= 2) {
+                status_inscricao = "suplente";
+                aviso = "VocÃª jÃ¡ possui 2 inscriÃ§Ãµes ativas. Esta inscriÃ§Ã£o entrarÃ¡ como suplente automaticamente.";
+            } else if (vagasRestantes <= 0 || curso[0].status === "esgotado") {
+                status_inscricao = "suplente";
+                aviso = "Este curso atingiu o nÃºmero mÃ¡ximo de inscriÃ§Ãµes. Esta inscriÃ§Ã£o entrarÃ¡ como suplente automaticamente.";
+            } else {
+                status_inscricao = "titular";
+                if (totalInscricoesCpf === 1) {
+                    aviso = "VocÃª agora estÃ¡ concorrendo a 2 cursos ao mesmo tempo.";
+                }
             }
 
-            const nomeCurso = curso[0].nome_curso || "Curso";
+            const dataNascimentoValida = data_nascimento ? data_nascimento : null;
+
+            const [insertResult] = await db.query(`
+                INSERT INTO pre_inscricoes (
+                    nome, email, telefone, cpf, rg, curso_id,
+                    mora_vitoria, escolaridade, cep, numero, rua, bairro, municipio,
+                    possui_necessidade_especial, tipo_necessidade_especial,
+                    cpf_documento, rg_documento,
+                    data_nascimento, genero, raca_cor, telefone_alternativo,
+                    responsavel_nome, responsavel_cpf, responsavel_parentesco,
+                    responsavel_telefone, responsavel_email, responsavel_autorizacao,
+                    deficiencia_adaptacoes, deficiencia_recursos,
+                    objetivo, autoriza_lgpd, status_inscricao,
+                    convocado_em, vaga_expira_em
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                        CASE WHEN ? = 'titular' THEN NOW() ELSE NULL END,
+                        CASE WHEN ? = 'titular' THEN NOW() + INTERVAL '${prazoHoras} hours' ELSE NULL END)
+                RETURNING id
+            `, [
+                nome, email, telefone, cpfLimpo, rgNormalizado, curso_id,
+                mora_vitoria || null, escolaridade || null, cep || null, numero || null, rua || null, bairro || null, municipio || null,
+                possuiNecessidadeEspecial, tipoNecessidadeEspecial,
+                cpf_documento, rg_documento,
+                dataNascimentoValida, genero || null, raca_cor || null, telefone_alternativo || null,
+                responsavel_nome || null, responsavel_cpf ? normalizarCpf(responsavel_cpf) : null, responsavel_parentesco || null,
+                responsavel_telefone || null, responsavel_email || null, responsavel_autorizacao || null,
+                deficiencia_adaptacoes || null, deficiencia_recursos || null,
+                objetivo || null, autoriza_lgpd || 'sim', status_inscricao,
+                status_inscricao, status_inscricao
+            ]);
+
+            const insertId = insertResult[0].id;
+            const protocolo = gerarProtocoloInscricao(insertId);
+
+            // Update course status if now full
+            const novoStatus = (vagasRestantes - (status_inscricao === 'titular' ? 1 : 0)) <= 0 ? 'esgotado' : 'ativo';
+            await db.query(`UPDATE cursos SET status = ? WHERE id = ?`, [novoStatus, curso_id]);
+
             const dadosConfirmacao = {
-                cursoNome: nomeCurso,
+                cursoNome: curso[0].nome_curso,
                 dataInicio: formatarDataBR(curso[0].data_inicio),
                 dataTermino: formatarDataBR(curso[0].data_termino),
                 horaInicio: formatarHora(curso[0].horario_inicio),
@@ -1350,103 +1857,38 @@ async function createApp() {
                 local: curso[0].local_nome
             };
 
-            const [insertResult] = await db.query(`
-                INSERT INTO pre_inscricoes (
-                    nome,
-                    email,
-                    telefone,
-                    cpf,
-                    rg,
-                    curso_id,
-                    mora_vitoria,
-                    escolaridade,
-                    cep,
-                    numero,
-                    rua,
-                    bairro,
-                    municipio,
-                    possui_necessidade_especial,
-                    tipo_necessidade_especial,
-                    cpf_documento,
-                    rg_documento
-                )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                RETURNING id
-            `, [
-                nome,
-                email,
-                telefone,
-                cpfLimpo,
-                rgNormalizado,
-                curso_id,
-                mora_vitoria || null,
-                escolaridade || null,
-                cep || null,
-                numero || null,
-                rua || null,
-                bairro || null,
-                municipio || null,
-                possuiNecessidadeEspecial,
-                tipoNecessidadeEspecial,
-                cpf_documento,
-                rg_documento
-            ]);
-
-            const protocolo = gerarProtocoloInscricao(insertResult[0].id);
-
-            // Atualizar vagas e status: quando as vagas chegam a 0, marca como esgotado
-            const novasVagas = vagasDisponiveis - 1;
-            const novoStatus = novasVagas === 0 ? "esgotado" : "ativo";
-            
-            await db.query(
-                `UPDATE cursos SET vagas = ?, status = ? WHERE id = ?`,
-                [novasVagas, novoStatus, curso_id]
-            );
-
-            const smsMensagem = montarSmsConfirmacao(dadosConfirmacao);
+            const smsMensagem = status_inscricao === 'suplente'
+                ? `VixCursos: Sua pre-inscricao no curso ${dadosConfirmacao.cursoNome} foi recebida como SUPLENTE (fila de espera). Protocolo: ${protocolo}.`
+                : montarSmsConfirmacao(dadosConfirmacao);
 
             const [emailResult, smsResult] = await Promise.allSettled([
-                enviarEmailRecebimentoPreInscricao({
-                    nome,
-                    email,
-                    cursoNome: dadosConfirmacao.cursoNome,
-                    protocolo
-                }),
+                status_inscricao === 'suplente'
+                    ? enviarEmailRecebimentoPreInscricao({ nome, email, cursoNome: dadosConfirmacao.cursoNome, protocolo })
+                    : enviarEmailConvocacaoMatricula({ nome, email, cursoNome: dadosConfirmacao.cursoNome, prazoHoras, local: dadosConfirmacao.local, protocolo }),
                 enviarMensagemTwilio({ telefone, mensagem: smsMensagem })
             ]);
 
             const notificacoes = {
                 email: emailResult.status === "fulfilled" ? "enviado" : "falhou",
-                sms: smsResult.status === "fulfilled" && smsResult.value.sent
-                    ? "enviado"
-                    : (smsResult.status === "fulfilled" ? smsResult.value.reason : "falhou"),
-                canal: smsResult.status === "fulfilled" && smsResult.value.canal
-                    ? smsResult.value.canal
-                    : "sms"
+                sms: smsResult.status === "fulfilled" && smsResult.value.sent ? "enviado" : "falhou",
+                canal: smsResult.status === "fulfilled" && smsResult.value.canal ? smsResult.value.canal : "sms"
             };
-
-            if (emailResult.status === "rejected") {
-                console.error("Falha ao enviar email de pre-inscricao:", emailResult.reason);
-            }
-            if (smsResult.status === "rejected") {
-                console.error("Falha ao enviar SMS de confirmacao:", smsResult.reason);
-            }
 
             res.json({
                 status: "ok",
-                msg: "Inscrição realizada com sucesso",
+                msg: "InscriÃ§Ã£o realizada com sucesso",
                 protocolo,
-                vagas_restantes: novasVagas,
+                status_inscricao,
+                aviso,
                 notificacoes
             });
         } catch (err) {
             if (err && (err.code === "23505" || err.code === "ER_DUP_ENTRY")) {
                 return res.status(409).json({
-                    error: "Você já possui pré-inscrição para este curso com este CPF."
+                    error: "VocÃª jÃ¡ possui prÃ©-inscriÃ§Ã£o para este curso com este CPF."
                 });
             }
-
-            return responderErroBanco(res, err, "Erro no servidor");
+            return responderErroBanco(res, err, "Erro na rota /inscricao:");
         }
     });
 
@@ -1455,25 +1897,19 @@ async function createApp() {
             const cpfLimpo = normalizarCpf(req.params.cpf);
 
             if (cpfLimpo.length !== 11) {
-                return res.status(400).json({ error: "CPF inválido" });
+                return res.status(400).json({ error: "CPF invÃ¡lido" });
             }
 
             const [rows] = await db.query(
                 `SELECT
-                    id,
-                    nome,
-                    email,
-                    telefone,
-                    cpf,
-                    rg,
-                    rua,
-                    bairro,
-                    municipio,
-                    possui_necessidade_especial,
-                    tipo_necessidade_especial,
-                    cpf_documento,
-                    rg_documento,
-                    curso_id
+                    id, nome, email, telefone, telefone_alternativo, cpf, rg,
+                    cep, numero, rua, bairro, municipio, mora_vitoria, escolaridade,
+                    possui_necessidade_especial, tipo_necessidade_especial,
+                    deficiencia_adaptacoes, deficiencia_recursos,
+                    data_nascimento, genero, raca_cor,
+                    responsavel_nome, responsavel_cpf, responsavel_parentesco,
+                    responsavel_telefone, responsavel_email, responsavel_autorizacao,
+                    autoriza_lgpd, objetivo, cpf_documento, rg_documento
                 FROM pre_inscricoes
                 WHERE cpf = ?
                 ORDER BY criado_em DESC
@@ -1481,19 +1917,32 @@ async function createApp() {
                 [cpfLimpo]
             );
 
+            const [historico] = await db.query(`
+                SELECT 
+                    pi.id, pi.curso_id, pi.status_inscricao, pi.matricula_confirmada, pi.situacao_final,
+                    COALESCE(fc.curso, 'Curso') AS curso_nome,
+                    COALESCE(fl.local, 'VitÃ³ria') AS local_nome
+                FROM pre_inscricoes pi
+                LEFT JOIN cursos c ON c.id = pi.curso_id
+                LEFT JOIN filtro_curso fc ON fc.id = c.curso_id
+                LEFT JOIN filtro_local fl ON fl.id = c.local_id
+                WHERE pi.cpf = ?
+                ORDER BY pi.criado_em DESC
+            `, [cpfLimpo]);
+
             if (!rows.length) {
-                return res.status(404).json({ found: false });
+                return res.status(404).json({ found: false, data: null, historico: [] });
             }
 
-            res.json({ found: true, data: rows[0] });
+            res.json({ found: true, data: rows[0], historico });
         } catch (err) {
-            console.error("Erro ao buscar inscrição por CPF:", err);
+            console.error("Erro ao buscar inscriÃ§Ã£o por CPF:", err);
             res.status(500).json({ error: "Erro ao buscar CPF" });
         }
     });
 
     // ============================================================
-    // LISTAR INSCRITOS DE UM CURSO ESPECÍFICO (Atualizado)
+    // LISTAR INSCRITOS DE UM CURSO ESPECÃFICO (Atualizado)
     // ============================================================
     app.get("/inscritos/:idCurso", exigirAuthAdmin, async (req, res) => {
         try {
@@ -1569,7 +2018,7 @@ async function createApp() {
     });
 
     // ============================================================
-    // CONFIRMAR MATRÍCULA E DISPARAR EMAIL
+    // CONFIRMAR MATRÃCULA E DISPARAR EMAIL
     // ============================================================
     app.put("/api/inscricoes/:id/confirmar", exigirAuthAdmin, async (req, res) => {
         try {
@@ -1597,13 +2046,13 @@ async function createApp() {
             );
 
             if (!rows.length) {
-                return res.status(404).json({ error: "Inscrição não encontrada." });
+                return res.status(404).json({ error: "InscriÃ§Ã£o nÃ£o encontrada." });
             }
 
             const inscricao = rows[0];
 
             if (Number(inscricao.matricula_confirmada) === 1) {
-                return res.json({ status: "ja-confirmada", msg: "Matrícula já estava confirmada." });
+                return res.json({ status: "ja-confirmada", msg: "MatrÃ­cula jÃ¡ estava confirmada." });
             }
 
             await db.query(
@@ -1632,33 +2081,33 @@ async function createApp() {
             } catch (err) {
                 emailStatus = "falhou";
                 emailErro = err?.code || err?.responseCode || err?.message || "erro-desconhecido";
-                console.error("Falha ao enviar email de matrícula confirmada:", err);
+                console.error("Falha ao enviar email de matrÃ­cula confirmada:", err);
             }
 
             return res.json({ status: "ok", email: emailStatus, email_erro: emailErro });
         } catch (err) {
-            console.error("Erro ao confirmar matrícula:", err);
-            return res.status(500).json({ error: "Erro ao confirmar matrícula." });
+            console.error("Erro ao confirmar matrÃ­cula:", err);
+            return res.status(500).json({ error: "Erro ao confirmar matrÃ­cula." });
         }
     });
 
     // ============================================================
-    // EXCLUIR INSCRIÇÃO E LIBERAR VAGA AUTOMATICAMENTE
+    // EXCLUIR INSCRIÃ‡ÃƒO E LIBERAR VAGA AUTOMATICAMENTE
     // ============================================================
     app.delete("/api/inscricoes/:id", exigirAuthAdmin, async (req, res) => {
         try {
             const idInscricao = req.params.id;
 
-            // 1. Descobrir de qual curso é essa inscrição
+            // 1. Descobrir de qual curso Ã© essa inscriÃ§Ã£o
             const [inscricao] = await db.query(`SELECT curso_id FROM pre_inscricoes WHERE id = ?`, [idInscricao]);
             
             if (!inscricao.length) {
-                return res.status(404).json({ error: "Inscrição não encontrada no sistema." });
+                return res.status(404).json({ error: "InscriÃ§Ã£o nÃ£o encontrada no sistema." });
             }
 
             const cursoId = inscricao[0].curso_id;
 
-            // 2. Apagar a inscrição
+            // 2. Apagar a inscriÃ§Ã£o
             await db.query(`DELETE FROM pre_inscricoes WHERE id = ?`, [idInscricao]);
 
             const [cursoRows] = await db.query(`
@@ -1686,9 +2135,9 @@ async function createApp() {
                 await notificarInteressadosPorCurso({ ...cursoRows[0], status: 'ativo' });
             }
 
-            res.json({ message: "Inscrição removida e vaga liberada com sucesso!" });
+            res.json({ message: "InscriÃ§Ã£o removida e vaga liberada com sucesso!" });
         } catch (err) {
-            console.error("Erro ao excluir inscrição:", err);
+            console.error("Erro ao excluir inscriÃ§Ã£o:", err);
             res.status(500).json({ error: "Erro interno no servidor" });
         }
     });
@@ -1761,7 +2210,7 @@ async function createApp() {
             const [[{ leads }]] = await db.query(`SELECT COUNT(*) AS leads FROM interessados WHERE status = 'aguardando'`);
             res.json({ total, ativos, inscritos, leads });
         } catch (err) {
-            return responderErroBanco(res, err, "Erro ao buscar estatísticas");
+            return responderErroBanco(res, err, "Erro ao buscar estatÃ­sticas");
         }
     });
 
@@ -1789,13 +2238,13 @@ async function createApp() {
     });
 
     // ============================================================
-    // DELETAR CURSO (CASCADE apaga inscrições automaticamente)
+    // DELETAR CURSO (CASCADE apaga inscriÃ§Ãµes automaticamente)
     // ============================================================
     app.delete("/cursos/:id", exigirAuthAdmin, async (req, res) => {
         try {
             const { id } = req.params;
             const [[curso]] = await db.query(`SELECT id FROM cursos WHERE id = ?`, [id]);
-            if (!curso) return res.status(404).json({ error: "Curso não encontrado" });
+            if (!curso) return res.status(404).json({ error: "Curso nÃ£o encontrado" });
             await db.query(`DELETE FROM cursos WHERE id = ?`, [id]);
             res.json({ message: "Curso removido com sucesso." });
         } catch (err) {
@@ -1818,7 +2267,7 @@ async function createApp() {
             const matchId = text.match(/curso\s*(\d+)/) || text.match(/id\s*(\d+)/);
 
             if (has(["inscricao", "inscrever", "quero me inscrever", "matricula", "pre inscri", "inscrever"])) {
-                return res.json({ reply: `🔗 Clique abaixo para fazer sua pré-inscrição:\n${baseUrl}/pre_inscricao.html` });
+                return res.json({ reply: `ðŸ”— Clique abaixo para escolher um curso e fazer sua prÃ©-inscriÃ§Ã£o:\n${baseUrl}/#cursos-list-section` });
             }
 
             if (matchId) {
@@ -1832,18 +2281,18 @@ async function createApp() {
                     WHERE c.id = ?
                 `, [id]);
 
-                if (!rows.length) return res.json({ reply: "Curso não encontrado." });
+                if (!rows.length) return res.json({ reply: "Curso nÃ£o encontrado." });
                 const c = rows[0];
 
                 return res.json({
-                    reply: `📘 *${c.nome}*\n\n📍 Local: ${c.local}\n🏫 Modalidade: ${c.modalidade}\n👥 Vagas: ${c.vagas} — ${c.status}\n\n👉 *Pré-inscrição:* \nhttp://localhost:3000/pre_inscricao.html?id=${c.id}`
+                    reply: `ðŸ“˜ *${c.nome}*\n\nðŸ“ Local: ${c.local}\nðŸ« Modalidade: ${c.modalidade}\nðŸ‘¥ Vagas: ${c.vagas} â€” ${c.status}\n\nðŸ‘‰ *PrÃ©-inscriÃ§Ã£o:* \n${baseUrl}/pre-inscricao/${c.id}`
                 });
             }
 
             if (has(["vaga", "vagas", "disponivel", "tem vaga"])) {
                 const [rows] = await db.query(`SELECT SUM(vagas) AS total FROM cursos WHERE status = 'ativo'`);
                 const total = rows[0].total || 0;
-                return res.json({ reply: `Atualmente temos *${total} vagas disponíveis*.` });
+                return res.json({ reply: `Atualmente temos *${total} vagas disponÃ­veis*.` });
             }
 
             if (has(["curso", "cursos", "lista", "catalogo", "mostrar cursos"])) {
@@ -1854,32 +2303,36 @@ async function createApp() {
                     LEFT JOIN filtro_local fl ON fl.id = c.local_id
                 `);
 
-                const lista = rows.map(r => `📘 *${r.id} — ${r.nome}*\n📍 Local: ${r.local}\n👥 ${r.vagas} vagas — ${r.status}\n👉 Pré-inscrição: http://localhost:3000/pre_inscricao.html?id=${r.id}\n`).join("\n");
+                const lista = rows.map(r => `ðŸ“˜ *${r.id} â€” ${r.nome}*\nðŸ“ Local: ${r.local}\nðŸ‘¥ ${r.vagas} vagas â€” ${r.status}\nðŸ‘‰ PrÃ©-inscriÃ§Ã£o: ${baseUrl}/pre-inscricao/${r.id}\n`).join("\n");
                 return res.json({ reply: lista });
             }
 
-            return res.json({ reply: `Não entendi 😅  \nTente perguntar:\n\n• "curso 12"\n• "vagas"\n• "lista de cursos"\n• "quero me inscrever"` });
+            return res.json({ reply: `NÃ£o entendi ðŸ˜…  \nTente perguntar:\n\nâ€¢ "curso 12"\nâ€¢ "vagas"\nâ€¢ "lista de cursos"\nâ€¢ "quero me inscrever"` });
 
         } catch (err) {
             return responderErroBanco(res, err, "Erro ao processar mensagem.");
         }
     });
         // ============================================================
-    // ESTATÍSTICAS DO PAINEL (VAGAS DISPONÍVEIS E PREENCHIDAS)
+    // ESTATÃSTICAS DO PAINEL (VAGAS DISPONÃVEIS E PREENCHIDAS)
     // ============================================================
     app.get("/api/estatisticas", async (req, res) => {
         try {
-            // 1. Soma todas as vagas restantes de cursos que estão 'ativos'
+            // 1. Soma todas as vagas restantes de cursos que estÃ£o 'ativos'
             const [rowsVagas] = await db.query(`SELECT SUM(vagas) AS totais FROM cursos WHERE status = 'ativo'`);
             const vagasHoje = rowsVagas[0].totais || 0;
 
-            // 2. Conta quantas inscrições (vagas preenchidas) foram feitas no ano de 2026
+            // 2. Conta quantas inscriÃ§Ãµes (vagas preenchidas) foram feitas no ano de 2026
             const [rowsInscricoes] = await db.query(`SELECT COUNT(id) AS preenchidas FROM pre_inscricoes WHERE EXTRACT(YEAR FROM criado_em) = 2026`);
             const vagas2026 = rowsInscricoes[0].preenchidas || 0;
 
             res.json({ vagasHoje, vagas2026 });
         } catch (err) {
-            return responderErroBanco(res, err, "Erro ao carregar estatísticas:");
+            if (eErroTimeoutBanco(err)) {
+                console.warn("[db] Falha na conexao do banco ao carregar estatÃ­sticas, servindo fallback estÃ¡tico.");
+                return res.json({ vagasHoje: 108, vagas2026: 677 });
+            }
+            return responderErroBanco(res, err, "Erro ao carregar estatÃ­sticas:");
         }
     });
     // ============================================================
@@ -1904,7 +2357,7 @@ async function createApp() {
                 WHERE c.id = ?
             `, [id]);
 
-            if (rows.length === 0) return res.status(404).json({ error: "Curso não encontrado" });
+            if (rows.length === 0) return res.status(404).json({ error: "Curso nÃ£o encontrado" });
             res.json(rows[0]);
         } catch (err) {
             return responderErroBanco(res, err, "Erro ao buscar detalhes");
@@ -1912,13 +2365,673 @@ async function createApp() {
     });
 
     // ============================================================
-    // ROTAS DE PÁGINAS (HTML)
+    // REGRAS DE INSCRIÃ‡ÃƒO, SUPLÃŠNCIA E PROMOÃ‡ÃƒO DE SUPLENTES
     // ============================================================
-    app.get("/", (req, res) => res.sendFile(path.join(__dirname, "public", "pages", "index.html")));
-    app.get("/detalhes", (req, res) => res.sendFile(path.join(__dirname, "public", "pages", "detalhes.html")));
+    async function promoverProximoSuplente(cursoId, prazoHoras) {
+        try {
+            // Buscar suplentes chronologically
+            const [suplentes] = await db.query(`
+                SELECT id, cpf, nome, email, telefone
+                FROM pre_inscricoes
+                WHERE curso_id = ? AND status_inscricao = 'suplente'
+                ORDER BY criado_em ASC
+            `, [cursoId]);
 
-    app.use((req, res) => {
-        res.status(404).send("Arquivo não encontrado!");
+            if (suplentes.length === 0) return;
+
+            // Priority: those who never completed any course have priority over those who completed
+            const suplentesOrdenados = [];
+            for (const s of suplentes) {
+                const [conclusoes] = await db.query(`
+                    SELECT COUNT(*) as total
+                    FROM pre_inscricoes
+                    WHERE cpf = ? AND situacao_final = 'concluido'
+                `, [s.cpf]);
+                
+                const jaConcluiu = conclusoes[0].total > 0;
+                suplentesOrdenados.push({
+                    ...s,
+                    jaConcluiu
+                });
+            }
+
+            suplentesOrdenados.sort((a, b) => {
+                if (a.jaConcluiu !== b.jaConcluiu) {
+                    return a.jaConcluiu ? 1 : -1;
+                }
+                return 0; // maintain original chronological order
+            });
+
+            const promovido = suplentesOrdenados[0];
+            console.log(`[promocao] Promovendo suplente ${promovido.nome} (ID: ${promovido.id}) para titular no curso ID: ${cursoId}`);
+
+            await db.query(`
+                UPDATE pre_inscricoes
+                SET status_inscricao = 'titular',
+                    convocado_em = NOW(),
+                    vaga_expira_em = NOW() + INTERVAL '${prazoHoras} hours'
+                WHERE id = ?
+            `, [promovido.id]);
+
+            const [curso] = await db.query(`
+                SELECT COALESCE(fc.curso, 'Curso') AS nome
+                FROM cursos c
+                LEFT JOIN filtro_curso fc ON fc.id = c.curso_id
+                WHERE c.id = ?
+            `, [cursoId]);
+            const cursoNome = curso.length > 0 ? curso[0].nome : "Curso";
+
+            await enviarEmailPromocaoSuplente({
+                nome: promovido.nome,
+                email: promovido.email,
+                cursoNome,
+                prazoHoras
+            });
+        } catch (err) {
+            console.error("Erro ao promover suplente:", err);
+        }
+    }
+
+    async function processarExpiracoesMatriculas() {
+        try {
+            const [configRows] = await db.query(`SELECT prazo_confirmacao_horas FROM configuracoes LIMIT 1`);
+            const prazoHoras = configRows.length > 0 ? configRows[0].prazo_confirmacao_horas : 48;
+
+            const [expirados] = await db.query(`
+                SELECT pi.id, pi.curso_id, pi.nome, pi.email, pi.telefone, pi.cpf, pi.possui_necessidade_especial,
+                       COALESCE(fc.curso, 'Curso') AS curso_nome
+                FROM pre_inscricoes pi
+                LEFT JOIN cursos c ON c.id = pi.curso_id
+                LEFT JOIN filtro_curso fc ON fc.id = c.curso_id
+                WHERE pi.status_inscricao = 'titular'
+                  AND pi.matricula_confirmada = 0
+                  AND pi.vaga_expira_em IS NOT NULL
+                  AND pi.vaga_expira_em <= NOW()
+            `);
+
+            for (const exp of expirados) {
+                if (exp.possui_necessidade_especial === 'sim') {
+                    console.warn(`[pcd-alerta] Aluno PcD ${exp.nome} (CPF: ${exp.cpf}) nÃ£o confirmou matrÃ­cula no prazo. Vaga mantida.`);
+                    continue;
+                }
+
+                console.log(`[expiracao] Expirando vaga de ${exp.nome} (ID: ${exp.id}) no curso ID: ${exp.curso_id}`);
+
+                await db.query(`
+                    UPDATE pre_inscricoes
+                    SET status_inscricao = 'suplente',
+                        convocado_em = NULL,
+                        vaga_expira_em = NULL
+                    WHERE id = ?
+                `, [exp.id]);
+
+                await enviarEmailExpiracaoVaga({
+                    nome: exp.nome,
+                    email: exp.email,
+                    cursoNome: exp.curso_nome
+                });
+
+                await promoverProximoSuplente(exp.curso_id, prazoHoras);
+            }
+        } catch (err) {
+            console.error("Erro no processamento de expiraÃ§Ãµes de matrÃ­cula:", err);
+        }
+    }
+
+    // Executa a cada 60s
+    setInterval(processarExpiracoesMatriculas, 60000);
+
+    // ============================================================
+    // CONFIGURAÃ‡Ã•ES DO SISTEMA (ADMIN)
+    // ============================================================
+    app.get("/api/admin/configuracoes", exigirAuthAdmin, async (req, res) => {
+        try {
+            const [rows] = await db.query(`SELECT limite_inscricoes_semestre, prazo_confirmacao_horas FROM configuracoes LIMIT 1`);
+            res.json(rows[0] || { limite_inscricoes_semestre: 4, prazo_confirmacao_horas: 48 });
+        } catch (err) {
+            return responderErroBanco(res, err, "Erro ao carregar configuraÃ§Ãµes");
+        }
+    });
+
+    app.put("/api/admin/configuracoes", exigirAuthAdmin, async (req, res) => {
+        try {
+            const { limite_inscricoes_semestre, prazo_confirmacao_horas } = req.body;
+            await db.query(`
+                UPDATE configuracoes
+                SET limite_inscricoes_semestre = ?,
+                    prazo_confirmacao_horas = ?
+            `, [Number(limite_inscricoes_semestre), Number(prazo_confirmacao_horas)]);
+            res.json({ ok: true, message: "ConfiguraÃ§Ãµes salvas!" });
+        } catch (err) {
+            return responderErroBanco(res, err, "Erro ao salvar configuraÃ§Ãµes");
+        }
+    });
+
+    // ============================================================
+    // FICHA COMPLETA DO ALUNO (ADMIN)
+    // ============================================================
+    app.get("/api/admin/aluno/completo/:cpf", exigirAuthAdmin, async (req, res) => {
+        try {
+            const cpfLimpo = normalizarCpf(req.params.cpf);
+            const [alunoRows] = await db.query(`
+                SELECT * FROM pre_inscricoes WHERE cpf = ? ORDER BY criado_em DESC LIMIT 1
+            `, [cpfLimpo]);
+            if (alunoRows.length === 0) {
+                return res.status(404).json({ error: "Aluno nÃ£o encontrado." });
+            }
+            const [historicoRows] = await db.query(`
+                SELECT pi.*, COALESCE(fc.curso, 'Curso') AS curso_nome, COALESCE(fl.local, 'A definir') AS local_nome
+                FROM pre_inscricoes pi
+                LEFT JOIN cursos c ON c.id = pi.curso_id
+                LEFT JOIN filtro_curso fc ON fc.id = c.curso_id
+                LEFT JOIN filtro_local fl ON fl.id = c.local_id
+                WHERE pi.cpf = ?
+                ORDER BY pi.criado_em DESC
+            `, [cpfLimpo]);
+            res.json({ aluno: alunoRows[0], historico: historicoRows });
+        } catch (err) {
+            return responderErroBanco(res, err, "Erro ao carregar ficha do aluno");
+        }
+    });
+
+    // ============================================================
+    // PESQUISAS DE SATISFAÃ‡ÃƒO E CONCLUSÃƒO (CERTIFICAÃ‡ÃƒO)
+    // ============================================================
+    app.post("/api/pre-inscricoes/:id/pesquisa-conclusao", async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { emprego_pos_curso, contribuicao_profissional, recomendaria, beneficio_principal } = req.body;
+            await db.query(`
+                UPDATE pre_inscricoes
+                SET emprego_pos_curso = ?,
+                    contribuicao_profissional = ?,
+                    recomendaria = ?,
+                    beneficio_principal = ?,
+                    questionario_conclusao_respondido = 1
+                WHERE id = ?
+            `, [emprego_pos_curso, Number(contribuicao_profissional), recomendaria, beneficio_principal, id]);
+            res.json({ ok: true, message: "Pesquisa de conclusÃ£o registrada!" });
+        } catch (err) {
+            return responderErroBanco(res, err, "Erro ao registrar pesquisa de conclusÃ£o");
+        }
+    });
+
+    app.post("/api/pre-inscricoes/:id/pesquisa-satisfacao", async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { nota_satisfacao_instrutor, nota_satisfacao_estrutura, nota_satisfacao_material, nota_satisfacao_geral, comentario_satisfacao } = req.body;
+            await db.query(`
+                UPDATE pre_inscricoes
+                SET nota_satisfacao_instrutor = ?,
+                    nota_satisfacao_estrutura = ?,
+                    nota_satisfacao_material = ?,
+                    nota_satisfacao_geral = ?,
+                    comentario_satisfacao = ?,
+                    pesquisa_satisfacao_respondida = 1
+                WHERE id = ?
+            `, [Number(nota_satisfacao_instrutor), Number(nota_satisfacao_estrutura), Number(nota_satisfacao_material), Number(nota_satisfacao_geral), comentario_satisfacao, id]);
+            res.json({ ok: true, message: "Pesquisa de satisfaÃ§Ã£o registrada!" });
+        } catch (err) {
+            return responderErroBanco(res, err, "Erro ao registrar pesquisa de satisfaÃ§Ã£o");
+        }
+    });
+
+    app.post("/api/pre-inscricoes/sugestoes", async (req, res) => {
+        try {
+            const { cpf, areas_interesse, sugestao_texto } = req.body;
+            const areasStr = Array.isArray(areas_interesse) ? areas_interesse.join(", ") : String(areas_interesse || "");
+            await db.query(`
+                INSERT INTO sugestoes_cursos (cpf, areas_interesse, sugestao_texto)
+                VALUES (?, ?, ?)
+            `, [normalizarCpf(cpf), areasStr, sugestao_texto]);
+            res.json({ ok: true, message: "SugestÃ£o enviada com sucesso!" });
+        } catch (err) {
+            return responderErroBanco(res, err, "Erro ao salvar sugestÃ£o");
+        }
+    });
+
+    // ============================================================
+    // EMISSÃƒO DE CERTIFICADOS
+    // ============================================================
+    app.get("/certificado/:id", async (req, res) => {
+        try {
+            const { id } = req.params;
+            const [rows] = await db.query(`
+                SELECT pi.*, COALESCE(fc.curso, 'Curso') AS curso_nome, COALESCE(fl.local, 'VitÃ³ria') AS local_nome,
+                       TO_CHAR(c.data_inicio, 'DD/MM/YYYY') AS data_inicio_formatada,
+                       TO_CHAR(c.data_termino, 'DD/MM/YYYY') AS data_termino_formatada
+                FROM pre_inscricoes pi
+                LEFT JOIN cursos c ON c.id = pi.curso_id
+                LEFT JOIN filtro_curso fc ON fc.id = c.curso_id
+                LEFT JOIN filtro_local fl ON fl.id = c.local_id
+                WHERE pi.id = ?
+                LIMIT 1
+            `, [id]);
+
+            if (rows.length === 0) {
+                return res.status(404).send("<h2>InscriÃ§Ã£o nÃ£o encontrada</h2>");
+            }
+
+            const aluno = rows[0];
+
+            if (Number(aluno.questionario_conclusao_respondido) !== 1) {
+                return res.redirect(`/questionario-conclusao.html?id=${id}`);
+            }
+
+            res.send(`
+                <!DOCTYPE html>
+                <html lang="pt-BR">
+                <head>
+                    <meta charset="UTF-8">
+                    <title>Certificado de ConclusÃ£o | ${aluno.nome}</title>
+                    <style>
+                        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Montserrat:wght@300;400;600&display=swap');
+                        body {
+                            background: #090f1d;
+                            color: #f8fafc;
+                            font-family: 'Montserrat', sans-serif;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            min-height: 100vh;
+                            margin: 0;
+                            padding: 20px;
+                        }
+                        .certificate-container {
+                            border: 12px double #f9c852;
+                            background: #111827;
+                            padding: 60px 40px;
+                            width: 100%;
+                            max-width: 800px;
+                            text-align: center;
+                            position: relative;
+                            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+                            border-radius: 4px;
+                            box-sizing: border-box;
+                        }
+                        .certificate-container::before {
+                            content: "";
+                            position: absolute;
+                            top: 15px; bottom: 15px; left: 15px; right: 15px;
+                            border: 2px solid #f9c852;
+                            pointer-events: none;
+                        }
+                        .header {
+                            font-family: 'Cinzel', serif;
+                            font-size: 2.2rem;
+                            color: #f9c852;
+                            margin-top: 0;
+                            margin-bottom: 20px;
+                            letter-spacing: 2px;
+                            text-transform: uppercase;
+                        }
+                        .subheader {
+                            font-size: 0.9rem;
+                            text-transform: uppercase;
+                            color: #94a3b8;
+                            letter-spacing: 3px;
+                            margin-bottom: 30px;
+                        }
+                        .body-text {
+                            font-size: 1.1rem;
+                            line-height: 1.8;
+                            color: #cbd5e1;
+                            margin-bottom: 40px;
+                            font-weight: 300;
+                        }
+                        .highlight {
+                            color: #f8fafc;
+                            font-weight: 600;
+                            border-bottom: 1px dashed #64748b;
+                            padding-bottom: 2px;
+                        }
+                        .footer {
+                            margin-top: 50px;
+                            display: flex;
+                            justify-content: space-around;
+                            align-items: flex-end;
+                        }
+                        .signature-block {
+                            width: 220px;
+                            text-align: center;
+                            border-top: 1px solid #64748b;
+                            padding-top: 10px;
+                            font-size: 0.8rem;
+                            color: #94a3b8;
+                        }
+                        .signature-title {
+                            font-weight: 600;
+                            color: #cbd5e1;
+                            margin-bottom: 4px;
+                        }
+                        .actions {
+                            margin-top: 30px;
+                        }
+                        .btn {
+                            display: inline-flex;
+                            align-items: center;
+                            gap: 8px;
+                            background: #ff8a5a;
+                            color: white;
+                            text-decoration: none;
+                            padding: 12px 24px;
+                            border-radius: 8px;
+                            font-weight: bold;
+                            transition: all 0.2s;
+                            border: none;
+                            cursor: pointer;
+                        }
+                        .btn:hover {
+                            background: #f97316;
+                            transform: translateY(-1px);
+                        }
+                        @media print {
+                            body {
+                                background: white !important;
+                                color: black !important;
+                                padding: 0;
+                            }
+                            .certificate-container {
+                                background: white !important;
+                                color: black !important;
+                                border-color: #333 !important;
+                                box-shadow: none !important;
+                                width: 100% !important;
+                                max-width: 100% !important;
+                                height: 100% !important;
+                                border-radius: 0 !important;
+                            }
+                            .certificate-container::before {
+                                border-color: #333 !important;
+                            }
+                            .header, .highlight {
+                                color: black !important;
+                            }
+                            .body-text, .subheader, .signature-block {
+                                color: #333 !important;
+                            }
+                            .actions {
+                                display: none !important;
+                            }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="certificate-container">
+                        <div class="header">Certificado de ConclusÃ£o</div>
+                        <div class="subheader">Prefeitura de VitÃ³ria â€” VixCursos</div>
+                        
+                        <p class="body-text">
+                            Certificamos que <span class="highlight">${aluno.nome}</span> concluiu com Ãªxito o curso de qualificaÃ§Ã£o profissional em <span class="highlight">${aluno.curso_nome}</span>, ministrado no polo <span class="highlight">${aluno.local_nome}</span>, no perÃ­odo de ${aluno.data_inicio_formatada} a ${aluno.data_termino_formatada}, com carga horÃ¡ria de <span class="highlight">40 horas</span>.
+                        </p>
+                        
+                        <div class="footer">
+                            <div class="signature-block">
+                                <div class="signature-title">Secretaria de AssistÃªncia Social</div>
+                                <div>MunicÃ­pio de VitÃ³ria â€” ES</div>
+                            </div>
+                            <div class="signature-block">
+                                <div class="signature-title">CoordenaÃ§Ã£o VixCursos</div>
+                                <div>ValidaÃ§Ã£o Protocolo: ${gerarProtocoloInscricao(aluno.id)}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="actions">
+                        <button onclick="window.print()" class="btn">ðŸ–¨ï¸ Imprimir / Salvar PDF</button>
+                        <a href="/" class="btn" style="background:#475569; margin-left:10px;">Voltar ao Site</a>
+                    </div>
+                </body>
+                </html>
+            `);
+        } catch (err) {
+            console.error("Erro ao gerar certificado:", err);
+            res.status(500).send("Erro interno ao gerar certificado");
+        }
+    });
+
+    // ============================================================
+    // EXPORTAR EXCEL MULTI-ABA (ADMIN)
+    // ============================================================
+    app.get("/api/admin/exportar-excel", exigirAuthAdmin, async (req, res) => {
+        try {
+            let querySql = `
+                SELECT
+                    pi.cpf AS "CPF",
+                    pi.nome AS "Nome",
+                    TO_CHAR(pi.data_nascimento, 'DD/MM/YYYY') AS "Data de nascimento",
+                    pi.genero AS "GÃªnero",
+                    pi.raca_cor AS "RaÃ§a/cor",
+                    pi.bairro AS "Bairro",
+                    pi.municipio AS "MunicÃ­pio",
+                    pi.cep AS "CEP",
+                    pi.possui_necessidade_especial AS "DeficiÃªncia",
+                    pi.email AS "E-mail",
+                    pi.telefone AS "Telefone",
+                    COALESCE(fc.curso, 'Curso') AS "Curso",
+                    'Turma ' || pi.curso_id AS "Turma",
+                    COALESCE(fl.local, 'VitÃ³ria') AS "Local",
+                    TO_CHAR(pi.criado_em, 'DD/MM/YYYY HH24:MI:SS') AS "Data de inscriÃ§Ã£o",
+                    CASE WHEN pi.matricula_confirmada = 1 THEN 'Matriculado' ELSE 'Pendente' END AS "Status",
+                    pi.status_inscricao AS "ClassificaÃ§Ã£o (titular/suplente)",
+                    TO_CHAR(pi.matricula_confirmada_em, 'DD/MM/YYYY HH24:MI:SS') AS "Data de matrÃ­cula",
+                    pi.situacao_final AS "SituaÃ§Ã£o final",
+                    pi.objetivo AS "Objetivo declarado"
+                FROM pre_inscricoes pi
+                LEFT JOIN cursos c ON c.id = pi.curso_id
+                LEFT JOIN filtro_curso fc ON fc.id = c.curso_id
+                LEFT JOIN filtro_local fl ON fl.id = c.local_id
+            `;
+
+            const conds = [];
+            const params = [];
+
+            if (req.query.curso_id) {
+                conds.push("pi.curso_id = ?");
+                params.push(req.query.curso_id);
+            }
+            if (req.query.bairro) {
+                conds.push("pi.bairro ILIKE ?");
+                params.push(`%${req.query.bairro}%`);
+            }
+            if (req.query.status_inscricao) {
+                conds.push("pi.status_inscricao = ?");
+                params.push(req.query.status_inscricao);
+            }
+            if (req.query.situacao_final) {
+                conds.push("pi.situacao_final = ?");
+                params.push(req.query.situacao_final);
+            }
+            if (req.query.data_inicio) {
+                conds.push("pi.criado_em >= ?");
+                params.push(req.query.data_inicio);
+            }
+            if (req.query.data_fim) {
+                conds.push("pi.criado_em <= ?");
+                params.push(req.query.data_fim);
+            }
+
+            if (conds.length > 0) {
+                querySql += " WHERE " + conds.join(" AND ");
+            }
+            querySql += " ORDER BY pi.id DESC";
+
+            const [rows] = await db.query(querySql, params);
+
+            const wb = XLSX.utils.book_new();
+
+            const wsInscricoes = XLSX.utils.json_to_sheet(rows);
+            XLSX.utils.book_append_sheet(wb, wsInscricoes, "InscriÃ§Ãµes");
+
+            const rowsConcluidos = rows.filter(r => r["SituaÃ§Ã£o final"] === "concluido");
+            const wsConcluidos = XLSX.utils.json_to_sheet(rowsConcluidos);
+            XLSX.utils.book_append_sheet(wb, wsConcluidos, "ConcluÃ­dos");
+
+            const rowsSuplentes = rows.filter(r => String(r["ClassificaÃ§Ã£o (titular/suplente)"]).toLowerCase() === "suplente");
+            const wsSuplentes = XLSX.utils.json_to_sheet(rowsSuplentes);
+            XLSX.utils.book_append_sheet(wb, wsSuplentes, "Suplentes");
+
+            const rowsPcD = rows.filter(r => String(r["DeficiÃªncia"]).toLowerCase() === "sim");
+            const wsPcD = XLSX.utils.json_to_sheet(rowsPcD);
+            XLSX.utils.book_append_sheet(wb, wsPcD, "PcD");
+
+            const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+
+            res.setHeader("Content-Disposition", "attachment; filename=relatorio_vixcursos.xlsx");
+            res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            return res.send(buffer);
+        } catch (err) {
+            console.error("Erro ao exportar Excel:", err);
+            return res.status(500).json({ error: "Erro ao gerar planilha Excel" });
+        }
+    });
+
+    // ============================================================
+    // RELATÃ“RIOS E PERFIL CRUZADO (ADMIN)
+    // ============================================================
+    app.get("/api/admin/relatorios-stats", exigirAuthAdmin, async (req, res) => {
+        try {
+            let whereClause = "";
+            const conds = [];
+            const params = [];
+
+            if (req.query.curso_id) {
+                conds.push("pi.curso_id = ?");
+                params.push(req.query.curso_id);
+            }
+            if (req.query.genero) {
+                conds.push("pi.genero = ?");
+                params.push(req.query.genero);
+            }
+            if (req.query.raca_cor) {
+                conds.push("pi.raca_cor = ?");
+                params.push(req.query.raca_cor);
+            }
+            if (req.query.bairro) {
+                conds.push("pi.bairro = ?");
+                params.push(req.query.bairro);
+            }
+            if (req.query.data_inicio) {
+                conds.push("pi.criado_em >= ?");
+                params.push(req.query.data_inicio);
+            }
+            if (req.query.data_fim) {
+                conds.push("pi.criado_em <= ?");
+                params.push(req.query.data_fim);
+            }
+
+            if (conds.length > 0) {
+                whereClause = " WHERE " + conds.join(" AND ");
+            }
+
+            const [genero, raca_cor, bairro, escolaridade, deficiencia, objetivo, faixa_etaria, kpis] = await Promise.all([
+                db.query(`SELECT COALESCE(genero, 'NÃ£o informado') AS label, COUNT(*) AS total FROM pre_inscricoes pi ${whereClause} GROUP BY genero`, params).then(r => r[0]),
+                db.query(`SELECT COALESCE(raca_cor, 'NÃ£o informado') AS label, COUNT(*) AS total FROM pre_inscricoes pi ${whereClause} GROUP BY raca_cor`, params).then(r => r[0]),
+                db.query(`SELECT COALESCE(bairro, 'NÃ£o informado') AS label, COUNT(*) AS total FROM pre_inscricoes pi ${whereClause} GROUP BY bairro`, params).then(r => r[0]),
+                db.query(`SELECT COALESCE(escolaridade, 'NÃ£o informado') AS label, COUNT(*) AS total FROM pre_inscricoes pi ${whereClause} GROUP BY escolaridade`, params).then(r => r[0]),
+                db.query(`SELECT COALESCE(possui_necessidade_especial, 'NÃ£o informado') AS label, COUNT(*) AS total FROM pre_inscricoes pi ${whereClause} GROUP BY possui_necessidade_especial`, params).then(r => r[0]),
+                db.query(`SELECT COALESCE(objetivo, 'NÃ£o informado') AS label, COUNT(*) AS total FROM pre_inscricoes pi ${whereClause} GROUP BY objetivo`, params).then(r => r[0]),
+                db.query(`
+                    SELECT 
+                        CASE
+                            WHEN data_nascimento IS NULL THEN 'NÃ£o informada'
+                            WHEN EXTRACT(YEAR FROM AGE(data_nascimento)) < 18 THEN 'Menor de 18 anos'
+                            WHEN EXTRACT(YEAR FROM AGE(data_nascimento)) BETWEEN 18 AND 29 THEN '18 a 29 anos'
+                            WHEN EXTRACT(YEAR FROM AGE(data_nascimento)) BETWEEN 30 AND 59 THEN '30 a 59 anos'
+                            ELSE '60 anos ou mais'
+                        END AS label,
+                        COUNT(*) AS total
+                    FROM pre_inscricoes pi
+                    ${whereClause}
+                    GROUP BY label
+                `, params).then(r => r[0]),
+                db.query(`
+                    SELECT
+                        COUNT(*) AS total,
+                        COALESCE(SUM(CASE WHEN situacao_final = 'concluido' THEN 1 ELSE 0 END), 0) AS concluidos,
+                        COALESCE(SUM(CASE WHEN situacao_final = 'evadido' THEN 1 ELSE 0 END), 0) AS evadidos,
+                        COALESCE(AVG(nota_satisfacao_geral), 0) AS satisfacao_media
+                    FROM pre_inscricoes pi
+                    ${whereClause}
+                `, params).then(r => r[0])
+            ]);
+
+            res.json({
+                genero,
+                raca_cor,
+                bairro,
+                escolaridade,
+                deficiencia,
+                objetivo,
+                faixa_etaria,
+                kpis: kpis[0] || { total: 0, concluidos: 0, evadidos: 0, satisfacao_media: 0 }
+            });
+        } catch (err) {
+            return responderErroBanco(res, err, "Erro ao buscar estatÃ­sticas de relatÃ³rios");
+        }
+    });
+
+    // ============================================================
+    // FAQ ENDPOINTS
+    // ============================================================
+    app.get("/api/faq", async (req, res) => {
+        try {
+            const [rows] = await db.query("SELECT * FROM faq ORDER BY ordem ASC, id ASC");
+            res.json(rows);
+        } catch (err) {
+            return responderErroBanco(res, err, "Erro ao carregar FAQ");
+        }
+    });
+
+    app.post("/api/admin/faq", exigirAuthAdmin, async (req, res) => {
+        try {
+            const { pergunta, resposta, ordem } = req.body;
+            const [result] = await db.query(
+                "INSERT INTO faq (pergunta, resposta, ordem) VALUES (?, ?, ?) RETURNING id",
+                [pergunta, resposta, Number(ordem || 0)]
+            );
+            res.json({ ok: true, id: result[0]?.id });
+        } catch (err) {
+            return responderErroBanco(res, err, "Erro ao criar FAQ");
+        }
+    });
+
+    app.put("/api/admin/faq/:id", exigirAuthAdmin, async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { pergunta, resposta, ordem } = req.body;
+            await db.query(
+                "UPDATE faq SET pergunta = ?, resposta = ?, ordem = ? WHERE id = ?",
+                [pergunta, resposta, Number(ordem || 0), id]
+            );
+            res.json({ ok: true });
+        } catch (err) {
+            return responderErroBanco(res, err, "Erro ao atualizar FAQ");
+        }
+    });
+
+    app.delete("/api/admin/faq/:id", exigirAuthAdmin, async (req, res) => {
+        try {
+            const { id } = req.params;
+            await db.query("DELETE FROM faq WHERE id = ?", [id]);
+            res.json({ ok: true });
+        } catch (err) {
+            return responderErroBanco(res, err, "Erro ao deletar FAQ");
+        }
+    });
+
+    // ============================================================
+    // ROTAS DE PÃGINAS (SPA FALLBACK COM REACT)
+    // ============================================================
+    app.get("*", (req, res, next) => {
+        if (req.path.startsWith("/api") || req.path.startsWith("/public") || req.path.startsWith("/chat") || req.path === "/inscricao") {
+            return next();
+        }
+        if (req.path.startsWith("/admin")) {
+            return next();
+        }
+        res.sendFile(path.join(__dirname, "dist", "index.html"));
     });
 
     return app;
@@ -1939,7 +3052,7 @@ if (require.main === module) {
             });
         })
         .catch((err) => {
-            console.error("Falha ao iniciar aplicação:", err);
+            console.error("Falha ao iniciar aplicaÃ§Ã£o:", err);
             process.exit(1);
         });
 }

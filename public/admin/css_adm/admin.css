@@ -97,17 +97,19 @@ body::after {
 
 .brand-icon {
     font-size: 1.35rem;
-    width: 42px;
+    width: 52px;
     height: 42px;
-    border-radius: 12px;
+    border-radius: 10px;
     display: grid;
     place-items: center;
-    background: linear-gradient(145deg, rgba(124, 58, 237, 0.9), rgba(79, 70, 229, 0.9));
-    box-shadow: 0 12px 24px rgba(79, 70, 229, 0.35);
+    background:
+        rgba(2, 6, 23, 0.62)
+        url("../../imagem/VIxcursos.png") center / contain no-repeat;
+    box-shadow: 0 12px 24px rgba(249, 115, 22, 0.18);
 }
 
 .brand-icon i {
-    font-size: 1.2rem;
+    display: none;
 }
 
 .brand-name {

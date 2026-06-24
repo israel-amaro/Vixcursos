@@ -5,6 +5,55 @@
         document.getElementById('formCriarCurso').reset();
     }
 
+    function abrirModalConfig(e) {
+        if (e) e.preventDefault();
+        document.getElementById('modalConfiguracoes').classList.add('open');
+        carregarConfiguracoes();
+    }
+
+    function fecharModalConfig() {
+        document.getElementById('modalConfiguracoes').classList.remove('open');
+        document.getElementById('formConfiguracoes').reset();
+    }
+
+    async function carregarConfiguracoes() {
+        try {
+            const res = await fetch('/api/admin/configuracoes');
+            const config = await lerJsonOuLancar(res);
+            document.getElementById('limite_inscricoes_semestre').value = config.limite_inscricoes_semestre || 4;
+            document.getElementById('prazo_confirmacao_horas').value = config.prazo_confirmacao_horas || 48;
+        } catch (err) {
+            console.error('Erro ao carregar configurações:', err);
+            mostrarPopup('Erro ao carregar configurações do servidor.', 'error');
+        }
+    }
+
+    async function salvarConfiguracoes(e) {
+        e.preventDefault();
+        const dados = {
+            limite_inscricoes_semestre: Number(document.getElementById('limite_inscricoes_semestre').value),
+            prazo_confirmacao_horas: Number(document.getElementById('prazo_confirmacao_horas').value)
+        };
+
+        try {
+            const res = await fetch('/api/admin/configuracoes', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+            const resDados = await lerJsonOuLancar(res);
+            if (resDados.ok) {
+                mostrarPopup('Configurações salvas com sucesso!', 'success');
+                fecharModalConfig();
+            } else {
+                mostrarPopup('Erro ao salvar: ' + resDados.message, 'error');
+            }
+        } catch (err) {
+            console.error('Erro ao salvar configurações:', err);
+            mostrarPopup('Falha na comunicação com o servidor.', 'error');
+        }
+    }
+
     function mostrarPopup(mensagem, tipo = 'info') {
         const icones = {
             success: 'OK',

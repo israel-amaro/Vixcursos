@@ -49,19 +49,19 @@
     },
     {
       "src": "^/vocacional$",
-      "dest": "/public/pages/vocacional.html"
+      "dest": "/index.html"
     },
     {
       "src": "^/detalhes$",
-      "dest": "/public/pages/detalhes.html"
+      "dest": "/index.html"
     },
     {
       "src": "^/informacoes$",
-      "dest": "/public/pages/informacoes.html"
+      "dest": "/index.html"
     },
     {
       "src": "^/pre_inscricao$",
-      "dest": "/public/pages/pre_inscricao.html"
+      "dest": "/index.html"
     },
     {
       "src": "^/admin/(.*)$",
@@ -89,7 +89,7 @@
     },
     {
       "src": "^/pages/(.*)$",
-      "dest": "/public/pages/$1"
+      "dest": "/index.html"
     },
     {
       "src": "^/public/(.*)$",

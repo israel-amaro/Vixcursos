@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pesquisa de Satisfação | Vix Cursos</title>
+    <script src="/mock-api.js"></script>
+    <style>
+        body {
+            background: #090f1d;
+            color: white;
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            margin: 0;
+        }
+        .survey-card {
+            background: #111827;
+            border: 1px solid #1f2937;
+            border-radius: 16px;
+            padding: 30px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            box-sizing: border-box;
+        }
+        h1 {
+            font-size: 1.5rem;
+            color: #ff8a5a;
+            margin-top: 0;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-size: 0.85rem;
+            color: #9ca3af;
+            margin-bottom: 8px;
+        }
+        select, textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #374151;
+            background: #1f2937;
+            color: white;
+            font-size: 0.9rem;
+            box-sizing: border-box;
+        }
+        select:focus, textarea:focus {
+            outline: 2px solid #ff8a5a;
+            border-color: transparent;
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #ff8a5a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        button:hover {
+            background: #f97316;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+    <div class="survey-card">
+        <h1>Pesquisa de Satisfação</h1>
+        <p style="text-align: center; font-size: 0.8rem; color: #9ca3af; margin-bottom: 25px;">Sua opinião é muito importante para melhorarmos nossos cursos!</p>
+        <form id="satisfactionForm" onsubmit="enviarSatisfacao(event)">
+            <div class="form-group">
+                <label>Avaliação do Instrutor (1 a 5 estrelas)</label>
+                <select id="nota_satisfacao_instrutor" required>
+                    <option value="">-- Selecione --</option>
+                    <option value="5">⭐⭐⭐⭐⭐ Excelente</option>
+                    <option value="4">⭐⭐⭐⭐ Bom</option>
+                    <option value="3">⭐⭐⭐ Regular</option>
+                    <option value="2">⭐⭐ Ruim</option>
+                    <option value="1">⭐ Péssimo</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Avaliação da Estrutura/Local (1 a 5 estrelas)</label>
+                <select id="nota_satisfacao_estrutura" required>
+                    <option value="">-- Selecione --</option>
+                    <option value="5">⭐⭐⭐⭐⭐ Excelente</option>
+                    <option value="4">⭐⭐⭐⭐ Bom</option>
+                    <option value="3">⭐⭐⭐ Regular</option>
+                    <option value="2">⭐⭐ Ruim</option>
+                    <option value="1">⭐ Péssimo</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Avaliação do Material Didático (1 a 5 estrelas)</label>
+                <select id="nota_satisfacao_material" required>
+                    <option value="">-- Selecione --</option>
+                    <option value="5">⭐⭐⭐⭐⭐ Excelente</option>
+                    <option value="4">⭐⭐⭐⭐ Bom</option>
+                    <option value="3">⭐⭐⭐ Regular</option>
+                    <option value="2">⭐⭐ Ruim</option>
+                    <option value="1">⭐ Péssimo</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Nota Geral para o Curso (1 a 10)</label>
+                <select id="nota_satisfacao_geral" required>
+                    <option value="">-- Selecione --</option>
+                    <option value="10">10</option>
+                    <option value="9">9</option>
+                    <option value="8">8</option>
+                    <option value="7">7</option>
+                    <option value="6">6</option>
+                    <option value="5">5</option>
+                    <option value="4">4</option>
+                    <option value="3">3</option>
+                    <option value="2">2</option>
+                    <option value="1">1</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Deixe um comentário livre ou sugestão:</label>
+                <textarea id="comentario_satisfacao" rows="3" placeholder="Sua mensagem (opcional)"></textarea>
+            </div>
+            <button type="submit">Enviar Pesquisa</button>
+        </form>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const id = urlParams.get('id');
+
+        if (!id) {
+            alert('ID da inscrição não fornecido.');
+            window.location.href = '/';
+        }
+
+        async function enviarSatisfacao(e) {
+            e.preventDefault();
+            const data = {
+                nota_satisfacao_instrutor: document.getElementById('nota_satisfacao_instrutor').value,
+                nota_satisfacao_estrutura: document.getElementById('nota_satisfacao_estrutura').value,
+                nota_satisfacao_material: document.getElementById('nota_satisfacao_material').value,
+                nota_satisfacao_geral: document.getElementById('nota_satisfacao_geral').value,
+                comentario_satisfacao: document.getElementById('comentario_satisfacao').value
+            };
+
+            try {
+                const res = await fetch(`/api/pre-inscricoes/${id}/pesquisa-satisfacao`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (res.ok) {
+                    alert('Obrigado! Sua pesquisa foi registrada com sucesso.');
+                    window.location.href = '/';
+                } else {
+                    alert('Erro ao enviar a pesquisa. Tente novamente.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Erro de conexão.');
+            }
+        }
+    </script>
+</body>
+</html>

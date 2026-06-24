@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatórios | Vix Cursos Admin</title>
+    <script src="/mock-api.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="css_adm/admin.css">
+    <style>
+        .relatorios-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .chart-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .chart-card h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #f9c852;
+            font-size: 1.1rem;
+            width: 100%;
+            text-align: left;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 8px;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 250px;
+        }
+        .filter-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .filter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .filter-group label {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .filter-group select, .filter-group input {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            color: white;
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            outline: none;
+            transition: all 0.15s;
+        }
+        .filter-group select:focus, .filter-group input:focus {
+            border-color: #f9c852;
+        }
+        .btn-filter {
+            background: #f9c852;
+            color: #0f172a;
+            font-weight: 700;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.15s;
+            align-self: flex-end;
+            height: 38px;
+        }
+        .btn-filter:hover {
+            background: #f59e0b;
+            transform: translateY(-1px);
+        }
+        .btn-clear {
+            background: transparent;
+            border: 1px solid #334155;
+            color: #cbd5e1;
+            font-weight: 600;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+            align-self: flex-end;
+            height: 38px;
+        }
+        .btn-clear:hover {
+            background: #334155;
+            color: white;
+        }
+        @media print {
+            .admin-sidebar, .filter-card, .ph-right {
+                display: none !important;
+            }
+            .admin-main {
+                margin-left: 0 !important;
+                padding: 0 !important;
+            }
+            .chart-card {
+                page-break-inside: avoid;
+                border: 1px solid #ccc !important;
+                background: white !important;
+                color: black !important;
+            }
+            .chart-card h3 {
+                color: black !important;
+                border-bottom: 1px solid #ccc !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="admin-sidebar">
+    <a href="menu.html" class="sidebar-brand">
+        <span class="brand-icon"><i class="bi bi-mortarboard-fill" aria-hidden="true"></i></span>
+        <div>
+            <span class="brand-name">Vix Cursos</span>
+            <span class="brand-sub">Área administrativa</span>
+        </div>
+    </a>
+    <div class="sidebar-nav">
+        <div class="nav-section">Principal</div>
+        <a href="menu.html" class="nav-link"><span class="ni"><i class="bi bi-house-door-fill" aria-hidden="true"></i></span> Dashboard</a>
+        <div class="nav-section">Academia</div>
+        <a href="inscritos.html" class="nav-link"><span class="ni"><i class="bi bi-people-fill" aria-hidden="true"></i></span> Alunos Inscritos</a>
+        <a href="interessados.html" class="nav-link"><span class="ni"><i class="bi bi-clipboard-data" aria-hidden="true"></i></span> Interessados</a>
+        <a href="cursos.html" class="nav-link"><span class="ni"><i class="bi bi-bar-chart-line-fill" aria-hidden="true"></i></span> Monitoramento</a>
+        <a href="relatorios.html" class="nav-link active"><span class="ni"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i></span> Relatórios</a>
+        <div class="sidebar-sep"></div>
+        <a href="../pages/index.html" class="nav-link"><span class="ni"><i class="bi bi-globe-americas" aria-hidden="true"></i></span> Ver Site</a>
+    </div>
+</nav>
+
+<div class="admin-main">
+    <div class="page-header">
+        <div class="ph-left">
+            <h1>Relatórios Estatísticos</h1>
+            <p>Perfil cruzado, evasão e índices de satisfação dos alunos</p>
+        </div>
+        <div class="ph-right">
+            <button onclick="window.print()" class="btn btn-outline"><i class="bi bi-printer" aria-hidden="true"></i> Imprimir Relatório</button>
+            <a href="menu.html" class="btn btn-outline" style="margin-left: 8px;"><i class="bi bi-arrow-left" aria-hidden="true"></i> Menu</a>
+        </div>
+    </div>
+
+    <div class="page-body">
+        <!-- Filtros de Pesquisa -->
+        <div class="filter-card">
+            <form id="formFiltroRelatorios" onsubmit="aplicarFiltros(event)">
+                <div class="filter-grid">
+                    <div class="filter-group">
+                        <label for="filtroCurso">Curso / Turma</label>
+                        <select id="filtroCurso">
+                            <option value="">Todos os cursos</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filtroGenero">Gênero</label>
+                        <select id="filtroGenero">
+                            <option value="">Todos</option>
+                            <option value="Masculino">Masculino</option>
+                            <option value="Feminino">Feminino</option>
+                            <option value="Outro">Outro</option>
+                            <option value="Prefiro não responder">Prefiro não responder</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filtroRaca">Raça/Cor</label>
+                        <select id="filtroRaca">
+                            <option value="">Todas</option>
+                            <option value="Branca">Branca</option>
+                            <option value="Preta">Preta</option>
+                            <option value="Parda">Parda</option>
+                            <option value="Amarela">Amarela</option>
+                            <option value="Indígena">Indígena</option>
+                            <option value="Não declarado">Não declarado</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="filtroBairro">Bairro</label>
+                        <input type="text" id="filtroBairro" placeholder="Ex: Centro...">
+                    </div>
+                    <div class="filter-group">
+                        <label for="dataInicio">Período de (Inscrição)</label>
+                        <input type="date" id="dataInicio">
+                    </div>
+                    <div class="filter-group">
+                        <label for="dataFim">Período até</label>
+                        <input type="date" id="dataFim">
+                    </div>
+                    <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                        <button type="button" class="btn-clear" onclick="limparFiltros()">Limpar</button>
+                        <button type="submit" class="btn-filter"><i class="bi bi-filter" aria-hidden="true"></i> Filtrar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- KPIs Resumo -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-label">Pré-inscrições Selecionadas</div>
+                <div class="kpi-value" id="kpiTotal">--</div>
+                <div class="kpi-sub">Total no filtro</div>
+            </div>
+            <div class="kpi-card green">
+                <div class="kpi-label">Alunos Concluídos</div>
+                <div class="kpi-value" id="kpiConcluidos">--</div>
+                <div class="kpi-sub" id="subConcluidos">Taxa de conclusão: --%</div>
+            </div>
+            <div class="kpi-card red">
+                <div class="kpi-label">Evasões Registradas</div>
+                <div class="kpi-value" id="kpiEvadidos">--</div>
+                <div class="kpi-sub" id="subEvadidos">Taxa de evasão: --%</div>
+            </div>
+            <div class="kpi-card yellow">
+                <div class="kpi-label">Satisfação Geral Média</div>
+                <div class="kpi-value" id="kpiSatisfacao">--</div>
+                <div class="kpi-sub">Escala de 1 a 10</div>
+            </div>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="relatorios-grid">
+            <div class="chart-card">
+                <h3>Distribuição por Gênero</h3>
+                <div class="chart-container">
+                    <canvas id="chartGenero"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>Distribuição por Faixa Etária</h3>
+                <div class="chart-container">
+                    <canvas id="chartFaixaEtaria"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>Distribuição por Raça/Cor</h3>
+                <div class="chart-container">
+                    <canvas id="chartRaca"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>Nível de Escolaridade</h3>
+                <div class="chart-container">
+                    <canvas id="chartEscolaridade"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>Portadores de Deficiência</h3>
+                <div class="chart-container">
+                    <canvas id="chartDeficiencia"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>Objetivos Declarados</h3>
+                <div class="chart-container">
+                    <canvas id="chartObjetivo"></canvas>
+                </div>
+            </div>
+            <div class="chart-card" style="grid-column: 1 / -1;">
+                <h3>Demanda por Bairro</h3>
+                <div class="chart-container" style="height: 350px;">
+                    <canvas id="chartBairro"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="admin-toast-container" class="admin-toast-container"></div>
+
+<!-- Carregar Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="adminjs/relatorios.js"></script>
+</body>
+</html>

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciamento de FAQ | Vix Cursos Admin</title>
+    <script src="/mock-api.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="css_adm/admin.css">
+    <style>
+        .faq-table td {
+            max-width: 300px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="admin-sidebar">
+    <a href="menu.html" class="sidebar-brand">
+        <span class="brand-icon"><i class="bi bi-mortarboard-fill" aria-hidden="true"></i></span>
+        <div>
+            <span class="brand-name">Vix Cursos</span>
+            <span class="brand-sub">Área administrativa</span>
+        </div>
+    </a>
+    <div class="sidebar-nav">
+        <div class="nav-section">Principal</div>
+        <a href="menu.html" class="nav-link"><span class="ni"><i class="bi bi-house-door-fill" aria-hidden="true"></i></span> Dashboard</a>
+        <div class="nav-section">Academia</div>
+        <a href="inscritos.html" class="nav-link"><span class="ni"><i class="bi bi-people-fill" aria-hidden="true"></i></span> Alunos Inscritos</a>
+        <a href="interessados.html" class="nav-link"><span class="ni"><i class="bi bi-clipboard-data" aria-hidden="true"></i></span> Interessados</a>
+        <a href="cursos.html" class="nav-link"><span class="ni"><i class="bi bi-bar-chart-line-fill" aria-hidden="true"></i></span> Monitoramento</a>
+        <a href="relatorios.html" class="nav-link"><span class="ni"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i></span> Relatórios</a>
+        <div class="nav-section">Configuração</div>
+        <a href="faq.html" class="nav-link active"><span class="ni"><i class="bi bi-question-circle-fill" aria-hidden="true"></i></span> Gerenciar FAQ</a>
+        <div class="sidebar-sep"></div>
+        <a href="../pages/index.html" class="nav-link"><span class="ni"><i class="bi bi-globe-americas" aria-hidden="true"></i></span> Ver Site</a>
+    </div>
+</nav>
+
+<div class="admin-main">
+    <div class="page-header">
+        <div class="ph-left">
+            <h1>Gerenciamento de FAQ</h1>
+            <p>Adicione, edite ou remova as perguntas frequentes do portal VixCursos</p>
+        </div>
+        <div class="ph-right">
+            <button class="btn btn-primary" onclick="abrirModalFaq()"><i class="bi bi-plus-circle" aria-hidden="true"></i> Novo FAQ</button>
+            <a href="menu.html" class="btn btn-outline" style="margin-left: 8px;"><i class="bi bi-arrow-left" aria-hidden="true"></i> Menu</a>
+        </div>
+    </div>
+
+    <div class="page-body">
+        <div class="card">
+            <div class="card-head">
+                <h2>Lista de Perguntas Frequentes</h2>
+            </div>
+            <div class="table-wrap">
+                <table class="faq-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;">Ordem</th>
+                            <th>Pergunta</th>
+                            <th>Resposta</th>
+                            <th style="width: 150px;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaFaqBody">
+                        <tr><td colspan="4" class="empty-state">Carregando FAQ...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Adicionar/Editar FAQ -->
+<div id="modalFaq" class="modal">
+    <div class="modal-content">
+        <button class="fechar-modal" onclick="fecharModalFaq()">&times;</button>
+        <p class="modal-title" id="faqModalTitle">Adicionar FAQ</p>
+        <p class="modal-desc" id="faqModalDesc">Insira a pergunta e resposta para exibição no portal.</p>
+        <form id="formFaq" onsubmit="salvarFaq(event)">
+            <input type="hidden" id="faqId">
+            <div class="form-grid">
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label>Pergunta</label>
+                    <input type="text" id="pergunta" required placeholder="Ex: Quem pode se inscrever?">
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label>Resposta</label>
+                    <textarea id="resposta" required rows="4" placeholder="Ex: Todos os cidadãos de Vitória..."></textarea>
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label>Ordem de Exibição</label>
+                    <input type="number" id="ordem" min="0" required value="0">
+                    <small style="color: #94a3b8; display: block; margin-top: 4px;">Menores números aparecem primeiro na lista do site.</small>
+                </div>
+            </div>
+            <div class="form-footer" style="margin-top: 20px;">
+                <button type="button" class="btn btn-outline" onclick="fecharModalFaq()">Cancelar</button>
+                <button type="submit" class="btn btn-primary"><i class="bi bi-floppy" aria-hidden="true"></i> Salvar FAQ</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="admin-toast-container" class="admin-toast-container"></div>
+
+<script>
+    let faqsGlobais = [];
+
+    function mostrarPopup(mensagem, tipo = 'info') {
+        const icones = { success: 'OK', error: '!', warning: '!', info: 'i' };
+        let container = document.getElementById('admin-toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'admin-toast-container';
+            container.className = 'admin-toast-container';
+            document.body.appendChild(container);
+        }
+        const toast = document.createElement('div');
+        toast.className = `admin-toast ${tipo}`;
+        toast.innerHTML = `
+            <span class="admin-toast-icon">${icones[tipo] || 'i'}</span>
+            <div class="admin-toast-content">${mensagem}</div>
+            <button type="button" class="admin-toast-close" onclick="this.parentElement.remove()">x</button>
+        `;
+        container.appendChild(toast);
+        setTimeout(() => toast.remove(), 4200);
+    }
+
+    function confirmarPopup({ titulo = 'Confirmar ação', mensagem = 'Deseja continuar?', textoConfirmar = 'Confirmar', textoCancelar = 'Cancelar', tipo = 'warning' } = {}) {
+        return new Promise((resolve) => {
+            const overlay = document.createElement('div');
+            overlay.className = 'admin-confirm-overlay';
+            const modal = document.createElement('div');
+            modal.className = 'admin-confirm-modal';
+            modal.innerHTML = `
+                <div class="admin-confirm-title">${titulo}</div>
+                <div class="admin-confirm-text">${mensagem}</div>
+                <div class="admin-confirm-actions">
+                    <button class="btn btn-outline cancel-btn">${textoCancelar}</button>
+                    <button class="btn ${tipo === 'danger' ? 'btn-danger' : 'btn-primary'} confirm-btn">${textoConfirmar}</button>
+                </div>
+            `;
+            const fechar = (res) => { overlay.remove(); resolve(res); };
+            overlay.querySelector('.cancel-btn').onclick = () => fechar(false);
+            overlay.querySelector('.confirm-btn').onclick = () => fechar(true);
+            document.body.appendChild(overlay);
+        });
+    }
+
+    async function lerJsonOuLancar(res) {
+        if (res.status === 401 || (res.redirected && String(res.url || '').includes('/admin/login.html'))) {
+            window.location.href = '/admin/login.html';
+            throw new Error('sessao-expirada');
+        }
+        if (!res.ok) throw new Error(`http-${res.status}`);
+        return res.json();
+    }
+
+    function abrirModalFaq(idFaq = null) {
+        const modal = document.getElementById('modalFaq');
+        const form = document.getElementById('formFaq');
+        form.reset();
+        document.getElementById('faqId').value = '';
+
+        if (idFaq) {
+            const faq = faqsGlobais.find(f => f.id === idFaq);
+            if (faq) {
+                document.getElementById('faqId').value = faq.id;
+                document.getElementById('pergunta').value = faq.pergunta;
+                document.getElementById('resposta').value = faq.resposta;
+                document.getElementById('ordem').value = faq.ordem;
+                document.getElementById('faqModalTitle').textContent = "Editar FAQ";
+                document.getElementById('faqModalDesc').textContent = "Atualize os dados da pergunta frequente.";
+            }
+        } else {
+            document.getElementById('faqModalTitle').textContent = "Adicionar FAQ";
+            document.getElementById('faqModalDesc').textContent = "Insira a pergunta e resposta para exibição no portal.";
+        }
+        modal.classList.add('open');
+    }
+
+    function fecharModalFaq() {
+        document.getElementById('modalFaq').classList.remove('open');
+    }
+
+    async function carregarFaqs() {
+        try {
+            const res = await fetch('/api/faq');
+            faqsGlobais = await lerJsonOuLancar(res);
+            const tbody = document.getElementById('tabelaFaqBody');
+            tbody.innerHTML = '';
+
+            if (faqsGlobais.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px;">Nenhum item de FAQ cadastrado.</td></tr>`;
+                return;
+            }
+
+            faqsGlobais.forEach(faq => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${faq.ordem}</strong></td>
+                        <td>${faq.pergunta}</td>
+                        <td title="${faq.resposta}">${faq.resposta}</td>
+                        <td>
+                            <div style="display: flex; gap: 8px;">
+                                <button onclick="abrirModalFaq(${faq.id})" class="btn btn-outline btn-sm"><i class="bi bi-pencil" aria-hidden="true"></i> Editar</button>
+                                <button onclick="deletarFaq(${faq.id})" class="btn btn-danger btn-sm"><i class="bi bi-trash" aria-hidden="true"></i> Deletar</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    async function salvarFaq(e) {
+        e.preventDefault();
+        const id = document.getElementById('faqId').value;
+        const dados = {
+            pergunta: document.getElementById('pergunta').value,
+            resposta: document.getElementById('resposta').value,
+            ordem: document.getElementById('ordem').value
+        };
+
+        const url = id ? `/api/admin/faq/${id}` : '/api/admin/faq';
+        const method = id ? 'PUT' : 'POST';
+
+        try {
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dados)
+            });
+            await lerJsonOuLancar(res);
+            mostrarPopup('FAQ salvo com sucesso!', 'success');
+            fecharModalFaq();
+            carregarFaqs();
+        } catch (err) {
+            console.error(err);
+            mostrarPopup('Erro ao salvar FAQ.', 'error');
+        }
+    }
+
+    async function deletarFaq(id) {
+        const ok = await confirmarPopup({
+            titulo: 'Deletar FAQ',
+            mensagem: 'Tem certeza que deseja remover esta pergunta frequente do site?',
+            textoConfirmar: 'Sim, deletar',
+            textoCancelar: 'Cancelar',
+            tipo: 'danger'
+        });
+        if (!ok) return;
+
+        try {
+            const res = await fetch(`/api/admin/faq/${id}`, { method: 'DELETE' });
+            await lerJsonOuLancar(res);
+            mostrarPopup('FAQ deletado com sucesso!', 'success');
+            carregarFaqs();
+        } catch (err) {
+            console.error(err);
+            mostrarPopup('Erro ao deletar FAQ.', 'error');
+        }
+    }
+
+    carregarFaqs();
+</script>
+</body>
+</html>

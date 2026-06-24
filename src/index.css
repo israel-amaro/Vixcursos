@@ -1,0 +1,137 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", sans-serif;
+  --font-display: "Poppins", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+
+  --color-primary: #004564;
+  --color-secondary: #1a5874;
+  --color-accent: #ff8a5a;
+  --color-coral: #f36c6f;
+  --color-bg-light: #fdfbf9;
+  --color-text-dark: #1e293b;
+  --color-success: #10b981;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+}
+
+/* Custom Styles */
+
+/* Glassmorphism claro */
+.glass {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Glassmorphism escuro */
+.glass-dark {
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Card de curso padrão */
+.card-curso {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-curso:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14);
+}
+
+/* Número de vagas — destaque mono */
+.badge-vagas {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+}
+
+/* Texto de sombra */
+.text-shadow {
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.text-shadow-large {
+  text-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+}
+
+/* Efeitos adicionais */
+.glow-primary {
+  box-shadow: 0 0 20px rgba(0, 69, 100, 0.3);
+}
+
+.glow-accent {
+  box-shadow: 0 0 20px rgba(255, 138, 90, 0.3);
+}
+
+/* Lenis Scroll Smooth */
+html.lenis {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
+}
+
+/* Scrollbar Customizada */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Animações decorativas */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes pulse-slow {
+  0%, 100% { opacity: 0.2; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(1.1); }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 8s ease-in-out infinite;
+}
+
+/* Acessibilidade - Destaque de foco visível */
+*:focus-visible {
+  outline: 3px solid #ff8a5a;
+  outline-offset: 2px;
+}

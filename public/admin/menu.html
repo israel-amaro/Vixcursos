@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard | Vix Cursos Admin</title>
+    <script src="/mock-api.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="css_adm/admin.css">
 </head>
@@ -24,6 +25,10 @@
         <a href="inscritos.html" class="nav-link"><span class="ni"><i class="bi bi-people-fill" aria-hidden="true"></i></span> Alunos Inscritos</a>
         <a href="interessados.html" class="nav-link"><span class="ni"><i class="bi bi-clipboard-data" aria-hidden="true"></i></span> Interessados</a>
         <a href="cursos.html" class="nav-link"><span class="ni"><i class="bi bi-bar-chart-line-fill" aria-hidden="true"></i></span> Monitoramento</a>
+        <a href="relatorios.html" class="nav-link"><span class="ni"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i></span> Relatórios</a>
+        <div class="nav-section">Configuração</div>
+        <a href="#" onclick="abrirModalConfig(event)" class="nav-link"><span class="ni"><i class="bi bi-gear-fill" aria-hidden="true"></i></span> Regras de Negócio</a>
+        <a href="faq.html" class="nav-link"><span class="ni"><i class="bi bi-question-circle-fill" aria-hidden="true"></i></span> Gerenciar FAQ</a>
         <div class="sidebar-sep"></div>
         <a href="../pages/index.html" class="nav-link"><span class="ni"><i class="bi bi-globe-americas" aria-hidden="true"></i></span> Ver Site</a>
     </div>
@@ -140,6 +145,32 @@
             <div class="form-footer">
                 <button type="button" class="btn btn-outline" onclick="fecharModal()">Cancelar</button>
                 <button type="submit" class="btn btn-primary"><i class="bi bi-floppy" aria-hidden="true"></i> Salvar Curso</button>
+            </div>
+        </form>
+    </div>
+</div>
+<!-- Modal: Configurações do Sistema -->
+<div id="modalConfiguracoes" class="modal">
+    <div class="modal-content">
+        <button class="fechar-modal" onclick="fecharModalConfig()">&times;</button>
+        <p class="modal-title">Regras de Negócio / Configurações</p>
+        <p class="modal-desc">Configure limites e prazos globais para o sistema de inscrições.</p>
+        <form id="formConfiguracoes" onsubmit="salvarConfiguracoes(event)">
+            <div class="form-grid">
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label>Limite de Inscrições Simultâneas por Semestre</label>
+                    <input type="number" id="limite_inscricoes_semestre" min="1" max="10" required>
+                    <small style="color: #94a3b8; display: block; margin-top: 4px;">Máximo de cursos em que um cidadão pode se inscrever no semestre (Padrão: 4).</small>
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label>Prazo de Confirmação de Matrícula (Horas)</label>
+                    <input type="number" id="prazo_confirmacao_horas" min="1" max="168" required>
+                    <small style="color: #94a3b8; display: block; margin-top: 4px;">Tempo máximo para confirmação antes de liberar para o próximo suplente (Padrão: 48h).</small>
+                </div>
+            </div>
+            <div class="form-footer" style="margin-top: 20px;">
+                <button type="button" class="btn btn-outline" onclick="fecharModalConfig()">Cancelar</button>
+                <button type="submit" class="btn btn-primary"><i class="bi bi-floppy" aria-hidden="true"></i> Salvar Configurações</button>
             </div>
         </form>
     </div>
