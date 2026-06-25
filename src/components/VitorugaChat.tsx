@@ -1069,8 +1069,11 @@ export default function VitorugaChat() {
             className={`relative w-16 h-16 rounded-full flex items-center justify-center shadow-[0_8px_32px_rgba(0,0,0,0.3)] border transition-all ${
               isOpen 
                 ? 'bg-slate-950 border-white/10' 
-                : 'bg-gradient-to-r from-coral to-accent border-accent/25 glow-accent'
+                : 'border-white/10 backdrop-blur-md shadow-lg shadow-black/20'
             }`}
+            style={!isOpen ? {
+              background: 'color-mix(in oklab, var(--color-black) 35%, transparent)',
+            } : undefined}
             aria-label={isOpen ? "Fechar chatbot" : "Abrir chatbot do Vitoruga"}
           >
             {isOpen ? (

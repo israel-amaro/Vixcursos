@@ -342,14 +342,14 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
               return (
                 <div
                   key={course.id}
-                  className="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-md hover:border-slate-200 transition-all duration-300 flex flex-col justify-between overflow-hidden text-left"
+                  className="group bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-[0_12px_32px_rgba(0,0,0,0.08)] hover:-translate-y-1.5 hover:border-primary/20 transition-all duration-300 flex flex-col justify-between overflow-hidden text-left"
                 >
                   {/* Imagem do Card */}
                   <div className="relative h-48 w-full overflow-hidden select-none">
                     <img
                       src={imgSrc}
                       alt={course.nome}
-                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = '/imagem/proficao/proficao.png';
                       }}

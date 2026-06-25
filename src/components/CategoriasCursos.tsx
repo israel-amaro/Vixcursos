@@ -5,7 +5,7 @@
 import React from 'react';
 import { Scissors, Shirt, ChefHat, Monitor, Heart } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
-import AutoScroll from 'embla-carousel-auto-scroll';
+import Autoplay from 'embla-carousel-autoplay';
 
 /* ─── Data ─── */
 const categorias = [
@@ -83,10 +83,9 @@ const PARTICLES = categorias.map((_, ci) =>
 
 /* ─── Component ─── */
 export default function CategoriasCursos() {
-  // Configured to move right-to-left smoothly, loop, support drag/swipe, no pause on hover/interaction
-  // Speed is set to 0.2 for a very slow, continuous, and readable full-screen slider
+  // Configured to transition slide-by-slide every 5 seconds, looping infinitely, with full touch support
   const [emblaRef] = useEmblaCarousel({ loop: true, dragFree: false }, [
-    AutoScroll({ speed: 0.2, stopOnInteraction: false, stopOnMouseEnter: false })
+    Autoplay({ delay: 5000, stopOnInteraction: false, stopOnMouseEnter: false })
   ]);
 
   const handleCTA = () =>

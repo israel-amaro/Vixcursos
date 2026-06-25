@@ -1557,8 +1557,8 @@ async function createApp() {
             const [rows] = await db.query(`
                 SELECT 
                     c.vagas AS vagas_totais,
-                    COALESCE(COUNT(pi.id), 0) AS inscritos,
-                    (c.vagas - COALESCE(COUNT(pi.id), 0)) AS vagas_disponiveis,
+                    COALESCE(SUM(CASE WHEN pi.status_inscricao = 'titular' THEN 1 ELSE 0 END), 0) AS inscritos,
+                    (c.vagas - COALESCE(SUM(CASE WHEN pi.status_inscricao = 'titular' THEN 1 ELSE 0 END), 0)) AS vagas_disponiveis,
                     c.status
                 FROM cursos c
                 LEFT JOIN pre_inscricoes pi ON pi.curso_id = c.id
