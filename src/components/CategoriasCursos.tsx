@@ -36,7 +36,7 @@ const categorias = [
     description:
       'Barbeiro, Cabeleireiro, Manicure e Estética. Aprenda técnicas profissionais e conquiste sua independência.',
     coursesCount: 12,
-    image: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&q=80&w=2000',
+    image: '/imagem/proficao/proficao4.png',
     Icon: Scissors,
     accent: '#ff8a5a',
   },
@@ -48,7 +48,7 @@ const categorias = [
     description:
       'Confecção, Corte e Costura, Moda Praia. Da teoria à prática, com espaço para toda a sua criatividade.',
     coursesCount: 8,
-    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&q=80&w=2000',
+    image: '/imagem/proficao/confeccao.jpg',
     Icon: Shirt,
     accent: '#f472b6',
   },
@@ -60,7 +60,7 @@ const categorias = [
     description:
       'Cozinha básica, Confeitaria, Padaria e Doceria. Do fogão ao empreendimento gastronômico profissional.',
     coursesCount: 10,
-    image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&q=80&w=2000',
+    image: '/imagem/proficao/proficao.png',
     Icon: ChefHat,
     accent: '#fbbf24',
   },
@@ -72,7 +72,7 @@ const categorias = [
     description:
       'Informática Básica, Manutenção de Computadores, Excel e Internet. Habilidades digitais essenciais para o mercado.',
     coursesCount: 6,
-    image: 'https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?auto=format&fit=crop&q=80&w=2000',
+    image: '/imagem/proficao/proficao3.png',
     Icon: Monitor,
     accent: '#60a5fa',
   },
@@ -84,7 +84,7 @@ const categorias = [
     description:
       'Primeiros Socorros, Cuidador de Idosos, Auxiliar de Farmácia. Formação humanizada para profissões que fazem diferença.',
     coursesCount: 7,
-    image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=2000',
+    image: '/imagem/proficao/enfermagem.png',
     Icon: Heart,
     accent: '#34d399',
   },
@@ -237,7 +237,13 @@ export default function CategoriasCursos() {
 
         /* ─ Desktop: sticky viewport + flex row track ─ */
         @media (min-width: 1024px) {
-          .cat-section   { height: calc(5 * 100vh); }   /* 5 panels × 100vh scroll distance */
+          /*
+           * SCROLL DISTANCE FIX:
+           * On widescreen (vw > vh), 5×vh < 4×vw — section ends too early.
+           * Correct formula: 100vh (first panel) + (N-1)×100vw (remaining panels).
+           * This guarantees section scroll distance = (N-1)×vw = track.scrollWidth - vw.
+           */
+          .cat-section   { height: calc(100vh + 400vw); }
           .cat-sticky    { position:sticky; top:0; height:100vh; overflow:hidden; }
           .cat-track     { display:flex; flex-direction:row; height:100%; will-change:transform; }
           .cat-panel     { width:100vw; height:100vh; flex-shrink:0; }
@@ -308,11 +314,9 @@ export default function CategoriasCursos() {
                     />
                   ))}
 
-                  {/* Content grid */}
-                  <div className="relative z-20 h-full max-w-7xl mx-auto w-full px-8 md:px-20 grid grid-cols-12 items-center gap-8">
-
-                    {/* ─ Left column ─ */}
-                    <div className="col-span-12 lg:col-span-8 flex flex-col justify-center">
+                  {/* Content — single full-width column */}
+                  <div className="relative z-20 h-full max-w-7xl mx-auto w-full px-8 md:px-20 flex items-center">
+                    <div className="flex flex-col justify-center max-w-3xl">
 
                       {/* Category label */}
                       <div className="cat-anim flex items-center gap-3 mb-6">
@@ -339,7 +343,10 @@ export default function CategoriasCursos() {
                       </h2>
 
                       {/* Description */}
-                      <p className="cat-anim border-l-2 border-white/20 pl-6 text-white/75 max-w-sm text-base leading-relaxed mt-8">
+                      <p
+                        className="cat-anim border-l-2 pl-6 text-white/75 max-w-sm text-base leading-relaxed mt-8"
+                        style={{ borderColor: 'rgba(255,255,255,0.2)' }}
+                      >
                         {cat.description}
                       </p>
 
@@ -363,50 +370,7 @@ export default function CategoriasCursos() {
                         </button>
                       </div>
                     </div>
-
-                    {/* ─ Right column: orbit circle ─ */}
-                    <div className="hidden lg:flex col-span-4 items-center justify-center">
-                      <div className="relative w-60 h-60 flex items-center justify-center">
-                        {/* Outer spinning ring */}
-                        <div
-                          className="absolute inset-0 rounded-full border"
-                          style={{ borderColor: `${cat.accent}28`, animation: 'catSpin 22s linear infinite' }}
-                        />
-                        {/* Dashed counter-rotating ring */}
-                        <div
-                          className="absolute inset-5 rounded-full border border-dashed"
-                          style={{ borderColor: `${cat.accent}20`, animation: 'catSpin 35s linear infinite reverse' }}
-                        />
-                        {/* Pulse halo */}
-                        <div
-                          className="absolute inset-9 rounded-full border"
-                          style={{ borderColor: `${cat.accent}55`, animation: 'catPulse 2.8s ease-out infinite' }}
-                        />
-                        {/* Glass core */}
-                        <div
-                          className="w-44 h-44 rounded-full flex flex-col items-center justify-center"
-                          style={{
-                            background: 'rgba(255,255,255,0.07)',
-                            backdropFilter: 'blur(16px)',
-                            border: '1px solid rgba(255,255,255,0.12)',
-                            boxShadow: `0 0 40px ${cat.accent}22`,
-                          }}
-                        >
-                          <Icon className="w-7 h-7 mb-1" style={{ color: cat.accent }} />
-                          <span
-                            className="font-display font-black text-4xl text-white"
-                            style={{ textShadow: `0 0 24px ${cat.accent}80` }}
-                          >
-                            {cat.coursesCount}
-                          </span>
-                          <span className="text-xs font-mono text-white/50 text-center mt-1 tracking-wider uppercase">
-                            cursos disponíveis
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                  </div>{/* /grid */}
+                  </div>{/* /content */}
 
                   {/* Bottom panel label */}
                   <div className="absolute bottom-8 left-20 z-30 select-none pointer-events-none">
