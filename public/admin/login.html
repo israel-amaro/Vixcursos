@@ -65,24 +65,28 @@
 
         .logo-container {
             display: flex;
-            flex-direction: column;
             align-items: center;
-            gap: 12px;
+            justify-content: center;
+            gap: 16px;
+            width: 100%;
         }
 
-        .logo-mark {
-            width: 100px;
-            height: 75px;
-            border-radius: 18px;
-            background: rgba(2, 6, 23, 0.4) url("../imagem/VIxcursos.png") center / contain no-repeat;
-            box-shadow: 
-                0 10px 30px rgba(124, 58, 237, 0.25),
-                0 0 0 1px rgba(255, 255, 255, 0.05);
+        .logo-img {
+            height: 48px;
+            width: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
             transition: transform 0.3s;
         }
 
-        .logo-mark:hover {
+        .logo-img:hover {
             transform: scale(1.04);
+        }
+
+        .logo-divider {
+            width: 1px;
+            height: 36px;
+            background: rgba(255, 255, 255, 0.15);
         }
 
         form {
@@ -206,7 +210,9 @@
 
     <main class="glass-card">
         <div class="logo-container">
-            <div class="logo-mark"></div>
+            <img src="/imagem/VIxcursos.png" alt="VIX Cursos" class="logo-img">
+            <div class="logo-divider"></div>
+            <img src="/imagem/prefeitura.png" alt="Prefeitura de Vitória" class="logo-img">
         </div>
 
         <form id="loginForm" autocomplete="off">

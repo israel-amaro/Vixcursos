@@ -1,4 +1,4 @@
-﻿const express = require("express");
+const express = require("express");
 const fs = require("fs");
 const { Pool } = require("pg");
 const cors = require("cors");
@@ -1342,10 +1342,14 @@ async function createApp() {
             res.json(rows);
         } catch (err) {
             if (eErroTimeoutBanco(err)) {
-                console.warn(`[db] Falha na conexao do banco ao buscar filtro ${req.params.tipo}, servindo fallback estÃ¡tico.`);
+                console.warn(`[db] Falha na conexao do banco ao buscar filtro ${req.params.tipo}, servindo fallback estático.`);
+                if (req.params.tipo === 'categoria') {
+                    return res.json([
+                        { id: 1, categoria: "Beleza" },
+                        { id: 2, categoria: "Moda" },
                         { id: 3, categoria: "Gastronomia" },
                         { id: 4, categoria: "Humanas" },
-                        { id: 5, categoria: "VeÃ­culos" }
+                        { id: 5, categoria: "Veículos" }
                     ]);
                 }
                 if (req.params.tipo === 'local') {
@@ -1398,6 +1402,8 @@ async function createApp() {
                     c.data_abertura_inscricao,
                     c.data_encerramento_inscricao,
                     COALESCE(c.acessos_contador, 0) AS acessos_contador,
+                    c.descricao,
+                    c.carga_horaria,
                     c.criado_em
                 FROM cursos c
                 LEFT JOIN filtro_curso fcurso ON fcurso.id = c.curso_id
@@ -1426,6 +1432,8 @@ async function createApp() {
                     c.data_abertura_inscricao,
                     c.data_encerramento_inscricao,
                     c.acessos_contador,
+                    c.descricao,
+                    c.carga_horaria,
                     c.criado_em
                 ORDER BY c.id DESC
             `;
@@ -1474,6 +1482,8 @@ async function createApp() {
                     c.data_abertura_inscricao,
                     c.data_encerramento_inscricao,
                     COALESCE(c.acessos_contador, 0) AS acessos_contador,
+                    c.descricao,
+                    c.carga_horaria,
                     c.criado_em
                 FROM cursos c
                 LEFT JOIN filtro_curso fcurso ON fcurso.id = c.curso_id
@@ -1502,6 +1512,8 @@ async function createApp() {
                     c.data_abertura_inscricao,
                     c.data_encerramento_inscricao,
                     c.acessos_contador,
+                    c.descricao,
+                    c.carga_horaria,
                     c.criado_em
             `;
             const [rows] = await db.query(querySql, [id]);

@@ -1108,18 +1108,18 @@ export default function VitorugaChat() {
                     ? Math.max(0, position.y - 550)
                     : position.y + 72,
                   background: 'rgba(0,0,0,0.35)',
-                  backdropFilter: 'blur(24px)',
+                  backdropFilter: 'blur(12px)',
                 }
               : {
                   bottom: '9rem',
                   right: '1.5rem',
                   background: 'rgba(0,0,0,0.35)',
-                  backdropFilter: 'blur(24px)',
+                  backdropFilter: 'blur(12px)',
                 }
             }
           >
             {/* Header */}
-            <header className="px-4 py-3 flex items-center justify-between border-b border-white/5 shadow-md" style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(16px)' }}>
+            <header className="px-4 py-3 flex items-center justify-between border-b border-white/5 shadow-sm bg-transparent">
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <img
@@ -1209,7 +1209,7 @@ export default function VitorugaChat() {
 
             {/* Interactive Options Buttons */}
             {activeOptions && activeOptions.length > 0 && (
-              <div className="px-3 py-2 bg-black/10 border-t border-white/5 flex flex-wrap gap-1.5 justify-start max-h-48 overflow-y-auto">
+              <div className="px-3 py-2 bg-transparent border-t border-white/5 flex flex-wrap gap-1.5 justify-start max-h-48 overflow-y-auto">
                 {activeOptions.map((opt, i) => (
                   <button
                     key={i}
@@ -1224,7 +1224,7 @@ export default function VitorugaChat() {
             )}
 
             {/* Input area */}
-            <form onSubmit={handleSendMessage} className="bg-black/25 border-t border-white/5 p-3 flex gap-2 items-center">
+            <form onSubmit={handleSendMessage} className="bg-transparent border-t border-white/5 p-3 flex gap-2 items-center">
               <input
                 type="text"
                 value={inputValue}

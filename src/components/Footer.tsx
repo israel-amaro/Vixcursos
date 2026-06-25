@@ -19,13 +19,12 @@ export default function Footer() {
           
           {/* Column 1: Identity */}
           <div className="flex flex-col items-start">
-            <div className="flex flex-col select-none">
-              <span className="font-display font-extrabold text-2xl text-accent leading-none tracking-tight">
-                VIX
-              </span>
-              <span className="font-display font-semibold text-[9px] text-white/40 tracking-[0.4em] leading-none uppercase mt-0.5">
-                Cursos
-              </span>
+            <div className="flex select-none mb-2">
+              <img 
+                src="/imagem/VIxcursos.png" 
+                alt="VIX Cursos" 
+                className="h-10 w-auto object-contain"
+              />
             </div>
             
             <p className="text-sm text-white/40 mt-4 max-w-xs leading-relaxed">

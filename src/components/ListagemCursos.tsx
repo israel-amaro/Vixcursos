@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, BookX, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
+import { MapPin, BookX, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, XCircle, ChevronDown, Clock } from 'lucide-react';
 import { FilterState } from './FiltroBusca';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const imagensCursos: { [key: string]: string } = {
   'Beleza':                       'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&q=80&w=800',
@@ -46,6 +47,68 @@ const imagensCursos: { [key: string]: string } = {
   'Vendas / Marketing':           'https://images.unsplash.com/photo-1556742393-d75f468bfcb0?auto=format&fit=crop&q=80&w=800',
 };
 
+const getCourseImage = (categoria: string, nome: string): string => {
+  const cat = (categoria || '').toLowerCase();
+  const nm = (nome || '').toLowerCase();
+
+  // Keyword matching for high-quality Unsplash photos
+  if (nm.includes('barbeiro') || nm.includes('barbearia')) {
+    return 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&q=80&w=800'; // Barbeiro
+  }
+  if (nm.includes('cabeleireiro') || nm.includes('corte') || nm.includes('escova')) {
+    return 'https://images.unsplash.com/photo-1562322140-8baeececf3df?auto=format&fit=crop&q=80&w=800'; // Cabeleireiro
+  }
+  if (nm.includes('unhas') || nm.includes('manicure') || nm.includes('pedicure')) {
+    return 'https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&q=80&w=800'; // Manicure
+  }
+  if (nm.includes('maquiagem') || nm.includes('designer de sobrancelhas')) {
+    return 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&q=80&w=800'; // Maquiagem
+  }
+  if (nm.includes('estética') || nm.includes('depilação') || nm.includes('massagem')) {
+    return 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&q=80&w=800'; // Estética
+  }
+  if (nm.includes('costura') || nm.includes('modelagem') || nm.includes('confecção') || cat.includes('moda') || cat.includes('confecção')) {
+    return 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&q=80&w=800'; // Moda/Costura
+  }
+  if (nm.includes('bolo') || nm.includes('confeitaria') || nm.includes('doces') || nm.includes('cupcake')) {
+    return 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&q=80&w=800'; // Confeitaria
+  }
+  if (nm.includes('pizzaiolo') || nm.includes('pizza')) {
+    return 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&q=80&w=800'; // Pizza
+  }
+  if (nm.includes('pão') || nm.includes('padaria') || nm.includes('panificação')) {
+    return 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=800'; // Padaria
+  }
+  if (nm.includes('salgados') || nm.includes('salgadeiro')) {
+    return 'https://images.unsplash.com/photo-1541532713592-79a0317b6b77?auto=format&fit=crop&q=80&w=800'; // Salgados
+  }
+  if (cat.includes('gastronomia') || nm.includes('culinária') || nm.includes('cozinha') || nm.includes('gastronomia')) {
+    return 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&q=80&w=800'; // Gastronomia Geral
+  }
+  if (nm.includes('computador') || nm.includes('informática') || nm.includes('excel') || nm.includes('word') || nm.includes('internet') || cat.includes('tecnologia') || cat.includes('informática') || cat.includes('programação')) {
+    return 'https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?auto=format&fit=crop&q=80&w=800'; // Tecnologia
+  }
+  if (nm.includes('cuidador') || nm.includes('idoso') || nm.includes('primeiros socorros') || nm.includes('farmácia') || cat.includes('saúde') || cat.includes('enfermagem')) {
+    return 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=800'; // Saúde
+  }
+  if (nm.includes('mecânica') || nm.includes('veículos') || cat.includes('veículos')) {
+    return 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&q=80&w=800'; // Mecânica
+  }
+  if (nm.includes('eletricista') || nm.includes('elétrica') || cat.includes('energia')) {
+    return 'https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&q=80&w=800'; // Elétrica
+  }
+  if (nm.includes('artesanato') || nm.includes('pintura') || cat.includes('artesanato')) {
+    return 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?auto=format&fit=crop&q=80&w=800'; // Artesanato
+  }
+
+  // Fallback by category match
+  const matchedImage = imagensCursos[categoria];
+  if (matchedImage) return matchedImage;
+
+  // Global fallback
+  return 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=800'; // General education
+};
+
 interface Course {
   id: number;
   nome: string;
@@ -63,6 +126,8 @@ interface Course {
   idade_max: string;
   modalidade: string;
   local: string;
+  descricao?: string;
+  carga_horaria?: number;
 }
 
 interface ListagemCursosProps {
@@ -75,6 +140,7 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
   const [courses, setCourses] = useState<Course[]>([]);
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
   const [sortBy, setSortBy] = useState<string>('recentes');
+  const [expandedCourseId, setExpandedCourseId] = useState<number | null>(null);
   
   // Pagination
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -265,214 +331,110 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
           </div>
         )}
 
-        {/* Listagem em Grade por Instituição */}
-        {Object.entries(groupedCourses).map(([localName, coursesInLocal]) => {
-          const instInfo = getInstitutionDetails(localName);
-          return (
-            <div key={localName} className="mb-10">
-              
-              {/* Cabeçalho da Instituição */}
-              <div className="bg-white rounded-2xl px-6 py-5 mb-5 shadow-sm border border-slate-100 flex items-start gap-4 hover:border-primary/20 transition-all duration-300">
-                <div className="p-3 bg-primary/10 text-primary rounded-xl mt-1">
-                  <MapPin className="w-5 h-5" />
-                </div>
-                <div className="flex flex-col">
-                  <h3 className="text-lg font-display font-bold text-slate-800 leading-tight">
-                    {instInfo.name}
-                  </h3>
-                  <span className="text-xs md:text-sm text-gray-400 mt-1.5 font-medium tracking-wide">
-                    {instInfo.address}
-                  </span>
-                </div>
-              </div>
+        {/* Grid de Cards de Cursos */}
+        {filteredCourses.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {currentCourses.map((course) => {
+              const status = getStatusConfig(course.vagas_disponiveis, course.status);
+              const isEsgotado = course.status === 'esgotado' || course.vagas_disponiveis <= 0;
+              const imgSrc = getCourseImage(course.categoria, course.nome);
 
-              {/* Lista de Cards de Cursos daquela Instituição */}
-              {coursesInLocal.map((course) => {
-                const status = getStatusConfig(course.vagas_disponiveis, course.status);
-                const isEsgotado = course.status === 'esgotado' || course.vagas_disponiveis <= 0;
-                const imgSrc = imagensCursos[course.categoria] || imagensCursos[course.nome] || '/imagem/proficao/proficao.png';
+              return (
+                <div
+                  key={course.id}
+                  className="bg-white rounded-2xl shadow-sm border border-slate-100 hover:shadow-md hover:border-slate-200 transition-all duration-300 flex flex-col justify-between overflow-hidden text-left"
+                >
+                  {/* Imagem do Card */}
+                  <div className="relative h-48 w-full overflow-hidden select-none">
+                    <img
+                      src={imgSrc}
+                      alt={course.nome}
+                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/imagem/proficao/proficao.png';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                    <div className="absolute top-3 left-3">
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-extrabold shadow-md ${status.class}`}>
+                        {status.icon}
+                        {status.label}
+                      </span>
+                    </div>
+                    <div className="absolute bottom-3 left-3 right-3 text-white">
+                      <span className="text-[10px] font-mono tracking-wider uppercase opacity-85 block">
+                        {course.categoria}
+                      </span>
+                    </div>
+                  </div>
 
-                return (
-                  <div
-                    key={course.id}
-                    className="bg-white rounded-2xl mb-6 shadow-sm border border-slate-100 hover:shadow-md transition-all duration-300 flex flex-col hover:border-slate-200 overflow-hidden text-left"
-                  >
-                    {/* Imagem do Curso Premium */}
-                    <div className="h-44 w-full overflow-hidden relative select-none pointer-events-none">
-                      <img 
-                        src={imgSrc} 
-                        alt={course.nome} 
-                        className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '/imagem/proficao/proficao.png';
-                        }}
-                      />
-                      <div className="absolute top-4 left-4">
-                        <span className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-extrabold shadow-md ${status.class}`}>
-                          {status.icon}
-                          {status.label}
-                        </span>
+                  {/* Conteúdo do Card */}
+                  <div className="p-5 flex-1 flex flex-col justify-between">
+                    <div className="mb-5">
+                      <h4 className="text-lg font-display font-bold text-slate-800 leading-snug line-clamp-2 mb-2 min-h-[3.5rem] flex items-center">
+                        {course.nome}
+                      </h4>
+                      <p className="text-slate-500 text-xs leading-relaxed line-clamp-3 mb-4 min-h-[3.25rem]">
+                        {course.descricao || "Este curso oferece formação prática qualificada, com foco nas habilidades exigidas pelo mercado de trabalho local. Prepare-se para atuar de forma profissional e autônoma."}
+                      </p>
+
+                      {/* Detalhes com Ícones */}
+                      <div className="flex flex-col gap-2.5 text-xs text-slate-600">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-primary/70 flex-shrink-0" />
+                          <span><strong>Carga Horária:</strong> {course.carga_horaria ? `${course.carga_horaria}h` : 'Consulte o edital'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-primary/70 flex-shrink-0" />
+                          <span className="line-clamp-1"><strong>Local:</strong> {course.local}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-primary/70 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                          <span><strong>Faixa Etária:</strong> {course.idade_min} a {course.idade_max} anos</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-primary/70 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                          <span><strong>Horário:</strong> {formatSchedule(course.horario_inicio, course.horario_termino)}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <svg className="w-4 h-4 text-primary/70 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                          <span><strong>Período:</strong> {course.data_inicio} até {course.data_termino}</span>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="p-6 flex flex-col">
-                      {/* Cabeçalho do Card */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-                        <div className="flex flex-col gap-1">
-                          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
-                            {course.categoria}
-                          </span>
-                          <h4 className="text-xl font-display font-bold text-slate-800 leading-snug">
-                            {course.nome}
-                          </h4>
-                        </div>
-                        <div className="flex flex-col sm:items-end">
-                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                            Total de Vagas
-                          </span>
-                          <span className="font-display font-black text-2xl text-slate-800 mt-1 badge-vagas">
-                            {course.vagas_totais}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="text-xs font-bold tracking-[0.2em] uppercase text-slate-300 mb-4 select-none">
-                        Turma Única / Turma 1
-                      </div>
-
-                    {/* Responsive Grid/Table for Turmas */}
-                    {/* Desktop Table View */}
-                    <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-100 mb-2">
-                      <table className="w-full text-left border-collapse" role="table" aria-label={`Turmas para ${course.nome}`}>
-                        <thead>
-                          <tr className="bg-primary/5 text-primary font-bold text-[10px] uppercase tracking-wider border-b border-slate-100">
-                            <th className="py-3.5 px-4 font-bold" role="columnheader">Faixa Etária</th>
-                            <th className="py-3.5 px-4 font-bold" role="columnheader">Período</th>
-                            <th className="py-3.5 px-4 font-bold" role="columnheader">Horário</th>
-                            <th className="py-3.5 px-4 font-bold" role="columnheader">Detalhes</th>
-                            <th className="py-3.5 px-4 font-bold" role="columnheader">Situação</th>
-                            <th className="py-3.5 px-4 font-bold text-center" role="columnheader">Vagas Disp.</th>
-                            <th className="py-3.5 px-4 text-right font-bold" role="columnheader">Ação</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr className="text-sm text-slate-700 hover:bg-slate-50 transition-colors">
-                            <td className="py-4 px-4 font-mono font-medium text-slate-600">
-                              {course.idade_min} a {course.idade_max} anos
-                            </td>
-                            <td className="py-4 px-4 font-mono font-medium text-slate-600 leading-snug">
-                              De {course.data_inicio}<br />até {course.data_termino}
-                            </td>
-                            <td className="py-4 px-4 font-medium text-slate-600">
-                              2ª a 6ª — {formatSchedule(course.horario_inicio, course.horario_termino)}
-                            </td>
-                            <td className="py-4 px-4">
-                              <button
-                                onClick={() => navigate(`/detalhes/${course.id}`)}
-                                className="border border-primary/20 text-primary rounded-xl px-3.5 py-1.5 text-xs font-bold hover:bg-primary hover:text-white transition-all duration-300 cursor-pointer"
-                              >
-                                Saiba +
-                              </button>
-                            </td>
-                            <td className="py-4 px-4">
-                              <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-extrabold ${status.class}`}>
-                                {status.icon}
-                                {status.label}
-                              </span>
-                            </td>
-                            <td className="py-4 px-4 text-center">
-                              <span className="font-display font-black text-2xl text-primary badge-vagas">
-                                {course.vagas_disponiveis}
-                              </span>
-                            </td>
-                            <td className="py-4 px-4 text-right">
-                              <div className="flex items-center justify-end">
-                                <button
-                                  onClick={() => navigate(`/pre-inscricao/${course.id}`)}
-                                  className={`px-5 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-widest text-white transition-all duration-300 cursor-pointer transform hover:scale-[1.03] ${
-                                    isEsgotado
-                                      ? 'bg-orange-500 hover:bg-orange-600'
-                                      : 'bg-primary hover:bg-primary-dark shadow-sm'
-                                  }`}
-                                >
-                                  {isEsgotado ? 'Lista de Espera' : 'Pré-inscrição'}
-                                </button>
-                                {isEsgotado && (
-                                  <span className="block bg-success text-white text-[9px] rounded-lg px-2 py-1 font-bold text-center leading-tight ml-2 max-w-[80px]">
-                                    vaga p/ suplente
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {/* Mobile Card View (Alternative to table) */}
-                    <div className="flex flex-col gap-4 md:hidden border border-slate-100 rounded-xl p-4 bg-slate-50/50">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-400">Situação</span>
-                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-extrabold ${status.class}`}>
-                          {status.icon}
-                          {status.label}
+                    {/* Vagas e CTA */}
+                    <div className="pt-4 border-t border-slate-100 mt-auto flex flex-col gap-3">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-400 font-semibold uppercase tracking-wider">Vagas Disponíveis</span>
+                        <span className="font-display font-black text-slate-800 text-sm">
+                          {course.vagas_disponiveis} / {course.vagas_totais}
                         </span>
                       </div>
-                      
-                      <div className="flex items-center justify-between border-t border-slate-100/70 pt-2">
-                        <span className="text-xs font-bold text-slate-400">Faixa Etária</span>
-                        <span className="text-xs font-mono font-bold text-slate-700">
-                          {course.idade_min} a {course.idade_max} anos
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between border-t border-slate-100/70 pt-2">
-                        <span className="text-xs font-bold text-slate-400">Período</span>
-                        <span className="text-xs font-mono font-bold text-slate-700 text-right">
-                          {course.data_inicio} até {course.data_termino}
-                        </span>
-                      </div>
-
-                      <div className="flex flex-col gap-1 border-t border-slate-100/70 pt-2">
-                        <span className="text-xs font-bold text-slate-400">Horário</span>
-                        <span className="text-xs font-bold text-slate-700">
-                          2ª a 6ª — {formatSchedule(course.horario_inicio, course.horario_termino)}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center justify-between border-t border-slate-100/70 pt-2 pb-2">
-                        <span className="text-xs font-bold text-slate-400">Vagas Disp.</span>
-                        <span className="font-display font-black text-xl text-primary badge-vagas">
-                          {course.vagas_disponiveis}
-                        </span>
-                      </div>
-
-                      <div className="flex flex-col sm:flex-row gap-2 mt-2 w-full">
-                        <button
-                          onClick={() => navigate(`/detalhes/${course.id}`)}
-                          className="w-full border border-primary/20 text-primary py-2.5 rounded-xl text-xs font-bold hover:bg-primary hover:text-white transition-all cursor-pointer text-center"
-                        >
-                          Saiba Mais
-                        </button>
+                      <div className="flex items-center gap-2">
                         <button
                           onClick={() => navigate(`/pre-inscricao/${course.id}`)}
-                          className={`w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-widest text-white transition-all cursor-pointer text-center ${
-                            isEsgotado ? 'bg-orange-500' : 'bg-primary'
+                          className={`w-full py-3 rounded-xl text-xs font-extrabold uppercase tracking-widest text-white transition-all duration-300 cursor-pointer text-center transform hover:scale-[1.02] ${
+                            isEsgotado
+                              ? 'bg-orange-500 hover:bg-orange-600'
+                              : 'bg-primary hover:bg-primary-dark shadow-sm'
                           }`}
                         >
                           {isEsgotado ? 'Lista de Espera' : 'Pré-inscrição'}
                         </button>
+                        {isEsgotado && (
+                          <span className="block bg-success text-white text-[9px] rounded-lg px-2 py-1 font-bold text-center leading-tight max-w-[80px]">
+                            vaga p/ suplente
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
-
                 </div>
               );
             })}
-
-            </div>
-          );
-        })}
+          </div>
+        )}
 
         {/* Paginação */}
         {totalPages > 1 && (
