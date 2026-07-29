@@ -1557,8 +1557,8 @@ async function createApp() {
             const [rows] = await db.query(`
                 SELECT 
                     c.vagas AS vagas_totais,
-                    COALESCE(SUM(CASE WHEN pi.status_inscricao = 'titular' THEN 1 ELSE 0 END), 0) AS inscritos,
-                    (c.vagas - COALESCE(SUM(CASE WHEN pi.status_inscricao = 'titular' THEN 1 ELSE 0 END), 0)) AS vagas_disponiveis,
+                    COALESCE(SUM(CASE WHEN pi.status_inscricao = 'titular' AND pi.status NOT IN ('cancelado', 'desistencia', 'nao_concluido', 'desistente', 'nao_compareceu') THEN 1 ELSE 0 END), 0) AS inscritos,
+                    (c.vagas - COALESCE(SUM(CASE WHEN pi.status_inscricao = 'titular' AND pi.status NOT IN ('cancelado', 'desistencia', 'nao_concluido', 'desistente', 'nao_compareceu') THEN 1 ELSE 0 END), 0)) AS vagas_disponiveis,
                     c.status
                 FROM cursos c
                 LEFT JOIN pre_inscricoes pi ON pi.curso_id = c.id
@@ -1567,7 +1567,7 @@ async function createApp() {
             `, [id]);
             
             if (rows.length === 0) {
-                return res.status(404).json({ error: "Curso nÃ£o encontrado" });
+                return res.status(404).json({ error: "Curso não encontrado" });
             }
             
             const resultado = rows[0];
@@ -1706,18 +1706,7 @@ async function createApp() {
     // ============================================================
     // ESGOTAR CURSO
     // ============================================================
-    app.put("/cursos/esgotar/:id", exigirAuthAdmin, async (req, res) => {
-        try {
-            await db.query(`UPDATE cursos SET status = 'esgotado' WHERE id = ?`, [req.params.id]);
-            res.json({ status: "curso esgotado" });
-        } catch (err) {
-            return responderErroBanco(res, err, "Erro ao atualizar status");
-        }
-    });
-    // ============================================================
-    // INSCRIÃ‡ÃƒO
-    // ============================================================
-    app.post("/inscricao", async (req, res) => {
+    app.put("/cursos/esgotar/:id", exi    app.post("/inscricao", async (req, res) => {
         try {
             const {
                 nome, email, telefone, cpf, rg, curso_id,
@@ -1728,7 +1717,7 @@ async function createApp() {
                 responsavel_nome, responsavel_cpf, responsavel_parentesco,
                 responsavel_telefone, responsavel_email, responsavel_autorizacao,
                 deficiencia_adaptacoes, deficiencia_recursos,
-                objetivo, autoriza_lgpd
+                objetivo, autoriza_lgpd, autoriza_uso_imagem
             } = req.body;
 
             const cpfLimpo = normalizarCpf(cpf);
@@ -1736,13 +1725,69 @@ async function createApp() {
             
             const possuiNecessidadeEspecial = String(possui_necessidade_especial || "nao").toLowerCase() === "sim" ? "sim" : "nao";
             const tipoNecessidadeEspecial = possuiNecessidadeEspecial === "sim" ? String(tipo_necessidade_especial || "").trim().slice(0, 120) : null;
+            const possuiDeficiencia = possuiNecessidadeEspecial === "sim" ? "sim" : "não";
+            const tipoDeficiencia = tipoNecessidadeEspecial;
+            const moraSuaVitoria = String(mora_vitoria || "nao").toLowerCase() === "sim" || String(municipio || "").trim().toLowerCase() === "vitoria" ? "sim" : "não";
 
             if (!nome || !email || !telefone || !cpfLimpo || !rgNormalizado || !curso_id || !cpf_documento || !rg_documento) {
-                return res.status(400).json({ error: "Preencha todos os campos obrigatÃ³rios, inclusive CPF, RG e as fotos dos dois documentos." });
+                return res.status(400).json({ error: "Preencha todos os campos obrigatórios, inclusive CPF, RG e as fotos dos dois documentos." });
             }
 
             if (String(municipio || "").trim().toLowerCase() !== "vitoria") {
-                return res.status(400).json({ error: "Os cursos do VixCursos sÃ£o destinados exclusivamente a moradores de VitÃ³ria - ES. Seu endereÃ§o nÃ£o estÃ¡ dentro do municÃ­pio." });
+                return res.status(400).json({ error: "Os cursos do VixCursos são destinados exclusivamente a moradores de Vitória - ES. Seu endereço não está dentro do município." });
+            }
+
+            // Sync/upsert citizen profile in 'usuarios' table
+            let usuarioId = null;
+            const [usuarioExistente] = await db.query(
+                `SELECT id FROM usuarios WHERE cpf = ? LIMIT 1`,
+                [cpfLimpo]
+            );
+
+            if (usuarioExistente.length > 0) {
+                usuarioId = usuarioExistente[0].id;
+                await db.query(
+                    `UPDATE usuarios SET
+                        nome = ?, email = ?, telefone = ?, telefone_alternativo = ?, data_nascimento = ?, rg = ?,
+                        genero = ?, raca_cor = ?, escolaridade = ?, cep = ?, numero = ?, rua = ?, bairro = ?,
+                        municipio = ?, uf = ?, mora_vitoria = ?, possui_deficiencia = ?, tipo_deficiencia = ?,
+                        deficiencia_adaptacoes = ?, deficiencia_recursos = ?, responsavel_nome = ?,
+                        responsavel_cpf = ?, responsavel_parentesco = ?, responsavel_telefone = ?, responsavel_email = ?,
+                        responsavel_autorizacao = ?, autoriza_uso_imagem = ?, objetivo = ?, cpf_documento = ?, rg_documento = ?,
+                        atualizado_em = NOW()
+                     WHERE id = ?`,
+                    [
+                        nome, email, telefone, telefone_alternativo || null, data_nascimento || null, rgNormalizado,
+                        genero || null, raca_cor || null, escolaridade || null, cep || null, numero || null, rua || null, bairro || null,
+                        municipio || null, req.body.uf || 'ES', moraSuaVitoria, possuiDeficiencia, tipoDeficiencia,
+                        deficiencia_adaptacoes || null, deficiencia_recursos || null, responsavel_nome || null,
+                        responsavel_cpf ? normalizarCpf(responsavel_cpf) : null, responsavel_parentesco || null,
+                        responsavel_telefone || null, responsavel_email || null, responsavel_autorizacao || null,
+                        autoriza_uso_imagem || 'sim', objetivo || null, cpf_documento || null, rg_documento || null,
+                        usuarioId
+                    ]
+                );
+            } else {
+                const [insertUserRes] = await db.query(
+                    `INSERT INTO usuarios (
+                        cpf, nome, email, telefone, telefone_alternativo, data_nascimento, rg,
+                        genero, raca_cor, escolaridade, cep, numero, rua, bairro, municipio, uf,
+                        mora_vitoria, possui_deficiencia, tipo_deficiencia, deficiencia_adaptacoes, deficiencia_recursos,
+                        responsavel_nome, responsavel_cpf, responsavel_parentesco, responsavel_telefone, responsavel_email,
+                        responsavel_autorizacao, autoriza_uso_imagem, objetivo, cpf_documento, rg_documento
+                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     RETURNING id`,
+                    [
+                        cpfLimpo, nome, email, telefone, telefone_alternativo || null, data_nascimento || null, rgNormalizado,
+                        genero || null, raca_cor || null, escolaridade || null, cep || null, numero || null, rua || null, bairro || null,
+                        municipio || null, req.body.uf || 'ES', moraSuaVitoria, possuiDeficiencia, tipoDeficiencia,
+                        deficiencia_adaptacoes || null, deficiencia_recursos || null, responsavel_nome || null,
+                        responsavel_cpf ? normalizarCpf(responsavel_cpf) : null, responsavel_parentesco || null,
+                        responsavel_telefone || null, responsavel_email || null, responsavel_autorizacao || null,
+                        autoriza_uso_imagem || 'sim', objetivo || null, cpf_documento || null, rg_documento || null
+                    ]
+                );
+                usuarioId = insertUserRes[0].id;
             }
 
             // Check duplicate in same course
@@ -1753,13 +1798,13 @@ async function createApp() {
 
             if (inscricaoExistente.length) {
                 return res.status(409).json({
-                    error: "VocÃª jÃ¡ possui prÃ©-inscriÃ§Ã£o para este curso com este CPF."
+                    error: "Você já possui pré-inscrição para este curso com este CPF."
                 });
             }
 
-            // Limit check (MÃ³dulo 3.1 & 3.2)
+            // Limit check (active courses: not completed/cancelled/withdrawn/failed)
             const [inscricoesCpf] = await db.query(
-                `SELECT COUNT(*) as total FROM pre_inscricoes WHERE cpf = ?`,
+                `SELECT COUNT(*) as total FROM pre_inscricoes WHERE cpf = ? AND status NOT IN ('cancelado', 'desistencia', 'nao_concluido', 'desistente', 'nao_compareceu')`,
                 [cpfLimpo]
             );
             const totalInscricoesCpf = inscricoesCpf[0].total;
@@ -1771,7 +1816,7 @@ async function createApp() {
 
             if (totalInscricoesCpf >= limite) {
                 return res.status(400).json({
-                    error: `VocÃª jÃ¡ possui o limite de ${limite} inscriÃ§Ãµes ativas neste perÃ­odo.`
+                    error: `Você já possui o limite de ${limite} inscrições ativas neste período.`
                 });
             }
 
@@ -1791,11 +1836,11 @@ async function createApp() {
                 WHERE c.id = ?
             `, [curso_id]);
 
-            if (!curso.length) return res.status(404).json({ error: "Curso nÃ£o encontrado" });
+            if (!curso.length) return res.status(404).json({ error: "Curso não encontrado" });
 
-            // Count current titulares
+            // Count current active titulares
             const [titularesRows] = await db.query(
-                `SELECT COUNT(*) as total FROM pre_inscricoes WHERE curso_id = ? AND status_inscricao = 'titular'`,
+                `SELECT COUNT(*) as total FROM pre_inscricoes WHERE curso_id = ? AND status_inscricao = 'titular' AND status NOT IN ('cancelado', 'desistencia', 'nao_concluido', 'desistente', 'nao_compareceu')`,
                 [curso_id]
             );
             const titularesAtuais = titularesRows[0].total;
@@ -1810,14 +1855,14 @@ async function createApp() {
                 status_inscricao = "titular"; // guaranteed PcD
             } else if (totalInscricoesCpf >= 2) {
                 status_inscricao = "suplente";
-                aviso = "VocÃª jÃ¡ possui 2 inscriÃ§Ãµes ativas. Esta inscriÃ§Ã£o entrarÃ¡ como suplente automaticamente.";
-            } else if (vagasRestantes <= 0 || curso[0].status === "esgotado") {
+                aviso = "Você já possui 2 inscrições ativas. Esta inscrição entrará como suplente automaticamente.";
+            } else if (vagasRestantes <= 0 || curso[0].status === 'esgotado') {
                 status_inscricao = "suplente";
-                aviso = "Este curso atingiu o nÃºmero mÃ¡ximo de inscriÃ§Ãµes. Esta inscriÃ§Ã£o entrarÃ¡ como suplente automaticamente.";
+                aviso = "Este curso atingiu o número máximo de inscrições. Esta inscrição entrará como suplente automaticamente.";
             } else {
                 status_inscricao = "titular";
                 if (totalInscricoesCpf === 1) {
-                    aviso = "VocÃª agora estÃ¡ concorrendo a 2 cursos ao mesmo tempo.";
+                    aviso = "Você agora está concorrendo a 2 cursos ao mesmo tempo.";
                 }
             }
 
@@ -1825,7 +1870,7 @@ async function createApp() {
 
             const [insertResult] = await db.query(`
                 INSERT INTO pre_inscricoes (
-                    nome, email, telefone, cpf, rg, curso_id,
+                    usuario_id, nome, email, telefone, cpf, rg, curso_id,
                     mora_vitoria, escolaridade, cep, numero, rua, bairro, municipio,
                     possui_necessidade_especial, tipo_necessidade_especial,
                     cpf_documento, rg_documento,
@@ -1834,14 +1879,14 @@ async function createApp() {
                     responsavel_telefone, responsavel_email, responsavel_autorizacao,
                     deficiencia_adaptacoes, deficiencia_recursos,
                     objetivo, autoriza_lgpd, status_inscricao,
-                    convocado_em, vaga_expira_em
+                    convocado_em, vaga_expira_em, autoriza_uso_imagem
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                         CASE WHEN ? = 'titular' THEN NOW() ELSE NULL END,
-                        CASE WHEN ? = 'titular' THEN NOW() + INTERVAL '${prazoHoras} hours' ELSE NULL END)
+                        CASE WHEN ? = 'titular' THEN NOW() + INTERVAL '${prazoHoras} hours' ELSE NULL END, ?)
                 RETURNING id
             `, [
-                nome, email, telefone, cpfLimpo, rgNormalizado, curso_id,
+                usuarioId, nome, email, telefone, cpfLimpo, rgNormalizado, curso_id,
                 mora_vitoria || null, escolaridade || null, cep || null, numero || null, rua || null, bairro || null, municipio || null,
                 possuiNecessidadeEspecial, tipoNecessidadeEspecial,
                 cpf_documento, rg_documento,
@@ -1850,7 +1895,7 @@ async function createApp() {
                 responsavel_telefone || null, responsavel_email || null, responsavel_autorizacao || null,
                 deficiencia_adaptacoes || null, deficiencia_recursos || null,
                 objetivo || null, autoriza_lgpd || 'sim', status_inscricao,
-                status_inscricao, status_inscricao
+                status_inscricao, status_inscricao, autoriza_uso_imagem || 'sim'
             ]);
 
             const insertId = insertResult[0].id;
@@ -1888,7 +1933,7 @@ async function createApp() {
 
             res.json({
                 status: "ok",
-                msg: "InscriÃ§Ã£o realizada com sucesso",
+                msg: "Inscrição realizada com sucesso",
                 protocolo,
                 status_inscricao,
                 aviso,
@@ -1897,7 +1942,7 @@ async function createApp() {
         } catch (err) {
             if (err && (err.code === "23505" || err.code === "ER_DUP_ENTRY")) {
                 return res.status(409).json({
-                    error: "VocÃª jÃ¡ possui prÃ©-inscriÃ§Ã£o para este curso com este CPF."
+                    error: "Você já possui pré-inscrição para este curso com este CPF."
                 });
             }
             return responderErroBanco(res, err, "Erro na rota /inscricao:");
@@ -1909,31 +1954,60 @@ async function createApp() {
             const cpfLimpo = normalizarCpf(req.params.cpf);
 
             if (cpfLimpo.length !== 11) {
-                return res.status(400).json({ error: "CPF invÃ¡lido" });
+                return res.status(400).json({ error: "CPF inválido" });
             }
 
             const [rows] = await db.query(
                 `SELECT
                     id, nome, email, telefone, telefone_alternativo, cpf, rg,
                     cep, numero, rua, bairro, municipio, mora_vitoria, escolaridade,
-                    possui_necessidade_especial, tipo_necessidade_especial,
+                    possui_deficiencia AS possui_necessidade_especial, tipo_deficiencia AS tipo_necessidade_especial,
                     deficiencia_adaptacoes, deficiencia_recursos,
                     data_nascimento, genero, raca_cor,
                     responsavel_nome, responsavel_cpf, responsavel_parentesco,
                     responsavel_telefone, responsavel_email, responsavel_autorizacao,
-                    autoriza_lgpd, objetivo, cpf_documento, rg_documento
-                FROM pre_inscricoes
+                    autoriza_uso_imagem, objetivo, cpf_documento, rg_documento
+                FROM usuarios
                 WHERE cpf = ?
-                ORDER BY criado_em DESC
                 LIMIT 1`,
                 [cpfLimpo]
             );
+
+            let found = false;
+            let data = null;
+
+            if (rows.length > 0) {
+                found = true;
+                data = rows[0];
+            } else {
+                // Fallback to pre_inscricoes if no profile in usuarios exists yet
+                const [fallbackRows] = await db.query(
+                    `SELECT
+                        id, nome, email, telefone, telefone_alternativo, cpf, rg,
+                        cep, numero, rua, bairro, municipio, mora_vitoria, escolaridade,
+                        possui_necessidade_especial, tipo_necessidade_especial,
+                        deficiencia_adaptacoes, deficiencia_recursos,
+                        data_nascimento, genero, raca_cor,
+                        responsavel_nome, responsavel_cpf, responsavel_parentesco,
+                        responsavel_telefone, responsavel_email, responsavel_autorizacao,
+                        autoriza_uso_imagem, objetivo, cpf_documento, rg_documento
+                    FROM pre_inscricoes
+                    WHERE cpf = ?
+                    ORDER BY criado_em DESC
+                    LIMIT 1`,
+                    [cpfLimpo]
+                );
+                if (fallbackRows.length > 0) {
+                    found = true;
+                    data = fallbackRows[0];
+                }
+            }
 
             const [historico] = await db.query(`
                 SELECT 
                     pi.id, pi.curso_id, pi.status_inscricao, pi.matricula_confirmada, pi.situacao_final,
                     COALESCE(fc.curso, 'Curso') AS curso_nome,
-                    COALESCE(fl.local, 'VitÃ³ria') AS local_nome
+                    COALESCE(fl.local, 'Vitória') AS local_nome
                 FROM pre_inscricoes pi
                 LEFT JOIN cursos c ON c.id = pi.curso_id
                 LEFT JOIN filtro_curso fc ON fc.id = c.curso_id
@@ -1942,19 +2016,19 @@ async function createApp() {
                 ORDER BY pi.criado_em DESC
             `, [cpfLimpo]);
 
-            if (!rows.length) {
-                return res.status(404).json({ found: false, data: null, historico: [] });
+            if (!found) {
+                return res.status(200).json({ found: false, data: null, historico: [] });
             }
 
-            res.json({ found: true, data: rows[0], historico });
+            res.json({ found: true, data, historico });
         } catch (err) {
-            console.error("Erro ao buscar inscriÃ§Ã£o por CPF:", err);
+            console.error("Erro ao buscar inscrição por CPF:", err);
             res.status(500).json({ error: "Erro ao buscar CPF" });
         }
     });
 
     // ============================================================
-    // LISTAR INSCRITOS DE UM CURSO ESPECÃFICO (Atualizado)
+    // LISTAR INSCRITOS DE UM CURSO ESPECÍFICO (Atualizado)
     // ============================================================
     app.get("/inscritos/:idCurso", exigirAuthAdmin, async (req, res) => {
         try {
@@ -1981,6 +2055,9 @@ async function createApp() {
                         rg_documento,
                         matricula_confirmada,
                         matricula_confirmada_em,
+                        status,
+                        status_inscricao,
+                        situacao_final,
                         criado_em AS data
                     FROM pre_inscricoes
                     WHERE curso_id = ?
@@ -2013,6 +2090,9 @@ async function createApp() {
                             rg_documento,
                             0 AS matricula_confirmada,
                             NULL::timestamp AS matricula_confirmada_em,
+                            'inscrito' AS status,
+                            'titular' AS status_inscricao,
+                            'inscrito' AS situacao_final,
                             criado_em AS data
                         FROM pre_inscricoes
                         WHERE curso_id = ?
@@ -2110,46 +2190,31 @@ async function createApp() {
         try {
             const idInscricao = req.params.id;
 
-            // 1. Descobrir de qual curso Ã© essa inscriÃ§Ã£o
+            // 1. Descobrir de qual curso é essa inscrição
             const [inscricao] = await db.query(`SELECT curso_id FROM pre_inscricoes WHERE id = ?`, [idInscricao]);
             
             if (!inscricao.length) {
-                return res.status(404).json({ error: "InscriÃ§Ã£o nÃ£o encontrada no sistema." });
+                return res.status(404).json({ error: "Inscrição não encontrada no sistema." });
             }
 
             const cursoId = inscricao[0].curso_id;
 
-            // 2. Apagar a inscriÃ§Ã£o
+            // 2. Apagar a inscrição
             await db.query(`DELETE FROM pre_inscricoes WHERE id = ?`, [idInscricao]);
 
-            const [cursoRows] = await db.query(`
-                SELECT
-                    c.id,
-                    COALESCE(fcurso.curso, 'Curso') AS nome,
-                    COALESCE(fc.categoria, 'Geral') AS categoria,
-                    COALESCE(fl.local, 'A definir') AS local,
-                    TO_CHAR(c.data_inicio, 'DD/MM/YYYY') AS data_inicio,
-                    TO_CHAR(c.data_termino, 'DD/MM/YYYY') AS data_termino,
-                    TO_CHAR(c.horario_inicio, 'HH24:MI') AS horario_inicio,
-                    TO_CHAR(c.horario_termino, 'HH24:MI') AS horario_termino,
-                    c.status
-                FROM cursos c
-                LEFT JOIN filtro_curso fcurso ON fcurso.id = c.curso_id
-                LEFT JOIN filtro_categoria fc ON fc.id = c.categoria_id
-                LEFT JOIN filtro_local fl ON fl.id = c.local_id
-                WHERE c.id = ?
-            `, [cursoId]);
+            // 3. Get configurations
+            const [configRows] = await db.query(`SELECT prazo_confirmacao_horas FROM configuracoes LIMIT 1`);
+            const prazoHoras = configRows.length > 0 ? configRows[0].prazo_confirmacao_horas : 48;
 
-            // 3. Devolver a vaga e garantir que o curso fique 'ativo'
-            await db.query(`UPDATE cursos SET vagas = vagas + 1, status = 'ativo' WHERE id = ?`, [cursoId]);
+            // 4. Devolve a vaga e garante que o curso fique 'ativo'
+            await db.query(`UPDATE cursos SET status = 'ativo' WHERE id = ?`, [cursoId]);
 
-            if (cursoRows.length) {
-                await notificarInteressadosPorCurso({ ...cursoRows[0], status: 'ativo' });
-            }
+            // 5. Promove o próximo suplente
+            await promoverProximoSuplente(cursoId, prazoHoras);
 
-            res.json({ message: "InscriÃ§Ã£o removida e vaga liberada com sucesso!" });
+            res.json({ message: "Inscrição removida e vaga liberada com sucesso!" });
         } catch (err) {
-            console.error("Erro ao excluir inscriÃ§Ã£o:", err);
+            console.error("Erro ao excluir inscrição:", err);
             res.status(500).json({ error: "Erro interno no servidor" });
         }
     });
@@ -2526,11 +2591,25 @@ async function createApp() {
         try {
             const cpfLimpo = normalizarCpf(req.params.cpf);
             const [alunoRows] = await db.query(`
-                SELECT * FROM pre_inscricoes WHERE cpf = ? ORDER BY criado_em DESC LIMIT 1
+                SELECT * FROM usuarios WHERE cpf = ? LIMIT 1
             `, [cpfLimpo]);
-            if (alunoRows.length === 0) {
-                return res.status(404).json({ error: "Aluno nÃ£o encontrado." });
+            
+            let aluno = null;
+            if (alunoRows.length > 0) {
+                aluno = alunoRows[0];
+                // Map custom fields to match pre_inscricoes attributes expected by frontend
+                aluno.possui_necessidade_especial = aluno.possui_deficiencia;
+                aluno.tipo_necessidade_especial = aluno.tipo_deficiencia;
+            } else {
+                const [fbAluno] = await db.query(`
+                    SELECT * FROM pre_inscricoes WHERE cpf = ? ORDER BY criado_em DESC LIMIT 1
+                `, [cpfLimpo]);
+                if (fbAluno.length === 0) {
+                    return res.status(404).json({ error: "Aluno não encontrado." });
+                }
+                aluno = fbAluno[0];
             }
+
             const [historicoRows] = await db.query(`
                 SELECT pi.*, COALESCE(fc.curso, 'Curso') AS curso_nome, COALESCE(fl.local, 'A definir') AS local_nome
                 FROM pre_inscricoes pi
@@ -2540,9 +2619,57 @@ async function createApp() {
                 WHERE pi.cpf = ?
                 ORDER BY pi.criado_em DESC
             `, [cpfLimpo]);
-            res.json({ aluno: alunoRows[0], historico: historicoRows });
+            
+            res.json({ aluno, historico: historicoRows });
         } catch (err) {
             return responderErroBanco(res, err, "Erro ao carregar ficha do aluno");
+        }
+    });
+
+    // ============================================================
+    // ATUALIZAR STATUS DE UMA PRÉ-INSCRIÇÃO (ADMIN)
+    // ============================================================
+    app.put("/api/inscricoes/:id/status-final", exigirAuthAdmin, async (req, res) => {
+        try {
+            const { id } = req.params;
+            const { status } = req.body;
+
+            if (!status) {
+                return res.status(400).json({ error: "Status não fornecido." });
+            }
+
+            const [insc] = await db.query(`SELECT curso_id, status_inscricao, status FROM pre_inscricoes WHERE id = ?`, [id]);
+            if (insc.length === 0) {
+                return res.status(404).json({ error: "Inscrição não encontrada." });
+            }
+
+            const cursoId = insc[0].curso_id;
+            const oldStatus = insc[0].status;
+            const oldClassif = insc[0].status_inscricao;
+
+            await db.query(
+                `UPDATE pre_inscricoes
+                 SET status = ?,
+                     situacao_final = ?,
+                     atualizado_em = NOW()
+                 WHERE id = ?`,
+                [status, status, id]
+            );
+
+            // Promote waitlist if a titular went inactive
+            const wasActive = !['cancelado', 'desistencia', 'nao_concluido', 'desistente', 'nao_compareceu'].includes(oldStatus);
+            const isNowInactive = ['cancelado', 'desistencia', 'nao_concluido', 'desistente', 'nao_compareceu'].includes(status);
+            
+            if (oldClassif === 'titular' && wasActive && isNowInactive) {
+                const [configRows] = await db.query(`SELECT prazo_confirmacao_horas FROM configuracoes LIMIT 1`);
+                const prazoHoras = configRows.length > 0 ? configRows[0].prazo_confirmacao_horas : 48;
+                await promoverProximoSuplente(cursoId, prazoHoras);
+            }
+
+            return res.json({ message: "Status atualizado com sucesso!" });
+        } catch (err) {
+            console.error("Erro ao atualizar status final:", err);
+            return res.status(500).json({ error: "Erro ao atualizar status final." });
         }
     });
 
@@ -2810,26 +2937,25 @@ async function createApp() {
         try {
             let querySql = `
                 SELECT
-                    pi.cpf AS "CPF",
                     pi.nome AS "Nome",
+                    pi.cpf AS "CPF",
                     TO_CHAR(pi.data_nascimento, 'DD/MM/YYYY') AS "Data de nascimento",
-                    pi.genero AS "GÃªnero",
-                    pi.raca_cor AS "RaÃ§a/cor",
-                    pi.bairro AS "Bairro",
-                    pi.municipio AS "MunicÃ­pio",
-                    pi.cep AS "CEP",
-                    pi.possui_necessidade_especial AS "DeficiÃªncia",
+                    COALESCE(EXTRACT(YEAR FROM AGE(pi.data_nascimento))::TEXT, 'Não informada') AS "Idade",
                     pi.email AS "E-mail",
                     pi.telefone AS "Telefone",
+                    pi.bairro AS "Bairro",
+                    pi.municipio AS "Cidade",
                     COALESCE(fc.curso, 'Curso') AS "Curso",
                     'Turma ' || pi.curso_id AS "Turma",
-                    COALESCE(fl.local, 'VitÃ³ria') AS "Local",
-                    TO_CHAR(pi.criado_em, 'DD/MM/YYYY HH24:MI:SS') AS "Data de inscriÃ§Ã£o",
-                    CASE WHEN pi.matricula_confirmada = 1 THEN 'Matriculado' ELSE 'Pendente' END AS "Status",
-                    pi.status_inscricao AS "ClassificaÃ§Ã£o (titular/suplente)",
-                    TO_CHAR(pi.matricula_confirmada_em, 'DD/MM/YYYY HH24:MI:SS') AS "Data de matrÃ­cula",
-                    pi.situacao_final AS "SituaÃ§Ã£o final",
-                    pi.objetivo AS "Objetivo declarado"
+                    pi.status AS "Status da inscrição",
+                    pi.status_inscricao AS "Classificação",
+                    pi.possui_necessidade_especial AS "Possui deficiência",
+                    pi.genero AS "Gênero",
+                    pi.raca_cor AS "Raça/cor",
+                    pi.escolaridade AS "Escolaridade",
+                    pi.objetivo AS "Objetivo",
+                    TO_CHAR(pi.criado_em, 'DD/MM/YYYY HH24:MI:SS') AS "Data da inscrição",
+                    CASE WHEN pi.situacao_final = 'concluido' THEN 'Concluído (Certificado Emitido)' WHEN pi.situacao_final = 'nao_concluido' THEN 'Não Concluído' ELSE 'Não emitido' END AS "Situação do certificado"
                 FROM pre_inscricoes pi
                 LEFT JOIN cursos c ON c.id = pi.curso_id
                 LEFT JOIN filtro_curso fc ON fc.id = c.curso_id
@@ -2874,17 +3000,17 @@ async function createApp() {
             const wb = XLSX.utils.book_new();
 
             const wsInscricoes = XLSX.utils.json_to_sheet(rows);
-            XLSX.utils.book_append_sheet(wb, wsInscricoes, "InscriÃ§Ãµes");
+            XLSX.utils.book_append_sheet(wb, wsInscricoes, "Inscrições");
 
-            const rowsConcluidos = rows.filter(r => r["SituaÃ§Ã£o final"] === "concluido");
+            const rowsConcluidos = rows.filter(r => r["Situação final"] === "concluido" || r["Situação do certificado"] === "Concluído (Certificado Emitido)");
             const wsConcluidos = XLSX.utils.json_to_sheet(rowsConcluidos);
-            XLSX.utils.book_append_sheet(wb, wsConcluidos, "ConcluÃ­dos");
+            XLSX.utils.book_append_sheet(wb, wsConcluidos, "Concluídos");
 
-            const rowsSuplentes = rows.filter(r => String(r["ClassificaÃ§Ã£o (titular/suplente)"]).toLowerCase() === "suplente");
+            const rowsSuplentes = rows.filter(r => String(r["Classificação"]).toLowerCase() === "suplente");
             const wsSuplentes = XLSX.utils.json_to_sheet(rowsSuplentes);
             XLSX.utils.book_append_sheet(wb, wsSuplentes, "Suplentes");
 
-            const rowsPcD = rows.filter(r => String(r["DeficiÃªncia"]).toLowerCase() === "sim");
+            const rowsPcD = rows.filter(r => String(r["Possui deficiência"]).toLowerCase() === "sim");
             const wsPcD = XLSX.utils.json_to_sheet(rowsPcD);
             XLSX.utils.book_append_sheet(wb, wsPcD, "PcD");
 

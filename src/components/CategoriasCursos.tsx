@@ -1,213 +1,196 @@
-/**
- * CategoriasCursos — Full-Screen Autoplay Loop Carousel
- */
-
 import React from 'react';
-import { Scissors, Shirt, ChefHat, Monitor, Heart } from 'lucide-react';
+import { 
+  Scissors, 
+  Shirt, 
+  ChefHat, 
+  Monitor, 
+  Zap, 
+  Briefcase, 
+  HardHat 
+} from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 
-/* ─── Data ─── */
-const categorias = [
+export interface CategoryItem {
+  id: number;
+  title: string;
+  subtitle: string;
+  description: string;
+  Icon: React.ElementType;
+  accent: string;
+  mascoteIcon: string;
+  filterName: string;
+}
+
+const categorias: CategoryItem[] = [
   {
     id: 1,
-    label: 'Categoria 01',
-    title: 'BELEZA',
-    subtitle: 'Transforme vidas com as suas mãos',
-    description:
-      'Barbeiro, Cabeleireiro, Manicure e Estética. Aprenda técnicas profissionais e conquiste sua independência.',
-    coursesCount: 12,
-    image: '/imagem/proficao/proficao4.png',
-    Icon: Scissors,
-    accent: '#ff8a5a',
+    title: 'INFORMÁTICA',
+    subtitle: 'Tecnologia & Inovação',
+    description: 'Informática básica, Excel, Manutenção de Computadores e Programação.',
+    Icon: Monitor,
+    accent: '#60a5fa',
+    mascoteIcon: '💻🐢',
+    filterName: 'Informática / Tecnologia',
   },
   {
     id: 2,
-    label: 'Categoria 02',
-    title: 'MODA',
-    subtitle: 'Crie, costure e mostre ao mundo',
-    description:
-      'Confecção, Corte e Costura, Moda Praia. Da teoria à prática, com espaço para toda a sua criatividade.',
-    coursesCount: 8,
-    image: '/imagem/proficao/confeccao.jpg',
-    Icon: Shirt,
-    accent: '#f472b6',
+    title: 'GASTRONOMIA',
+    subtitle: 'Culinária & Confeitaria',
+    description: 'Cozinha básica, Confeitaria, Padaria, Pizzaiolo e Drinks.',
+    Icon: ChefHat,
+    accent: '#fbbf24',
+    mascoteIcon: '👨‍🍳🐢',
+    filterName: 'Gastronomia',
   },
   {
     id: 3,
-    label: 'Categoria 03',
-    title: 'GASTRONOMIA',
-    subtitle: 'O sabor que transforma carreiras',
-    description:
-      'Cozinha básica, Confeitaria, Padaria e Doceria. Do fogão ao empreendimento gastronômico profissional.',
-    coursesCount: 10,
-    image: '/imagem/proficao/proficao.png',
-    Icon: ChefHat,
-    accent: '#fbbf24',
+    title: 'BELEZA',
+    subtitle: 'Estética & Cuidados Pessoais',
+    description: 'Barbeiro, Cabeleireiro, Manicure, Maquiagem e Estética.',
+    Icon: Scissors,
+    accent: '#ff8a5a',
+    mascoteIcon: '✂️🐢',
+    filterName: 'Beleza',
   },
   {
     id: 4,
-    label: 'Categoria 04',
-    title: 'TECNOLOGIA',
-    subtitle: 'O futuro começa com conhecimento',
-    description:
-      'Informática Básica, Manutenção de Computadores, Excel e Internet. Habilidades digitais essenciais para o mercado.',
-    coursesCount: 6,
-    image: '/imagem/proficao/proficao3.png',
-    Icon: Monitor,
-    accent: '#60a5fa',
+    title: 'ELÉTRICA',
+    subtitle: 'Energia & Manutenção',
+    description: 'Instalações elétricas prediais, comandos e manutenção de equipamentos.',
+    Icon: Zap,
+    accent: '#f59e0b',
+    mascoteIcon: '⚡🐢',
+    filterName: 'Eletricista / Energia',
   },
   {
     id: 5,
-    label: 'Categoria 05',
-    title: 'SAÚDE',
-    subtitle: 'Cuidar de vidas é uma vocação',
-    description:
-      'Primeiros Socorros, Cuidador de Idosos, Auxiliar de Farmácia. Formação humanizada para profissões que fazem diferença.',
-    coursesCount: 7,
-    image: '/imagem/proficao/enfermagem.png',
-    Icon: Heart,
+    title: 'COSTURA & MODA',
+    subtitle: 'Modelagem & Confecção',
+    description: 'Corte e costura, confecção de moda praia, ajustes e técnicas de acabamento.',
+    Icon: Shirt,
+    accent: '#f472b6',
+    mascoteIcon: '🧵🐢',
+    filterName: 'Confecção',
+  },
+  {
+    id: 6,
+    title: 'ADMINISTRAÇÃO',
+    subtitle: 'Gestão & Vendas',
+    description: 'Auxiliar administrativo, atendimento ao cliente, vendas e rotinas de escritório.',
+    Icon: Briefcase,
     accent: '#34d399',
+    mascoteIcon: '💼🐢',
+    filterName: 'Administração',
+  },
+  {
+    id: 7,
+    title: 'CONSTRUÇÃO CIVIL',
+    subtitle: 'Obras & Serviços Técnicos',
+    description: 'Alvenaria, pintura predial, hidráulica e reparos residenciais.',
+    Icon: HardHat,
+    accent: '#a78bfa',
+    mascoteIcon: '🧱🐢',
+    filterName: 'Construção Civil / Serviço',
   },
 ];
 
-/* Stable particle positions — computed once, never change across renders */
-const PARTICLES = categorias.map((_, ci) =>
-  Array.from({ length: 15 }, (__, i) => ({
-    top:   `${10 + Math.sin((ci * 100 + i) * 0.731) * 38 + 38}%`,
-    left:  `${10 + Math.cos((ci * 100 + i) * 0.573) * 38 + 38}%`,
-    dur:   `${14 + (i % 5) * 3}s`,
-    delay: `${i * 0.65}s`,
-  }))
-);
+interface CategoriasCursosProps {
+  onSelectCategory?: (category: string) => void;
+}
 
-/* ─── Component ─── */
-export default function CategoriasCursos() {
-  // Configured to transition slide-by-slide every 5 seconds, looping infinitely, with full touch support
-  const [emblaRef] = useEmblaCarousel({ loop: true, dragFree: false }, [
-    Autoplay({ delay: 5000, stopOnInteraction: false, stopOnMouseEnter: false })
+export default function CategoriasCursos({ onSelectCategory }: CategoriasCursosProps) {
+  const [emblaRef] = useEmblaCarousel({ loop: true, align: 'start' }, [
+    Autoplay({ delay: 4000, stopOnInteraction: false })
   ]);
 
-  const handleCTA = () =>
-    document.getElementById('cursos-list-section')?.scrollIntoView({ behavior: 'smooth' });
+  const handleCategoryClick = (categoryName: string) => {
+    if (onSelectCategory) {
+      onSelectCategory(categoryName);
+    }
+    const el = document.getElementById('cursos-list-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
-  // 5 slides of 100vw is perfect for infinite looping without duplication in full viewportwidth
   return (
-    <div id="categorias-section" className="w-full h-[100vh] bg-black overflow-hidden relative" ref={emblaRef}>
-      <div className="flex h-full">
-        {categorias.map((cat, pi) => {
-          const { Icon } = cat;
-          return (
-            <div 
-              key={cat.id} 
-              className="flex-shrink-0 w-screen h-full relative overflow-hidden bg-black select-none"
-            >
-              {/* Background image */}
-              <img
-                src={cat.image}
-                alt={cat.title}
-                className="absolute inset-0 w-full h-full object-cover select-none pointer-events-none"
-                loading="lazy"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/imagem/proficao/proficao.png';
-                }}
-              />
-              <div className="absolute inset-0 bg-black/52" />
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: `radial-gradient(ellipse at 62% 48%, ${cat.accent}18, transparent 58%)`,
-                  mixBlendMode: 'overlay',
-                }}
-              />
+    <section id="categorias-section" className="w-full bg-slate-900 text-white py-14 px-6 md:px-12 relative overflow-hidden">
+      {/* Background glow effects */}
+      <div className="absolute top-1/2 left-0 w-72 h-72 bg-accent/10 rounded-full filter blur-3xl pointer-events-none" />
 
-              {/* Floating particles */}
-              {PARTICLES[pi].map((p, i) => (
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
+          <div>
+            <span className="text-xs font-mono uppercase tracking-[0.25em] text-accent font-bold">
+              Áreas de Qualificação
+            </span>
+            <h2 className="text-2xl md:text-4xl font-display font-extrabold text-white mt-1">
+              Explore os Cursos por Categoria
+            </h2>
+            <p className="text-xs md:text-sm text-slate-400 mt-1 max-w-lg">
+              Clique em uma área profissional para filtrar as turmas disponíveis com o auxílio do nosso mascote Vitoruga!
+            </p>
+          </div>
+        </div>
+
+        {/* Categories Grid (Desktop & Tablet) / Embla Carousel (Mobile) */}
+        <div className="overflow-hidden" ref={emblaRef}>
+          <div className="flex gap-5">
+            {categorias.map((cat) => {
+              const { Icon } = cat;
+              return (
                 <div
-                  key={i}
-                  className="absolute w-1 h-1 bg-white/30 rounded-full blur-[1px] pointer-events-none"
-                  style={{
-                    top: p.top, left: p.left,
-                    animation: `catFloat ${p.dur} ease-in-out infinite`,
-                    animationDelay: p.delay,
-                  }}
-                />
-              ))}
+                  key={cat.id}
+                  onClick={() => handleCategoryClick(cat.filterName)}
+                  className="flex-none w-[260px] sm:w-[280px] bg-slate-800/80 hover:bg-slate-800 border border-white/10 hover:border-accent/50 rounded-3xl p-6 transition-all duration-300 cursor-pointer flex flex-col justify-between group hover:-translate-y-1.5 shadow-lg relative overflow-hidden"
+                >
+                  {/* Category Accent Pill */}
+                  <div
+                    className="absolute -top-12 -right-12 w-28 h-28 rounded-full filter blur-xl opacity-30 pointer-events-none transition-opacity group-hover:opacity-60"
+                    style={{ backgroundColor: cat.accent }}
+                  />
 
-              {/* Content — single full-width column */}
-              <div className="relative z-20 h-full max-w-7xl mx-auto w-full px-8 md:px-20 flex items-center">
-                <div className="flex flex-col justify-center max-w-3xl text-left">
-                  {/* Category label */}
-                  <div className="flex items-center gap-3 mb-6">
-                    <Icon className="w-5 h-5" style={{ color: cat.accent }} />
-                    <span className="text-sm font-mono tracking-[0.3em] uppercase text-white/50">
-                      {cat.label}
-                    </span>
+                  {/* Top Bar: Icon + Vitoruga Mascot styling badge */}
+                  <div className="flex items-center justify-between mb-6 z-10">
+                    <div
+                      className="p-3.5 rounded-2xl text-white shadow-md group-hover:scale-110 transition-transform"
+                      style={{ backgroundColor: cat.accent }}
+                    >
+                      <Icon className="w-6 h-6" />
+                    </div>
+
+                    {/* Mascote Vitoruga Badge Styled for Category */}
+                    <div className="px-2.5 py-1 rounded-full bg-white/10 border border-white/10 flex items-center gap-1.5 text-xs font-bold text-white/90 group-hover:bg-accent/20 transition-colors">
+                      <span className="text-base">{cat.mascoteIcon}</span>
+                      <span className="text-[10px] font-mono uppercase tracking-wider text-slate-300">Vitoruga</span>
+                    </div>
                   </div>
 
-                  {/* Subtitle */}
-                  <p className="font-sans italic text-lg text-white/55 mb-4">
-                    {cat.subtitle}
-                  </p>
+                  {/* Text Content */}
+                  <div className="z-10 flex-1 flex flex-col justify-end">
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400 block mb-1">
+                      {cat.subtitle}
+                    </span>
+                    <h3 className="text-lg font-display font-extrabold text-white leading-tight mb-2 group-hover:text-accent transition-colors">
+                      {cat.title}
+                    </h3>
+                    <p className="text-xs text-slate-300 leading-relaxed line-clamp-2">
+                      {cat.description}
+                    </p>
+                  </div>
 
-                  {/* Giant title */}
-                  <h2
-                    className="font-display font-black leading-[0.72] tracking-tighter text-white uppercase"
-                    style={{
-                      fontSize: 'clamp(4rem, 11vw, 15rem)',
-                      textShadow: '0 20px 80px rgba(0,0,0,0.8)',
-                    }}
-                  >
-                    {cat.title}
-                  </h2>
-
-                  {/* Description */}
-                  <p
-                    className="border-l-2 pl-6 text-white/75 max-w-sm text-base leading-relaxed mt-8"
-                    style={{ borderColor: 'rgba(255,255,255,0.2)' }}
-                  >
-                    {cat.description}
-                  </p>
-
-                  {/* CTA button */}
-                  <div className="mt-10">
-                    <button
-                      onClick={handleCTA}
-                      className="group relative px-10 py-5 rounded-full font-semibold tracking-widest text-sm uppercase text-white cursor-pointer overflow-hidden"
-                      style={{
-                        background: 'rgba(255,255,255,0.1)',
-                        backdropFilter: 'blur(12px)',
-                        border: '1px solid rgba(255,255,255,0.18)',
-                      }}
-                      onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.04)')}
-                      onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
-                    >
-                      <span className="relative z-10 group-hover:text-[#004564] transition-colors duration-300">
-                        Ver cursos desta categoria
-                      </span>
-                      <span className="absolute inset-0 bg-white origin-bottom scale-y-0 group-hover:scale-y-100 rounded-full transition-transform duration-500" />
-                    </button>
+                  {/* Footer Action */}
+                  <div className="mt-5 pt-4 border-t border-white/10 flex items-center justify-between z-10 text-xs font-bold text-slate-400 group-hover:text-accent transition-colors">
+                    <span>Ver cursos</span>
+                    <span>→</span>
                   </div>
                 </div>
-              </div>
-
-              {/* Bottom panel label */}
-              <div className="absolute bottom-8 left-20 z-30 select-none pointer-events-none hidden md:block">
-                <span className="font-mono text-[10px] tracking-[0.4em] text-white/20 uppercase">
-                  {cat.label}
-                </span>
-              </div>
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+        </div>
       </div>
-
-      <style>{`
-        @keyframes catFloat {
-          0%,100% { transform:translateY(0)     scale(1);    opacity:.28; }
-          50%      { transform:translateY(-18px) scale(1.22); opacity:.58; }
-        }
-      `}</style>
-    </div>
+    </section>
   );
 }

@@ -71,6 +71,11 @@ export default function PreInscricao() {
   const [objetivo1, setObjetivo1] = useState<string | null>(null);
   const [aguardandoObjetivo2, setAguardandoObjetivo2] = useState(false);
 
+  // Mandatory Legal & Privacy Agreements State
+  const [aceitouTermosCompromisso, setAceitouTermosCompromisso] = useState(false);
+  const [aceitouAvisoLgpd, setAceitouAvisoLgpd] = useState(false);
+  const [mostrarAvisoLgpdCompleto, setMostrarAvisoLgpdCompleto] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -292,12 +297,12 @@ export default function PreInscricao() {
         chave: 'tipo_necessidade_especial'
       });
       list.push({
-        pergunta: 'Você necessita de alguma <strong>adaptação</strong> ou atendimento especializado para realizar as aulas? Se sim, descreva.',
+        pergunta: 'Você possui alguma <strong>necessidade de acessibilidade</strong> para as aulas? Se sim, descreva (ou clique em Pular).',
         tipo: 'texto',
         chave: 'deficiencia_adaptacoes'
       });
       list.push({
-        pergunta: 'Necessita de algum <strong>recurso assistivo</strong>? Se sim, descreva.',
+        pergunta: 'Você possui alguma <strong>necessidade de acompanhante</strong> ou outra observação importante? Se sim, descreva (ou clique em Pular).',
         tipo: 'texto',
         chave: 'deficiencia_recursos'
       });
@@ -351,12 +356,11 @@ export default function PreInscricao() {
       chave: 'cpf_documento',
     });
     list.push({
-      pergunta: 'Envie uma foto legível do seu <strong>RG (Frente e Verso)</strong>.',
+      pergunta: 'Envie uma foto legível do seu <strong>RG (Frente ou Verso)</strong>.',
       tipo: 'arquivo',
       chave: 'rg_documento',
     });
 
-    // 17. Autorização LGPD
     list.push({
       pergunta: 'Você autoriza a divulgação do seu nome em listas públicas de classificados e suplentes do VixCursos, conforme a LGPD? (Caso não autorize, seu nome aparecerá parcialmente oculto nas listas públicas).',
       tipo: 'botoes',
@@ -440,7 +444,10 @@ export default function PreInscricao() {
           inscritos: dadosVagas.inscritos,
           totais: dadosVagas.vagas_totais
         });
-        setCursoDisponivel(dadosVagas.disponivel);
+        // Permitir inscrição como suplente se o curso estiver esgotado ou ativo.
+        // Bloquear apenas se estiver 'encerrado', 'oculto' ou 'rascunho'.
+        const isClosed = ['encerrado', 'oculto', 'rascunho'].includes(dadosVagas.status);
+        setCursoDisponivel(!isClosed);
         setVagasVerificadas(true);
 
         // Fetch general configs for enrollment limit
@@ -564,20 +571,26 @@ export default function PreInscricao() {
       .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
   };
 
-  // CEP Lookup ViaCEP
+  // CEP Lookup ViaCEP com Validação Estrita de Elegibilidade de Vitória
   const buscarCep = async (cepValue: string) => {
     const clean = cepValue.replace(/\D/g, '');
     if (clean.length !== 8) return false;
+
+    // Faixa genérica de CEPs de Vitória: 29000-000 a 29099-999
+    const numCep = parseInt(clean, 10);
+    const dentroFaixaVitoria = numCep >= 29000000 && numCep <= 29099999;
 
     try {
       const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`);
       const data = await res.json();
       
       if (!data.erro) {
-        if (data.localidade.trim().toLowerCase() !== 'vitória' || data.uf.trim().toUpperCase() !== 'ES') {
+        const ehVitoria = (data.localidade && data.localidade.trim().toLowerCase() === 'vitória') && (data.uf && data.uf.trim().toUpperCase() === 'ES');
+        
+        if (!ehVitoria && !dentroFaixaVitoria) {
           setEnderecoValido(false);
           await addBotMessage(
-            `❌ <strong>Acesso bloqueado:</strong> Os cursos do VixCursos são destinados exclusivamente a moradores de Vitória - ES. Seu endereço (${data.localidade} - ${data.uf}) não está dentro do município.`,
+            `⛔ <strong>BLOQUEIO DE ELEGIBILIDADE:</strong> Conforme as regras da Prefeitura de Vitória, os cursos gratuitos são restritos a moradores de Vitória ou trabalhadores com endereço profissional na cidade.<br/><br/>O CEP <strong>${cepValue}</strong> refere-se ao município de <strong>${data.localidade || 'fora de Vitória'} - ${data.uf || 'ES'}</strong>. O formulário foi bloqueado para prosseguimento.`,
             600
           );
           return false;
@@ -593,15 +606,25 @@ export default function PreInscricao() {
         }));
         
         await addBotMessage(
-          `Achei! Rua <strong>${data.logradouro}</strong>, Bairro <strong>${data.bairro}</strong>. Endereço validado para Vitória/ES! ✅`,
+          `Endereço localizado com sucesso: <strong>${data.logradouro}</strong>, Bairro <strong>${data.bairro}</strong> — Vitória/ES! ✅`,
           800
         );
         return true;
       } else {
-        await addBotMessage('❌ CEP não encontrado. Por favor, verifique o CEP informado.', 600);
+        if (!dentroFaixaVitoria) {
+          setEnderecoValido(false);
+          await addBotMessage('⛔ <strong>BLOQUEIO DE ELEGIBILIDADE:</strong> CEP não encontrado e fora da faixa do município de Vitória (29000-000 a 29099-999).', 600);
+          return false;
+        }
+        setEnderecoValido(true);
+        return true;
       }
     } catch (e) {
       console.error('Erro na busca de CEP', e);
+      if (dentroFaixaVitoria) {
+        setEnderecoValido(true);
+        return true;
+      }
       await addBotMessage('❌ Falha na consulta de CEP. Verifique sua conexão e tente novamente.', 600);
     }
     return false;
@@ -659,7 +682,8 @@ export default function PreInscricao() {
         'nome', 'email', 'telefone', 'telefone_alternativo', 'rg', 'mora_vitoria', 
         'escolaridade', 'possui_necessidade_especial', 
         'tipo_necessidade_especial', 'deficiencia_adaptacoes', 'deficiencia_recursos',
-        'cep', 'numero', 'rua', 'bairro', 'municipio', 'data_nascimento', 'genero', 'raca_cor'
+        'cep', 'numero', 'rua', 'bairro', 'municipio', 'data_nascimento', 'genero', 'raca_cor',
+        'cpf_documento', 'rg_documento'
       ].forEach((campo) => {
         if (dados[campo] !== undefined && dados[campo] !== null) {
           novo[campo] = dados[campo];
@@ -683,15 +707,27 @@ export default function PreInscricao() {
 
       if (confirmou) {
         aplicarDadosAutopreenchimento(dadosSalvos);
-        await addBotMessage(
-          'Perfeito! Vou reaproveitar os dados de cadastro e histórico e avançar direto para as fotos dos documentos. 📂',
-          800
-        );
-        // Skip directly to document collection (cpf_documento)
-        const indexDoc = roteiro.findIndex((x) => x.chave === 'cpf_documento');
-        setEtapaAtual(indexDoc);
+        
+        // Se já temos os documentos no perfil do cidadão, pula direto para a LGPD
+        if (dadosSalvos.cpf_documento && dadosSalvos.rg_documento) {
+          await addBotMessage(
+            'Perfeito! Reativei seu cadastro, inclusive as fotos dos seus documentos. Vamos direto para a confirmação final! 📂',
+            800
+          );
+          const indexLgpd = roteiro.findIndex((x) => x.chave === 'autoriza_lgpd');
+          setEtapaAtual(indexLgpd);
+        } else {
+          await addBotMessage(
+            'Perfeito! Vou reaproveitar os dados de cadastro e histórico. Só preciso das fotos dos seus documentos para validar. 📂',
+            800
+          );
+          // Pula direto para a coleta de documentos
+          const indexDoc = roteiro.findIndex((x) => x.chave === 'cpf_documento');
+          setEtapaAtual(indexDoc);
+        }
         return;
       } else {
+        aplicarDadosAutopreenchimento(dadosSalvos);
         await addBotMessage(
           'Entendido. Vamos preencher o restante passo a passo e você poderá alterar o que quiser. ✏️',
           800
@@ -798,17 +834,32 @@ export default function PreInscricao() {
         setIsTyping(false);
         if (response.ok) {
           const resJson = await response.json();
-          setInscricoesAtivas(resJson.historico?.length || 0);
           
           if (resJson.found) {
             setDadosSalvos(resJson.data);
             setHistoricoCpf(resJson.historico || []);
             
+            const activas = resJson.historico?.filter((h: any) => 
+              !['cancelado', 'desistencia', 'nao_concluido', 'desistente', 'nao_compareceu'].includes(h.situacao_final) && 
+              !['cancelado', 'desistencia', 'nao_concluido', 'desistente', 'nao_compareceu'].includes(h.status)
+            ).length || 0;
+            setInscricoesAtivas(activas);
+            
             let histText = '<strong>Histórico de Inscrições:</strong><br/>';
             resJson.historico.forEach((h: any) => {
               const matriculaStatus = h.matricula_confirmada === 1 ? 'Confirmada' : 'Pendente';
               const classifStatus = h.status_inscricao === 'suplente' ? 'Suplente' : 'Titular';
-              histText += `• <strong>${h.curso_nome}</strong> (${h.local_nome}) — ${classifStatus} — Matrícula: ${matriculaStatus}<br/>`;
+              let situacao = '';
+              if (h.situacao_final === 'concluido') {
+                situacao = ' — Concluído ✅';
+              } else if (h.situacao_final === 'nao_concluido') {
+                situacao = ' — Não Concluído ❌';
+              } else if (h.situacao_final === 'certificado_emitido' || h.situacao_final === 'certificado emitido') {
+                situacao = ' — Certificado Emitido 📜';
+              } else if (h.situacao_final === 'desistente' || h.situacao_final === 'não compareceu') {
+                situacao = ` — ${h.situacao_final}`;
+              }
+              histText += `• <strong>${h.curso_nome}</strong> (${h.local_nome}) — ${classifStatus}${situacao}<br/>`;
             });
 
             await addBotMessage(
@@ -817,6 +868,8 @@ export default function PreInscricao() {
             );
             setAguardandoEscolhaCpf(true);
             return;
+          } else {
+            setInscricoesAtivas(0);
           }
         }
       } catch (err) {
@@ -914,8 +967,14 @@ export default function PreInscricao() {
   // Trigger bot reaction on step update
   useEffect(() => {
     if (etapaAtual > 0 && etapaAtual < roteiro.length) {
+      const q = roteiro[etapaAtual];
+      if (q.tipo === 'texto') {
+        setInputValue(respostasUsuario[q.chave] || '');
+      } else {
+        setInputValue('');
+      }
+
       const askQuestion = async () => {
-        const q = roteiro[etapaAtual];
         const rawText = q.pergunta.replace('{CURSO_NOME}', cursoNome);
         
         // Custom warning message on 2nd and 3rd active enrollments
@@ -1081,7 +1140,30 @@ export default function PreInscricao() {
     );
   }
 
-  // Course sold out view
+  // CEP blocked view
+  if (enderecoValido === false) {
+    return (
+      <div className="min-h-screen bg-[linear-gradient(120deg,rgba(4,8,22,0.92),rgba(7,17,31,0.85),rgba(11,23,48,0.9)),url('https://images.unsplash.com/photo-1606761568499-6d2451b23c66?auto=format&fit=crop&q=80&w=2000')] bg-center bg-cover bg-no-repeat flex items-center justify-center p-4">
+        <div className="w-full max-w-md glass-dark rounded-3xl p-8 border border-danger/20 text-center shadow-2xl animate-float">
+          <div className="w-16 h-16 bg-danger/10 border border-danger/20 rounded-2xl flex items-center justify-center mx-auto mb-6 text-danger">
+            <X className="w-8 h-8" />
+          </div>
+          <h2 className="font-display font-bold text-2xl text-white mb-2">Cadastro Bloqueado</h2>
+          <p className="text-white/70 mb-6 leading-relaxed">
+            Este curso é destinado exclusivamente a moradores de Vitória. No momento, não será possível continuar sua inscrição.
+          </p>
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-full font-bold uppercase text-xs tracking-wider transition-all hover:scale-105 hover:bg-primary/95 shadow-lg shadow-primary/20 cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" /> Voltar para Cursos
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Course sold out/closed view
   if (!cursoDisponivel && vagasVerificadas) {
     return (
       <div className="min-h-screen bg-[linear-gradient(120deg,rgba(4,8,22,0.92),rgba(7,17,31,0.85),rgba(11,23,48,0.9)),url('https://images.unsplash.com/photo-1606761568499-6d2451b23c66?auto=format&fit=crop&q=80&w=2000')] bg-center bg-cover bg-no-repeat flex items-center justify-center p-4">
@@ -1089,20 +1171,10 @@ export default function PreInscricao() {
           <div className="w-16 h-16 bg-danger/10 border border-danger/20 rounded-2xl flex items-center justify-center mx-auto mb-6 text-danger">
             <X className="w-8 h-8" />
           </div>
-          <h2 className="font-display font-bold text-2xl text-white mb-2">Turma Esgotada</h2>
+          <h2 className="font-display font-bold text-2xl text-white mb-2">Inscrições Encerradas</h2>
           <p className="text-white/60 mb-6 leading-relaxed">
-            Infelizmente, as vagas disponíveis para o curso <strong>{cursoNome}</strong> foram preenchidas.
+            As inscrições para o curso <strong>{cursoNome}</strong> estão encerradas ou temporariamente indisponíveis.
           </p>
-          {vagasInfo && (
-            <div className="bg-white/5 border border-white/10 rounded-xl p-4 mb-6">
-              <p className="text-white/70 text-sm font-mono">
-                Total de vagas: <span className="text-white font-bold">{vagasInfo.totais}</span>
-              </p>
-              <p className="text-white/70 text-sm font-mono mt-1">
-                Matrículas realizadas: <span className="text-danger font-bold">{vagasInfo.inscritos}</span>
-              </p>
-            </div>
-          )}
           <Link
             to="/"
             className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-full font-bold uppercase text-xs tracking-wider transition-all hover:scale-105 hover:bg-primary/95 shadow-lg shadow-primary/20 cursor-pointer"
@@ -1253,6 +1325,99 @@ export default function PreInscricao() {
 
         {/* Form Controls / Inputs */}
         <footer className="bg-black/20 border-t border-white/5 p-4 flex flex-col gap-3">
+
+          {/* CARD OBRIGATÓRIO DE TERMOS E LGPD (Requisitos 11 e 12) */}
+          {roteiro[etapaAtual]?.chave === 'confirmacao_final' && !dadosSalvosExito && (
+            <div className="bg-slate-900 border border-white/15 rounded-2xl p-5 mb-2 flex flex-col gap-4 text-left shadow-xl">
+              
+              {/* TERMO DE COMPROMISSO (Item 11) */}
+              <div className="bg-slate-950/80 p-4 rounded-xl border border-white/10">
+                <h4 className="font-bold text-accent text-xs uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <FileText className="w-4 h-4 text-accent" /> Termo de Compromisso Oficial
+                </h4>
+                <p className="text-white/80 text-xs leading-relaxed mb-3">
+                  Estou ciente que:<br/>
+                  1. Ao fazer a pré-inscrição, confirmo que tenho os Pré-Requisitos necessários para frequentar as aulas do curso.<br/>
+                  2. Esta operação NÃO me garante vaga no curso, exceto após a inscrição, na data, hora e local citados no comprovante de pré-inscrição.<br/>
+                  3. Não confirmando a minha inscrição, perco automaticamente a vaga pré-reservada.
+                </p>
+                <label className="flex items-start gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={aceitouTermosCompromisso}
+                    onChange={(e) => setAceitouTermosCompromisso(e.target.checked)}
+                    className="w-4 h-4 rounded text-accent accent-accent mt-0.5"
+                  />
+                  <span className="text-xs font-bold text-white leading-tight">
+                    Li e concordo com os termos de compromisso, e estou ciente de todas as observações sobre o curso. <span className="text-accent">* (obrigatório)</span>
+                  </span>
+                </label>
+              </div>
+
+              {/* AVISO DE PRIVACIDADE E LGPD (Item 12) */}
+              <div className="bg-slate-950/80 p-4 rounded-xl border border-white/10">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-bold text-emerald-400 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                    <Check className="w-4 h-4 text-emerald-400" /> Aviso de Privacidade e Proteção de Dados (LGPD)
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => setMostrarAvisoLgpdCompleto(!mostrarAvisoLgpdCompleto)}
+                    className="text-[11px] text-accent underline cursor-pointer font-semibold"
+                  >
+                    {mostrarAvisoLgpdCompleto ? 'Ocultar Detalhes' : 'Leia o aviso completo'}
+                  </button>
+                </div>
+
+                <div className="text-white/80 text-xs leading-relaxed mb-3">
+                  {mostrarAvisoLgpdCompleto ? (
+                    <div className="space-y-2">
+                      <p>
+                        A Prefeitura de Vitória informa que a coleta de seus dados pessoais é necessária para a inscrição e execução dos cursos públicos ofertados.
+                      </p>
+                      <p>Ao preencher este formulário, você declara estar ciente de que seus dados serão tratados para:</p>
+                      <ul className="list-disc pl-4 space-y-1">
+                        <li><strong>Inscrição e Matrícula:</strong> efetivar sua participação no curso escolhido;</li>
+                        <li><strong>Compartilhamento Legítimo:</strong> os dados poderão ser compartilhados com outras secretarias municipais e órgãos parceiros realizadores dos cursos (como SENAI e SEBRAE), estritamente para emissão de certificados, controle de frequência e gestão das turmas;</li>
+                        <li><strong>Estatísticas Públicas:</strong> monitorar o perfil dos alunos e planejar novas políticas públicas (dados anonimizados).</li>
+                      </ul>
+                      <p>
+                        O tratamento dos dados segue rigorosamente a Lei Geral de Proteção de Dados (LGPD). Garantimos que suas informações não serão utilizadas para fins comerciais. Para dúvidas, contate o Encarregado pelo e-mail: <strong className="text-accent">dpo@vitoria.es.gov.br</strong>.
+                      </p>
+                    </div>
+                  ) : (
+                    <p>
+                      A Prefeitura de Vitória coleta seus dados para efetivar a matrícula, gerar estatísticas anônimas e compartilhar estritamente com os parceiros do curso para emissão de certificados. Garantimos o sigilo de suas informações. Encarregado LGPD: <strong className="text-accent">dpo@vitoria.es.gov.br</strong>.
+                    </p>
+                  )}
+                </div>
+
+                <label className="flex items-start gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={aceitouAvisoLgpd}
+                    onChange={(e) => setAceitouAvisoLgpd(e.target.checked)}
+                    className="w-4 h-4 rounded text-accent accent-accent mt-0.5"
+                  />
+                  <span className="text-xs font-bold text-white leading-tight">
+                    Li e estou ciente de como meus dados serão utilizados conforme a LGPD. <span className="text-accent">* (obrigatório)</span>
+                  </span>
+                </label>
+              </div>
+
+              {/* Botões de envio condicionados ao aceite das duas checkboxes */}
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={!aceitouTermosCompromisso || !aceitouAvisoLgpd}
+                  onClick={() => prosseguirEtapa('sim', 'Sim, quero finalizar!')}
+                  className="w-full sm:w-auto px-8 py-3.5 bg-accent hover:bg-accent/90 disabled:opacity-40 disabled:cursor-not-allowed text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all cursor-pointer"
+                >
+                  Finalizar Pré-Inscrição
+                </button>
+              </div>
+            </div>
+          )}
           
           {/* Options mode (Buttons) */}
           {roteiro[etapaAtual]?.tipo === 'botoes' && !aguardandoConfirmacaoFoto && !aguardandoEscolhaCpf && !aguardandoObjetivo2 && !dadosSalvosExito && (

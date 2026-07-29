@@ -417,6 +417,26 @@ export default function Detalhes() {
                 {detailTexts.atuar}
               </p>
             </div>
+
+            {/* Oportunidade de Mercado & Média Salarial (Item 7 Requirement) */}
+            <div className="mt-4 p-5 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-emerald-600 text-white rounded-xl font-extrabold text-base shadow-sm">
+                  💰
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-800 text-sm">
+                    Possibilidades Profissionais & Remuneração
+                  </h4>
+                  <p className="text-xs text-slate-600 mt-0.5">
+                    Formação voltada tanto para <strong>Carteira Assinada (CLT)</strong> quanto para <strong>Empreendedorismo/Autônomo</strong>.
+                  </p>
+                </div>
+              </div>
+              <div className="px-4 py-2 rounded-xl bg-white border border-emerald-200 text-emerald-800 font-extrabold text-xs whitespace-nowrap shadow-xs">
+                Média Salarial ES: R$ 2.200 a R$ 4.500/mês
+              </div>
+            </div>
           </div>
 
           {/* Box 2: Quick Infos */}

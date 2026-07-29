@@ -232,9 +232,20 @@ async function abrirListaAlunos(idCurso) {
                     ? `<span class="badge-necessidade sim"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i> ${escapeHtml(tipoNecessidadeEspecial)}</span>`
                     : '<span class="badge-necessidade nao"><i class="bi bi-check-circle-fill" aria-hidden="true"></i> Não</span>';
 
-                const botaoConfirmacao = matriculaConfirmada
-                    ? `<span class="btn-acao btn-confirmado"><i class="bi bi-check-circle-fill" aria-hidden="true"></i> Confirmada</span>`
-                    : `<button onclick="confirmarMatricula(${aluno.id}, '${nomeEscapadoJs}')" class="btn-acao btn-confirmar"><i class="bi bi-check-circle-fill" aria-hidden="true"></i> Confirmar Matrícula</button>`;
+                const statusSelecionado = String(aluno.status || '').toLowerCase();
+                const selectStatus = `
+                    <select onchange="atualizarStatusAluno(${aluno.id}, this.value, '${nomeEscapadoJs}')" class="admin-status-select" style="background:#1e293b; color:white; border:1px solid #334155; padding:6px 10px; border-radius:6px; font-size:0.75rem; font-weight:600; outline:none; cursor:pointer;">
+                        <option value="inscrito" ${statusSelecionado === 'inscrito' ? 'selected' : ''}>Pré-inscrito</option>
+                        <option value="titular" ${statusSelecionado === 'titular' ? 'selected' : ''}>Classificado (Titular)</option>
+                        <option value="suplente" ${statusSelecionado === 'suplente' ? 'selected' : ''}>Suplente</option>
+                        <option value="matriculado" ${statusSelecionado === 'matriculado' ? 'selected' : ''}>Matriculado</option>
+                        <option value="desistente" ${['desistente', 'desistencia'].includes(statusSelecionado) ? 'selected' : ''}>Desistente</option>
+                        <option value="não compareceu" ${['não compareceu', 'nao_compareceu'].includes(statusSelecionado) ? 'selected' : ''}>Não Compareceu</option>
+                        <option value="concluído" ${['concluído', 'concluido'].includes(statusSelecionado) ? 'selected' : ''}>Concluído</option>
+                        <option value="não concluído" ${['não concluído', 'nao_concluido'].includes(statusSelecionado) ? 'selected' : ''}>Não Concluído</option>
+                        <option value="certificado emitido" ${['certificado emitido', 'certificado_emitido'].includes(statusSelecionado) ? 'selected' : ''}>Certificado Emitido</option>
+                    </select>
+                `;
 
                 tbody.innerHTML += `
                     <tr class="${possuiNecessidadeEspecial ? 'aluno-necessidade' : ''}">
@@ -245,7 +256,7 @@ async function abrirListaAlunos(idCurso) {
                         <td>${badgeNecessidade}</td>
                         <td>
                             <div class="acoes-container">
-                                ${botaoConfirmacao}
+                                ${selectStatus}
                                 <div class="acoes-menu">
                                     <button class="acoes-toggle" onclick="toggleAcoesMenu(event)" title="Mais ações"><i class="bi bi-three-dots-vertical" aria-hidden="true"></i></button>
                                     <div class="acoes-dropdown" data-aluno-id="${aluno.id}">
@@ -791,6 +802,39 @@ async function confirmarMatricula(idAluno, nomeAluno) {
         abrirListaAlunos(cursoAbertoAtual.id);
     } catch (err) {
         mostrarPopup('Falha na comunicação com o servidor.', 'error');
+    }
+}
+
+async function atualizarStatusAluno(idAluno, novoStatus, nomeAluno) {
+    const ok = await confirmarPopup({
+        titulo: 'Alterar Status',
+        mensagem: `Deseja alterar o status de ${nomeAluno} para "${novoStatus}"?`,
+        textoConfirmar: 'Sim, alterar',
+        textoCancelar: 'Cancelar',
+        tipo: 'info'
+    });
+    if (!ok) {
+        abrirListaAlunos(cursoAbertoAtual.id);
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/inscricoes/${idAluno}/status-final`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: novoStatus })
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+            mostrarPopup(data.error || 'Erro ao alterar status.', 'error');
+        } else {
+            mostrarPopup('Status alterado com sucesso!', 'success');
+        }
+        abrirListaAlunos(cursoAbertoAtual.id);
+    } catch (err) {
+        mostrarPopup('Falha na comunicação com o servidor.', 'error');
+        abrirListaAlunos(cursoAbertoAtual.id);
     }
 }
 

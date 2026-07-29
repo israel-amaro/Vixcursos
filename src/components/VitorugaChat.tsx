@@ -277,7 +277,7 @@ export default function VitorugaChat() {
         await new Promise((r) => setTimeout(r, 1000));
         setIsTyping(false);
         
-        const welcomeText = "Olá! 🐢 Eu sou o **Vitoruga**, o assistente virtual da VIX Cursos. Estou aqui para tirar suas dúvidas!\n\nVocê também pode fazer o nosso **Quiz Vocacional** para descobrir o curso ideal para o seu perfil.\n\nPergunte-me sobre:\n• **'vagas'**\n• **'lista de cursos'**\n• **'como me inscrever'**";
+        const welcomeText = "Olá! 🐢 Eu sou o **Vitoruga**, o assistente virtual da VIX Cursos. Precisa de ajuda para encontrar um curso?\n\nVocê também pode fazer o nosso **Quiz Vocacional** para descobrir o curso ideal para o seu perfil.\n\nPergunte-me sobre:\n• **'vagas'**\n• **'lista de cursos'**\n• **'como me inscrever'**";
         
         setMessages([
           {
@@ -1026,7 +1026,7 @@ export default function VitorugaChat() {
               exit={{ opacity: 0, scale: 0.95 }}
               className="bg-black/35 backdrop-blur-md border border-white/10 text-white rounded-2xl py-2.5 px-4 shadow-2xl mb-3 ml-2 max-w-[200px] text-xs font-semibold relative text-left"
             >
-              <span>Dúvidas sobre as vagas? Fale comigo! 🐢</span>
+              <span>Precisa de ajuda para encontrar um curso? 🐢</span>
               <button 
                 onClick={(e) => {
                   e.stopPropagation();

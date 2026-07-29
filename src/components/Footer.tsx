@@ -1,8 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Phone, Mail, MapPin, Clock } from 'lucide-react';
+import { Phone, Mail, MapPin, Clock, MessageSquareHeart } from 'lucide-react';
 
-export default function Footer() {
+interface FooterProps {
+  onOpenSurvey?: () => void;
+}
+
+export default function Footer({ onOpenSurvey }: FooterProps) {
   const handleNavClick = (sectionId: string) => {
     const el = document.getElementById(sectionId);
     if (el) {
@@ -31,6 +35,17 @@ export default function Footer() {
               Plataforma oficial de cursos profissionalizantes gratuitos da Prefeitura Municipal de Vitória, Espírito Santo.
             </p>
             
+            {/* Pesquisa de Satisfação Banner Trigger */}
+            {onOpenSurvey && (
+              <button
+                onClick={onOpenSurvey}
+                className="mt-6 px-4 py-2.5 bg-accent/20 hover:bg-accent/30 border border-accent/40 rounded-xl text-accent text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-sm group"
+              >
+                <MessageSquareHeart className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                <span>Responder Pesquisa de Satisfação</span>
+              </button>
+            )}
+
             {/* Social Icons */}
             <div className="flex gap-4 mt-6">
               <a
@@ -84,14 +99,14 @@ export default function Footer() {
               >
                 Categorias
               </button>
-              <button
-                onClick={() => {
-                  window.dispatchEvent(new CustomEvent('abrir-chat-quiz'));
-                }}
-                className="text-left text-white/50 hover:text-white transition-colors cursor-pointer bg-transparent border-none outline-none block"
-              >
-                Quiz Vocacional
-              </button>
+              {onOpenSurvey && (
+                <button
+                  onClick={onOpenSurvey}
+                  className="text-left text-white/50 hover:text-white transition-colors cursor-pointer"
+                >
+                  Pesquisa de Satisfação
+                </button>
+              )}
               <Link to="/sobre" className="text-white/50 hover:text-white transition-colors">
                 Sobre o VIX Cursos
               </Link>
