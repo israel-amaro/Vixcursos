@@ -78,19 +78,19 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
             <img
               src={imgUrl}
               alt={`Profissão ${index + 1}`}
-              className="w-full h-full object-cover object-center filter brightness-[0.45] contrast-[1.1]"
+              className="w-full h-full object-cover object-center filter brightness-[0.88] saturate-[1.10] contrast-[1.05]"
             />
           </div>
         ))}
 
-        {/* Sleek Radial & Gradient Overlays for High Legibility */}
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/75 to-slate-950/85" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-primary-dark/50 via-transparent to-slate-950/90" />
-        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-accent/15 rounded-full filter blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/20 rounded-full filter blur-[100px] pointer-events-none" />
+        {/* Softened Overlays for Vibrant Images with High Readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/35 to-black/55" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-black/40 via-transparent to-black/50" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-accent/10 rounded-full filter blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/15 rounded-full filter blur-[100px] pointer-events-none" />
         
         {/* Subtle SVG Grid Pattern */}
-        <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:24px_24px]" />
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:24px_24px]" />
       </div>
 
       {/* Floating Navbar */}
