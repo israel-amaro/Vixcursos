@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HelpCircle, X, Check, ArrowRight, Sparkles, RefreshCw } from 'lucide-react';
+import { HelpCircle, X, Check, ArrowRight, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface CourseQuizModalProps {
@@ -61,7 +61,7 @@ export default function CourseQuizModal({ isOpen, onClose, onSelectCategory }: C
           <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-2xl bg-accent/15 text-accent flex items-center justify-center font-bold">
-                <Sparkles className="w-5 h-5 text-accent" />
+                <HelpCircle className="w-5 h-5 text-accent" />
               </div>
               <div>
                 <h3 className="font-display font-extrabold text-slate-800 text-lg">

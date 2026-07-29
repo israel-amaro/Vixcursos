@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CalendarCheck, BookOpen, GraduationCap, ExternalLink, Search, Sparkles, MapPinCheck } from 'lucide-react';
+import { CalendarCheck, BookOpen, GraduationCap, ExternalLink, Search, HelpCircle, MapPinCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Header from './Header';
 
@@ -149,7 +149,7 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
                 onClick={onOpenQuiz}
                 className="px-6 py-4 glass hover:bg-white/15 text-white/90 rounded-2xl font-bold text-xs tracking-wider uppercase hover:scale-105 transition-all duration-300 w-full sm:w-auto text-center cursor-pointer flex items-center justify-center gap-2 border border-white/15 backdrop-blur-md"
               >
-                <Sparkles className="w-4 h-4 text-accent" />
+                <HelpCircle className="w-4 h-4 text-accent" />
                 Não sabe qual escolher? (Quiz)
               </button>
             )}

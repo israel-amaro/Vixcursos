@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronDown, Search, Sparkles } from 'lucide-react';
+import { ChevronDown, Search, SlidersHorizontal } from 'lucide-react';
 
 export interface FilterState {
   idade: string;
@@ -146,8 +146,8 @@ export default function FiltroBusca({ onFilterChange }: FiltroBuscaProps) {
         {/* BUSCA INTELIGENTE POR IA (Termos Coloquiais) */}
         <div className="mb-8">
           <label htmlFor="busca-inteligente" className="text-white font-bold text-xs tracking-wider uppercase mb-2 flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-accent" />
-            Busca Inteligente por Palavra-chave ou Profissão:
+            <SlidersHorizontal className="w-4 h-4 text-accent" />
+            Busca por Palavra-chave ou Profissão:
           </label>
           <div className="relative">
             <input

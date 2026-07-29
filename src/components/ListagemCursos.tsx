@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, BookX, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, XCircle, Clock, Calendar, Sparkles, TrendingUp, DollarSign, Tag } from 'lucide-react';
+import { MapPin, BookX, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, XCircle, Clock, Calendar, BookmarkPlus, TrendingUp, DollarSign, Tag } from 'lucide-react';
 import { FilterState } from './FiltroBusca';
 
 const imagensCursos: { [key: string]: string } = {
@@ -260,7 +260,7 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              <Sparkles className="w-3.5 h-3.5" />
+              <BookmarkPlus className="w-3.5 h-3.5" />
               Novas Inscrições
             </button>
           </div>
