@@ -13,7 +13,7 @@ O objetivo principal desta reformulação de UX/UI e regras de negócio foi **au
 ## 🚀 Resumo das Atualizações Implementadas
 
 ### 1. Remoções e Ajustes de Conteúdo do Hero
-- **Remoção de Vídeos Institucionais de Fundo:** Substituídos por fundo limpo com gradiente dinâmico, iluminação focal e padrão SVG geométrico, eliminando distrações e mantendo o foco exclusivo em capacitação profissional.
+- **Carrossel de Imagens de Fundo Profissionais:** Transição suave automática a cada 5 segundos alternando entre 4 imagens de profissões em alta definição (`proficao4`, `proficao2`, `proficao3`, `proficao`), com camada de gradiente de alto contraste para máxima legibilidade.
 - **Redução de Altura do Hero em ~30%:** Altura ajustada para `~70vh`, permitindo visualizar categorias e filtros sem rolagem excessiva.
 - **Copy Direta e Informativa:**
   - *Título:* `CURSOS GRATUITOS DA PREFEITURA DE VITÓRIA`
