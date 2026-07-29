@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Hero from '../components/Hero';
-import CategoriasCursos from '../components/CategoriasCursos';
-import ProcessSteps from '../components/ProcessSteps';
 import BenefitsSection from '../components/BenefitsSection';
 import FiltroBusca, { FilterState } from '../components/FiltroBusca';
 import ListagemCursos from '../components/ListagemCursos';
@@ -150,25 +148,19 @@ export default function Home() {
         {/* 1. Hero Principal com texto direto e CTA único */}
         <Hero onOpenQuiz={() => setIsQuizOpen(true)} />
 
-        {/* 2. Categorias de Cursos (Logo após o Banner Principal + Mascote Vitoruga) */}
-        <CategoriasCursos onSelectCategory={handleSelectCategoryFromGrid} />
-
-        {/* 3. Barra de Etapas do Processo (3 Passos) */}
-        <ProcessSteps />
-
-        {/* 4. Bloco de Benefícios ao Concluir */}
+        {/* 2. Bloco de Benefícios ao Concluir */}
         <BenefitsSection />
 
-        {/* 5. Filtros de Busca Avançados e Busca Inteligente por IA */}
+        {/* 3. Filtros de Busca Avançados e Busca Inteligente por IA */}
         <FiltroBusca onFilterChange={setFilters} />
 
-        {/* 6. Listagem de Cursos (Mais Procurados, Novas Inscrições, Cards com Início e Média Salarial) */}
+        {/* 4. Listagem de Cursos (Mais Procurados, Novas Inscrições, Cards com Início e Média Salarial) */}
         <ListagemCursos filters={filters} onClearFilters={handleClearFilters} />
 
-        {/* 7. Depoimentos dos Alunos */}
+        {/* 5. Depoimentos dos Alunos */}
         <Depoimentos />
 
-        {/* 8. Rodapé com Link para Pesquisa de Satisfação */}
+        {/* 6. Rodapé com Link para Pesquisa de Satisfação */}
         <Footer onOpenSurvey={() => setIsSurveyOpen(true)} />
 
         {/* Interactive Modals */}

@@ -31,10 +31,8 @@ O objetivo principal desta reformulação de UX/UI e regras de negócio foi **au
   - Vagas restantes no momento
   - Turmas iniciando esta semana
 
-### 4. Categorias de Cursos & Mascote Vitoruga Estilizado
-- **Posicionamento Antecipado:** Categorias movidas para **logo após o banner principal** ([CategoriasCursos.tsx](file:///c:/Users/Porto/Downloads/Vixcursos-maincopia/src/components/CategoriasCursos.tsx)).
-- **Ícones Grandes e Cobertura Completa:** Informática, Gastronomia, Beleza, Elétrica, Costura & Moda, Administração e Construção Civil.
-- **Mascote Vitoruga Integrado:** Cada card exibe o mascote Vitoruga estilizado e caracterizado para a respectiva profissão (ex.: chef de cozinha, eletricista, programador, barbeiro).
+### 4. Simplificação do Layout da Página Inicial
+- **Remoção de Seções Redundantes:** As seções de *Categorias de Cursos* e *Passo a Passo (3 Etapas)* foram removidas da página inicial para proporcionar uma navegação mais direta a partir do Banner/Hero direto para os Benefícios e Filtros de Busca.
 
 ### 5. Filtros de Busca & Busca Inteligente por IA
 - **Busca Semântica por IA:** Mapeamento inteligente de palavras-chave coloquiais para categorias correspondentes:
