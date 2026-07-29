@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Hero from '../components/Hero';
-import BenefitsSection from '../components/BenefitsSection';
 import FiltroBusca, { FilterState } from '../components/FiltroBusca';
 import ListagemCursos from '../components/ListagemCursos';
 import Depoimentos from '../components/Depoimentos';
@@ -148,19 +147,16 @@ export default function Home() {
         {/* 1. Hero Principal com texto direto e CTA único */}
         <Hero onOpenQuiz={() => setIsQuizOpen(true)} />
 
-        {/* 2. Bloco de Benefícios ao Concluir */}
-        <BenefitsSection />
-
-        {/* 3. Filtros de Busca Avançados e Busca Inteligente por IA */}
+        {/* 2. Filtros de Busca Avançados e Busca Inteligente por IA */}
         <FiltroBusca onFilterChange={setFilters} />
 
-        {/* 4. Listagem de Cursos (Mais Procurados, Novas Inscrições, Cards com Início e Média Salarial) */}
+        {/* 3. Listagem de Cursos (Mais Procurados, Novas Inscrições, Cards com Início e Média Salarial) */}
         <ListagemCursos filters={filters} onClearFilters={handleClearFilters} />
 
-        {/* 5. Depoimentos dos Alunos */}
+        {/* 4. Depoimentos dos Alunos */}
         <Depoimentos />
 
-        {/* 6. Rodapé com Link para Pesquisa de Satisfação */}
+        {/* 5. Rodapé com Link para Pesquisa de Satisfação */}
         <Footer onOpenSurvey={() => setIsSurveyOpen(true)} />
 
         {/* Interactive Modals */}
