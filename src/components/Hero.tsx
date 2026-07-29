@@ -170,59 +170,62 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
           </div>
         </motion.div>
 
-        {/* Right Column: Revised Actionable Statistics Card */}
+        {/* Right Column: Glassmorphism Statistics Card (Grayish Frosted Glass) */}
         <motion.div
           initial={{ opacity: 0, x: 30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="w-full max-w-[340px] bg-slate-900/85 backdrop-blur-xl p-6 rounded-3xl shadow-2xl flex flex-col border border-white/10 relative overflow-hidden"
+          className="w-full max-w-[340px] bg-slate-800/45 backdrop-blur-2xl p-6 rounded-3xl shadow-[0_12px_40px_rgba(0,0,0,0.35)] flex flex-col border border-white/20 relative overflow-hidden"
         >
+          {/* Subtle Glass Highlight Glow */}
+          <div className="absolute -top-12 -right-12 w-28 h-28 bg-white/10 rounded-full filter blur-xl pointer-events-none" />
+
           <h3 className="font-display font-bold text-white text-base mb-5 tracking-wide flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
             Oportunidades Disponíveis
           </h3>
 
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3.5">
             {/* Stat 1: Cursos com Inscrições Abertas */}
-            <div className="flex items-center gap-3.5 p-2.5 rounded-2xl bg-white/5 border border-white/5">
-              <div className="p-2.5 rounded-xl bg-accent/20 text-accent">
-                <GraduationCap className="w-5 h-5" />
+            <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 hover:bg-white/15 transition-all">
+              <div className="p-2.5 rounded-xl bg-accent/25 text-accent shadow-sm">
+                <GraduationCap className="w-5 h-5 text-white" />
               </div>
               <div className="flex flex-col">
-                <span className="text-xl font-mono font-bold text-white leading-none">
+                <span className="text-xl font-mono font-extrabold text-white leading-none">
                   {stats.cursosAbertos} cursos
                 </span>
-                <span className="text-[11px] text-slate-400 tracking-wide mt-1">
+                <span className="text-[11px] text-slate-200 font-medium tracking-wide mt-1">
                   com inscrições abertas
                 </span>
               </div>
             </div>
 
             {/* Stat 2: Total Vagas Restantes */}
-            <div className="flex items-center gap-3.5 p-2.5 rounded-2xl bg-white/5 border border-white/5">
-              <div className="p-2.5 rounded-xl bg-accent/20 text-accent">
-                <CalendarCheck className="w-5 h-5" />
+            <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 hover:bg-white/15 transition-all">
+              <div className="p-2.5 rounded-xl bg-accent/25 text-accent shadow-sm">
+                <CalendarCheck className="w-5 h-5 text-white" />
               </div>
               <div className="flex flex-col">
-                <span className="text-xl font-mono font-bold text-white leading-none">
+                <span className="text-xl font-mono font-extrabold text-white leading-none">
                   {stats.vagasRestantes} vagas
                 </span>
-                <span className="text-[11px] text-slate-400 tracking-wide mt-1">
+                <span className="text-[11px] text-slate-200 font-medium tracking-wide mt-1">
                   restantes no momento
                 </span>
               </div>
             </div>
 
             {/* Stat 3: Iniciando esta semana */}
-            <div className="flex items-center gap-3.5 p-2.5 rounded-2xl bg-white/5 border border-white/5">
-              <div className="p-2.5 rounded-xl bg-accent/20 text-accent">
-                <BookOpen className="w-5 h-5" />
+            <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 hover:bg-white/15 transition-all">
+              <div className="p-2.5 rounded-xl bg-accent/25 text-accent shadow-sm">
+                <BookOpen className="w-5 h-5 text-white" />
               </div>
               <div className="flex flex-col">
-                <span className="text-xl font-mono font-bold text-white leading-none">
+                <span className="text-xl font-mono font-extrabold text-white leading-none">
                   {stats.iniciandoSemana} turmas
                 </span>
-                <span className="text-[11px] text-slate-400 tracking-wide mt-1">
+                <span className="text-[11px] text-slate-200 font-medium tracking-wide mt-1">
                   iniciando esta semana
                 </span>
               </div>
@@ -231,7 +234,7 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
 
           <button
             onClick={() => scrollToSection('cursos-list-section')}
-            className="w-full bg-white/10 hover:bg-white/20 py-3 rounded-xl font-bold uppercase tracking-wider text-xs text-white mt-5 transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 border border-white/10"
+            className="w-full bg-white/15 hover:bg-white/25 border border-white/25 py-3 rounded-xl font-bold uppercase tracking-wider text-xs text-white mt-5 transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 backdrop-blur-md shadow-md hover:scale-[1.02]"
           >
             Ver Todas as Vagas
           </button>
