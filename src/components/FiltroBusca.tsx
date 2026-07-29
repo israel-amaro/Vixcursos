@@ -143,28 +143,6 @@ export default function FiltroBusca({ onFilterChange }: FiltroBuscaProps) {
       <div className="max-w-7xl mx-auto">
         <h2 className="sr-only">Filtro de Busca de Cursos</h2>
         
-        {/* BUSCA INTELIGENTE POR IA (Termos Coloquiais) */}
-        <div className="mb-8">
-          <label htmlFor="busca-inteligente" className="text-white font-bold text-xs tracking-wider uppercase mb-2 flex items-center gap-2">
-            <SlidersHorizontal className="w-4 h-4 text-accent" />
-            Busca por Palavra-chave ou Profissão:
-          </label>
-          <div className="relative">
-            <input
-              id="busca-inteligente"
-              type="text"
-              value={filters.buscaInteligente}
-              onChange={handleSearchInputChange}
-              placeholder="Digite o que você procura (ex: 'cozinheiro', 'barbeiro', 'computador', 'obra')..."
-              className="w-full bg-white/10 text-white placeholder-slate-400 rounded-2xl px-5 py-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-accent border border-white/15 transition-all duration-300 pr-12 shadow-inner"
-            />
-            <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-accent pointer-events-none" />
-          </div>
-          <p className="text-[11px] text-slate-400 mt-1.5 font-medium">
-            Dica: Digite nomes de profissões cotidianas para ver áreas e cursos relacionados automaticamente.
-          </p>
-        </div>
-
         {/* Grid de Filtros */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           
