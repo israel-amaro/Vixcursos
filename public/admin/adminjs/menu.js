@@ -262,7 +262,12 @@
             data_inicio: document.getElementById("data_inicio").value,
             data_termino: document.getElementById("data_termino").value,
             horario_inicio: document.getElementById("horario_inicio").value,
-            horario_termino: document.getElementById("horario_termino").value
+            horario_termino: document.getElementById("horario_termino").value,
+            carga_horaria: document.getElementById("carga_horaria")?.value || null,
+            descricao: document.getElementById("descricao")?.value || null,
+            ementa: document.getElementById("ementa")?.value || null,
+            competencias: document.getElementById("competencias")?.value || null,
+            pre_requisitos: document.getElementById("pre_requisitos")?.value || null
         };
 
         fetch("/cursos", {

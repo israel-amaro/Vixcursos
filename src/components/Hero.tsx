@@ -113,8 +113,7 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
           </div>
           
           <h1 className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-display font-extrabold leading-[1.1] sm:leading-[1.05] tracking-tight text-white drop-shadow-md">
-            CURSOS GRATUITOS DA <br />
-            <span className="text-accent drop-shadow-lg">PREFEITURA DE VITÓRIA</span>
+            Cursos de qualificação profissional - prefeitura de vitória
           </h1>
           
           <p className="text-xs sm:text-sm md:text-base text-slate-200 max-w-xl mt-2.5 sm:mt-4 leading-relaxed font-medium drop-shadow-sm">

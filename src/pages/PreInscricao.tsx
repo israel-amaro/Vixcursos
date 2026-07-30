@@ -15,6 +15,7 @@ import {
   Loader2,
   ExternalLink
 } from 'lucide-react';
+import CpfVerificationModal from '../components/CpfVerificationModal';
 
 interface Question {
   pergunta: string;
@@ -74,7 +75,17 @@ export default function PreInscricao() {
   // Mandatory Legal & Privacy Agreements State
   const [aceitouTermosCompromisso, setAceitouTermosCompromisso] = useState(false);
   const [aceitouAvisoLgpd, setAceitouAvisoLgpd] = useState(false);
+  const [autorizaUsoImagem, setAutorizaUsoImagem] = useState(false);
   const [mostrarAvisoLgpdCompleto, setMostrarAvisoLgpdCompleto] = useState(false);
+
+  // Non-Vitória CEP prompt state
+  const [aguardandoConfirmacaoCepForaVitoria, setAguardandoConfirmacaoCepForaVitoria] = useState(false);
+  const [dadosCepForaVitoria, setDadosCepForaVitoria] = useState<{ localidade: string; uf: string; cep: string; logradouro: string; bairro: string } | null>(null);
+
+  // Secure OTP Authentication State
+  const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
+  const [maskedIdentity, setMaskedIdentity] = useState<{ nome: string; email: string; telefone: string } | null>(null);
+  const [sessionToken, setSessionToken] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -94,12 +105,14 @@ export default function PreInscricao() {
     cpf: '',
     rg: '',
     mora_vitoria: '',
+    confirmou_cep_fora_vitoria: false,
     escolaridade: '',
     cep: '',
     numero: '',
     rua: '',
     bairro: '',
     municipio: '',
+    uf: 'ES',
     data_nascimento: '',
     genero: '',
     raca_cor: '',
@@ -111,8 +124,6 @@ export default function PreInscricao() {
     responsavel_autorizacao: '',
     autoriza_lgpd: 'sim',
     objetivo: '',
-    cpf_documento: '',
-    rg_documento: '',
   });
 
   const verificarIdadeMenor = (dataNasc: string) => {
@@ -147,7 +158,7 @@ export default function PreInscricao() {
     
     // 1. CPF
     list.push({
-      pergunta: `Olá! 🐢 Eu sou o Vitoruga, assistente virtual da Vix Cursos. Que legal que você quer se inscrever para <strong>{CURSO_NOME}</strong>! <br/><br/>Para começar, digite seu <strong>CPF</strong> no campo abaixo, só os números.`,
+      pergunta: `Olá! 🐢 Eu sou o Vitoruga, assistente virtual do Qualifica Vix. Que legal que você quer se inscrever para <strong>{CURSO_NOME}</strong>! <br/><br/>Para começar, digite seu <strong>CPF</strong> no campo abaixo, só os números.`,
       tipo: 'texto',
       chave: 'cpf',
       mascara: 'cpf',
@@ -349,20 +360,8 @@ export default function PreInscricao() {
       });
     }
 
-    // 16. Documentos
     list.push({
-      pergunta: 'Agora envie uma foto legível do seu <strong>CPF (Frente)</strong> para validação de dados.',
-      tipo: 'arquivo',
-      chave: 'cpf_documento',
-    });
-    list.push({
-      pergunta: 'Envie uma foto legível do seu <strong>RG (Frente ou Verso)</strong>.',
-      tipo: 'arquivo',
-      chave: 'rg_documento',
-    });
-
-    list.push({
-      pergunta: 'Você autoriza a divulgação do seu nome em listas públicas de classificados e suplentes do VixCursos, conforme a LGPD? (Caso não autorize, seu nome aparecerá parcialmente oculto nas listas públicas).',
+      pergunta: 'Você autoriza a divulgação do seu nome em listas públicas de classificados e suplentes do Qualifica Vix, conforme a LGPD? (Caso não autorize, seu nome aparecerá parcialmente oculto nas listas públicas).',
       tipo: 'botoes',
       chave: 'autoriza_lgpd',
       opcoes: [
@@ -371,9 +370,9 @@ export default function PreInscricao() {
       ]
     });
 
-    // 18. Confirmação Final
+    // 16. Confirmação Final
     list.push({
-      pergunta: 'Atenção: A matrícula definitiva exige a entrega presencial dos documentos. <strong>Você confirma todos os dados informados para finalizar sua inscrição?</strong>',
+      pergunta: 'Atenção: A apresentação dos documentos originais (CPF e RG) será exigida no momento da validação presencial da matrícula junto à instituição. <strong>Você confirma todos os dados informados para prosseguir com o aceite dos termos?</strong>',
       tipo: 'botoes',
       chave: 'confirmacao_final',
       opcoes: [
@@ -571,26 +570,32 @@ export default function PreInscricao() {
       .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
   };
 
-  // CEP Lookup ViaCEP com Validação Estrita de Elegibilidade de Vitória
+  // CEP Lookup ViaCEP com Fluxo Amigável para Munícipes Fora de Vitória
   const buscarCep = async (cepValue: string) => {
     const clean = cepValue.replace(/\D/g, '');
     if (clean.length !== 8) return false;
-
-    // Faixa genérica de CEPs de Vitória: 29000-000 a 29099-999
-    const numCep = parseInt(clean, 10);
-    const dentroFaixaVitoria = numCep >= 29000000 && numCep <= 29099999;
 
     try {
       const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`);
       const data = await res.json();
       
       if (!data.erro) {
-        const ehVitoria = (data.localidade && data.localidade.trim().toLowerCase() === 'vitória') && (data.uf && data.uf.trim().toUpperCase() === 'ES');
+        const localidade = (data.localidade || '').trim();
+        const uf = (data.uf || '').trim().toUpperCase();
+        const ehVitoria = localidade.toLowerCase() === 'vitória' || localidade.toLowerCase() === 'vitoria';
         
-        if (!ehVitoria && !dentroFaixaVitoria) {
+        if (!ehVitoria) {
           setEnderecoValido(false);
+          setDadosCepForaVitoria({
+            localidade: localidade || 'Outro município',
+            uf: uf || 'ES',
+            cep: cepValue,
+            logradouro: data.logradouro || '',
+            bairro: data.bairro || ''
+          });
+          setAguardandoConfirmacaoCepForaVitoria(true);
           await addBotMessage(
-            `⛔ <strong>BLOQUEIO DE ELEGIBILIDADE:</strong> Conforme as regras da Prefeitura de Vitória, os cursos gratuitos são restritos a moradores de Vitória ou trabalhadores com endereço profissional na cidade.<br/><br/>O CEP <strong>${cepValue}</strong> refere-se ao município de <strong>${data.localidade || 'fora de Vitória'} - ${data.uf || 'ES'}</strong>. O formulário foi bloqueado para prosseguimento.`,
+            `⛔ <strong>ELEGIBILIDADE RESTRITA:</strong> Os cursos gratuitos do Qualifica Vix são <strong>exclusivos para pessoas que moram ou trabalham no município de Vitória</strong>.<br/><br/>O CEP <strong>${cepValue}</strong> refere-se à cidade de <strong>${localidade} - ${uf}</strong>.<br/><br/>Você pode <strong>corrigir o CEP</strong> digitando um endereço de Vitória ou <strong>sair do formulário</strong>.`,
             600
           );
           return false;
@@ -601,44 +606,53 @@ export default function PreInscricao() {
           ...prev,
           rua: data.logradouro || '',
           bairro: data.bairro || '',
-          municipio: data.localidade || 'Vitória',
-          mora_vitoria: 'sim'
+          municipio: localidade || 'Vitória',
+          uf: uf || 'ES',
+          mora_vitoria: 'sim',
+          confirmou_cep_fora_vitoria: false
         }));
         
         await addBotMessage(
-          `Endereço localizado com sucesso: <strong>${data.logradouro}</strong>, Bairro <strong>${data.bairro}</strong> — Vitória/ES! ✅`,
+          `Endereço localizado com sucesso: <strong>${data.logradouro || 'Rua cadastrada'}</strong>, Bairro <strong>${data.bairro || 'Bairro'}</strong> — ${localidade}/${uf}! ✅`,
           800
         );
         return true;
       } else {
-        if (!dentroFaixaVitoria) {
-          setEnderecoValido(false);
-          await addBotMessage('⛔ <strong>BLOQUEIO DE ELEGIBILIDADE:</strong> CEP não encontrado e fora da faixa do município de Vitória (29000-000 a 29099-999).', 600);
-          return false;
-        }
-        setEnderecoValido(true);
-        return true;
+        await addBotMessage(
+          `⚠️ <strong>CEP não encontrado:</strong> O CEP <strong>${cepValue}</strong> não foi localizado no sistema postal. Por favor, verifique os números e digite novamente.`,
+          600
+        );
+        return false;
       }
     } catch (e) {
       console.error('Erro na busca de CEP', e);
-      if (dentroFaixaVitoria) {
-        setEnderecoValido(true);
-        return true;
-      }
-      await addBotMessage('❌ Falha na consulta de CEP. Verifique sua conexão e tente novamente.', 600);
+      await addBotMessage(
+        `⚠️ <strong>Serviço ViaCEP temporariamente indisponível.</strong> Não se preocupe! Você pode continuar preenchendo os dados do seu endereço normalmente.`,
+        800
+      );
+      setEnderecoValido(true);
+      return true;
     }
-    return false;
   };
 
   // Form Submission
   const enviarInscricaoAoBanco = async (dadosFinais: any) => {
     await addBotMessage('Processando sua pré-inscrição junto à Prefeitura... ⏳', 1500);
 
+    const payloadEnviado = {
+      ...dadosFinais,
+      aceitou_termos_ciencia: aceitouTermosCompromisso,
+      aceitou_aviso_lgpd: aceitouAvisoLgpd,
+      autoriza_uso_imagem: autorizaUsoImagem ? 'sim' : 'nao',
+      versao_termos: '1.0',
+      timestamp_aceite_lgpd: new Date().toISOString()
+    };
+
     try {
       const res = await fetch('/inscricao', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dadosFinais),
+        body: JSON.stringify(payloadEnviado),
       });
 
       const responseData = await res.json();
@@ -707,24 +721,12 @@ export default function PreInscricao() {
 
       if (confirmou) {
         aplicarDadosAutopreenchimento(dadosSalvos);
-        
-        // Se já temos os documentos no perfil do cidadão, pula direto para a LGPD
-        if (dadosSalvos.cpf_documento && dadosSalvos.rg_documento) {
-          await addBotMessage(
-            'Perfeito! Reativei seu cadastro, inclusive as fotos dos seus documentos. Vamos direto para a confirmação final! 📂',
-            800
-          );
-          const indexLgpd = roteiro.findIndex((x) => x.chave === 'autoriza_lgpd');
-          setEtapaAtual(indexLgpd);
-        } else {
-          await addBotMessage(
-            'Perfeito! Vou reaproveitar os dados de cadastro e histórico. Só preciso das fotos dos seus documentos para validar. 📂',
-            800
-          );
-          // Pula direto para a coleta de documentos
-          const indexDoc = roteiro.findIndex((x) => x.chave === 'cpf_documento');
-          setEtapaAtual(indexDoc);
-        }
+        await addBotMessage(
+          'Perfeito! Reativei seus dados de cadastro para acelerar sua inscrição. ⚡',
+          800
+        );
+        const indexLgpd = roteiro.findIndex((x) => x.chave === 'autoriza_lgpd');
+        setEtapaAtual(indexLgpd !== -1 ? indexLgpd : roteiro.length - 1);
         return;
       } else {
         aplicarDadosAutopreenchimento(dadosSalvos);
@@ -827,53 +829,26 @@ export default function PreInscricao() {
         return;
       }
 
-      // Query database for existing registration and active count
+      // Query database securely via masked localization endpoint
       try {
         setIsTyping(true);
-        const response = await fetch(`/api/pre-inscricoes/por-cpf/${valorNormalizado}`);
+        const response = await fetch('/api/cidadaos/localizar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cpf: valorNormalizado })
+        });
         setIsTyping(false);
+
         if (response.ok) {
           const resJson = await response.json();
-          
-          if (resJson.found) {
-            setDadosSalvos(resJson.data);
-            setHistoricoCpf(resJson.historico || []);
-            
-            const activas = resJson.historico?.filter((h: any) => 
-              !['cancelado', 'desistencia', 'nao_concluido', 'desistente', 'nao_compareceu'].includes(h.situacao_final) && 
-              !['cancelado', 'desistencia', 'nao_concluido', 'desistente', 'nao_compareceu'].includes(h.status)
-            ).length || 0;
-            setInscricoesAtivas(activas);
-            
-            let histText = '<strong>Histórico de Inscrições:</strong><br/>';
-            resJson.historico.forEach((h: any) => {
-              const matriculaStatus = h.matricula_confirmada === 1 ? 'Confirmada' : 'Pendente';
-              const classifStatus = h.status_inscricao === 'suplente' ? 'Suplente' : 'Titular';
-              let situacao = '';
-              if (h.situacao_final === 'concluido') {
-                situacao = ' — Concluído ✅';
-              } else if (h.situacao_final === 'nao_concluido') {
-                situacao = ' — Não Concluído ❌';
-              } else if (h.situacao_final === 'certificado_emitido' || h.situacao_final === 'certificado emitido') {
-                situacao = ' — Certificado Emitido 📜';
-              } else if (h.situacao_final === 'desistente' || h.situacao_final === 'não compareceu') {
-                situacao = ` — ${h.situacao_final}`;
-              }
-              histText += `• <strong>${h.curso_nome}</strong> (${h.local_nome}) — ${classifStatus}${situacao}<br/>`;
-            });
-
-            await addBotMessage(
-              `Encontrei seus dados em nosso sistema!<br/><br/>${histText}<br/>Deseja aproveitar os dados de cadastro e histórico para a nova inscrição?`,
-              800
-            );
-            setAguardandoEscolhaCpf(true);
-            return;
-          } else {
-            setInscricoesAtivas(0);
+          if (resJson.localizou && resJson.id_mascarado) {
+            setMaskedIdentity(resJson.id_mascarado);
+            setIsOtpModalOpen(true);
+            return; // pauses chat flow until OTP verification or skip
           }
         }
       } catch (err) {
-        console.error('Erro ao validar CPF na API', err);
+        console.error('Erro ao consultar CPF via API segura:', err);
       }
     }
 
@@ -914,7 +889,7 @@ export default function PreInscricao() {
         if (eMenor) {
           targetIndex = roteiro.findIndex(x => x.chave === 'responsavel_nome');
         } else {
-          targetIndex = roteiro.findIndex(x => x.chave === 'cpf_documento');
+          targetIndex = roteiro.findIndex(x => x.chave === 'autoriza_lgpd');
         }
         setEtapaAtual(targetIndex);
         return;
@@ -925,8 +900,8 @@ export default function PreInscricao() {
       // Special needs details complete, check age branches
       const eMenor = verificarIdadeMenor(respostasUsuario.data_nascimento);
       if (!eMenor) {
-        const indexDoc = roteiro.findIndex(x => x.chave === 'cpf_documento');
-        setEtapaAtual(indexDoc);
+        const indexLgpd = roteiro.findIndex(x => x.chave === 'autoriza_lgpd');
+        setEtapaAtual(indexLgpd);
         return;
       }
     }
@@ -1326,39 +1301,63 @@ export default function PreInscricao() {
         {/* Form Controls / Inputs */}
         <footer className="bg-black/20 border-t border-white/5 p-4 flex flex-col gap-3">
 
-          {/* CARD OBRIGATÓRIO DE TERMOS E LGPD (Requisitos 11 e 12) */}
+          {/* CEP fora de Vitoria prompt buttons */}
+          {aguardandoConfirmacaoCepForaVitoria && !dadosSalvosExito && (
+            <div className="flex flex-wrap gap-2 justify-end">
+              <button
+                type="button"
+                onClick={async () => {
+                  setAguardandoConfirmacaoCepForaVitoria(false);
+                  setDadosCepForaVitoria(null);
+                  setEnderecoValido(null);
+                  setInputValue('');
+                  setRespostasUsuario((prev) => ({ ...prev, cep: '', rua: '', bairro: '', municipio: '', uf: '' }));
+                  addUserMessage('Corrigir o CEP');
+                  await addBotMessage('Por favor, digite seu CEP correto de Vitória (29000-000 a 29099-999).', 600);
+                }}
+                className="bg-accent text-white hover:bg-accent/90 font-bold text-xs py-2.5 px-5 rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                Corrigir o CEP
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  navigate('/');
+                }}
+                className="bg-slate-900 border border-red-500/30 text-red-400 hover:bg-red-500/10 font-semibold text-xs py-2.5 px-4 rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                Sair do Formulário
+              </button>
+            </div>
+          )}
+
+          {/* CARD OBRIGATÓRIO DE TERMOS E LGPD (Requisitos 7 e 8) */}
           {roteiro[etapaAtual]?.chave === 'confirmacao_final' && !dadosSalvosExito && (
             <div className="bg-slate-900 border border-white/15 rounded-2xl p-5 mb-2 flex flex-col gap-4 text-left shadow-xl">
               
-              {/* TERMO DE COMPROMISSO (Item 11) */}
+              {/* TERMO DE CIÊNCIA E VALIDAÇÃO DE MATRÍCULA (Item 7) */}
               <div className="bg-slate-950/80 p-4 rounded-xl border border-white/10">
                 <h4 className="font-bold text-accent text-xs uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                  <FileText className="w-4 h-4 text-accent" /> Termo de Compromisso Oficial
+                  <FileText className="w-4 h-4 text-accent" /> Termo de Ciência e Validação de Matrícula
                 </h4>
-                <p className="text-white/80 text-xs leading-relaxed mb-3">
-                  Estou ciente que:<br/>
-                  1. Ao fazer a pré-inscrição, confirmo que tenho os Pré-Requisitos necessários para frequentar as aulas do curso.<br/>
-                  2. Esta operação NÃO me garante vaga no curso, exceto após a inscrição, na data, hora e local citados no comprovante de pré-inscrição.<br/>
-                  3. Não confirmando a minha inscrição, perco automaticamente a vaga pré-reservada.
-                </p>
-                <label className="flex items-start gap-2 cursor-pointer select-none">
+                <label className="flex items-start gap-2.5 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={aceitouTermosCompromisso}
                     onChange={(e) => setAceitouTermosCompromisso(e.target.checked)}
                     className="w-4 h-4 rounded text-accent accent-accent mt-0.5"
                   />
-                  <span className="text-xs font-bold text-white leading-tight">
-                    Li e concordo com os termos de compromisso, e estou ciente de todas as observações sobre o curso. <span className="text-accent">* (obrigatório)</span>
+                  <span className="text-xs font-semibold text-white/95 leading-relaxed">
+                    “Confirmação da matricula no formulário somente após a instituição entrar em contato e validar as informações, não comparecendo a matricula perde a vaga pré reservada” <span className="text-accent font-bold">* (obrigatório)</span>
                   </span>
                 </label>
               </div>
 
-              {/* AVISO DE PRIVACIDADE E LGPD (Item 12) */}
-              <div className="bg-slate-950/80 p-4 rounded-xl border border-white/10">
-                <div className="flex items-center justify-between mb-2">
+              {/* AVISO DE PRIVACIDADE E DUAL CONSENTIMENTO LGPD (Item 8) */}
+              <div className="bg-slate-950/80 p-4 rounded-xl border border-white/10 flex flex-col gap-3">
+                <div className="flex items-center justify-between">
                   <h4 className="font-bold text-emerald-400 text-xs uppercase tracking-wider flex items-center gap-1.5">
-                    <Check className="w-4 h-4 text-emerald-400" /> Aviso de Privacidade e Proteção de Dados (LGPD)
+                    <Check className="w-4 h-4 text-emerald-400" /> Consentimentos e Privacidade (LGPD)
                   </h4>
                   <button
                     type="button"
@@ -1369,7 +1368,7 @@ export default function PreInscricao() {
                   </button>
                 </div>
 
-                <div className="text-white/80 text-xs leading-relaxed mb-3">
+                <div className="text-white/80 text-xs leading-relaxed">
                   {mostrarAvisoLgpdCompleto ? (
                     <div className="space-y-2">
                       <p>
@@ -1382,30 +1381,44 @@ export default function PreInscricao() {
                         <li><strong>Estatísticas Públicas:</strong> monitorar o perfil dos alunos e planejar novas políticas públicas (dados anonimizados).</li>
                       </ul>
                       <p>
-                        O tratamento dos dados segue rigorosamente a Lei Geral de Proteção de Dados (LGPD). Garantimos que suas informações não serão utilizadas para fins comerciais. Para dúvidas, contate o Encarregado pelo e-mail: <strong className="text-accent">dpo@vitoria.es.gov.br</strong>.
+                        Encarregado pelo tratamento de dados pessoais (DPO): <strong className="text-accent">dpo@vitoria.es.gov.br</strong>.
                       </p>
                     </div>
                   ) : (
                     <p>
-                      A Prefeitura de Vitória coleta seus dados para efetivar a matrícula, gerar estatísticas anônimas e compartilhar estritamente com os parceiros do curso para emissão de certificados. Garantimos o sigilo de suas informações. Encarregado LGPD: <strong className="text-accent">dpo@vitoria.es.gov.br</strong>.
+                      Informações do Encarregado de Proteção de Dados (DPO): <strong className="text-accent">dpo@vitoria.es.gov.br</strong>.
                     </p>
                   )}
                 </div>
 
-                <label className="flex items-start gap-2 cursor-pointer select-none">
+                {/* Consentimento 1 - Obrigatório */}
+                <label className="flex items-start gap-2.5 cursor-pointer select-none pt-1">
                   <input
                     type="checkbox"
                     checked={aceitouAvisoLgpd}
                     onChange={(e) => setAceitouAvisoLgpd(e.target.checked)}
+                    className="w-4 h-4 rounded text-emerald-400 accent-emerald-400 mt-0.5"
+                  />
+                  <span className="text-xs font-semibold text-white/95 leading-snug">
+                    Aviso de Privacidade e tratamento de dados pessoais necessários para a gestão do curso <span className="text-accent font-bold">* (obrigatório para concluir o cadastro)</span>
+                  </span>
+                </label>
+
+                {/* Consentimento 2 - Opcional / Facultativo */}
+                <label className="flex items-start gap-2.5 cursor-pointer select-none pt-2 border-t border-white/10">
+                  <input
+                    type="checkbox"
+                    checked={autorizaUsoImagem}
+                    onChange={(e) => setAutorizaUsoImagem(e.target.checked)}
                     className="w-4 h-4 rounded text-accent accent-accent mt-0.5"
                   />
-                  <span className="text-xs font-bold text-white leading-tight">
-                    Li e estou ciente de como meus dados serão utilizados conforme a LGPD. <span className="text-accent">* (obrigatório)</span>
+                  <span className="text-xs font-semibold text-white/80 leading-snug">
+                    Autorização de uso de imagem e voz para divulgação institucional dos projetos da prefeitura <span className="text-emerald-400 font-bold">(opcional e facultativo - a recusa não impede a sua pré-inscrição)</span>
                   </span>
                 </label>
               </div>
 
-              {/* Botões de envio condicionados ao aceite das duas checkboxes */}
+              {/* Botão de envio condicionado às duas checkboxes obrigatórias */}
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
@@ -1571,6 +1584,49 @@ export default function PreInscricao() {
  
       {/* VLibras Accessibility Integration */}
       <VLibrasWidget />
+
+      {/* Secure OTP Verification Modal */}
+      {isOtpModalOpen && maskedIdentity && (
+        <CpfVerificationModal
+          cpf={respostasUsuario.cpf || ''}
+          maskedIdentity={maskedIdentity}
+          isOpen={isOtpModalOpen}
+          onClose={() => setIsOtpModalOpen(false)}
+          onVerified={async (authenticatedProfile, token) => {
+            setIsOtpModalOpen(false);
+            setSessionToken(token);
+
+            if (authenticatedProfile && authenticatedProfile.data) {
+              setDadosSalvos(authenticatedProfile.data);
+              setHistoricoCpf(authenticatedProfile.historico || []);
+              aplicarDadosAutopreenchimento(authenticatedProfile.data);
+
+              let histText = '';
+              if (authenticatedProfile.historico && authenticatedProfile.historico.length > 0) {
+                histText = '<strong>Seu Histórico de Inscrições:</strong><br/>';
+                authenticatedProfile.historico.forEach((h: any) => {
+                  const classifStatus = h.status_inscricao === 'suplente' ? 'Suplente' : 'Titular';
+                  histText += `• <strong>${h.curso_nome}</strong> (${h.local_nome}) — ${classifStatus}<br/>`;
+                });
+              }
+
+              await addBotMessage(
+                `🔒 <strong>Identidade Autenticada com Sucesso!</strong><br/><br/>Seus dados cadastrais foram pré-preenchidos com segurança.<br/>${histText}<br/>Confira os dados e avance para concluir.`,
+                800
+              );
+
+              const indexCep = roteiro.findIndex((x) => x.chave === 'cep');
+              setEtapaAtual(indexCep !== -1 ? indexCep : 1);
+            }
+          }}
+          onStartFromScratch={async () => {
+            setIsOtpModalOpen(false);
+            await addBotMessage('Tudo bem! Vamos preencher seu cadastro passo a passo do zero. ✏️', 600);
+            const indexCep = roteiro.findIndex((x) => x.chave === 'cep');
+            setEtapaAtual(indexCep !== -1 ? indexCep : 1);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -7,9 +7,37 @@ const nodemailer = require("nodemailer");
 const jwt = require("jsonwebtoken");
 const twilio = require("twilio");
 const XLSX = require("xlsx");
+const crypto = require("crypto");
 const { LOCAL_PUBLIC_CURSOS, createLocalDb } = require("./local-db");
 require("dotenv").config();
 require("dotenv").config({ path: ".env.local", override: true });
+
+const otpStore = new Map(); // cpf -> { hash, expiresAt, tentativas }
+const sessionStore = new Map(); // token -> { cpf, expiresAt }
+
+function mascararNome(nome) {
+    if (!nome) return '***';
+    const partes = String(nome).trim().split(/\s+/);
+    return partes.map(p => p.length <= 1 ? p : p[0] + '*'.repeat(p.length - 1)).join(' ');
+}
+
+function mascararEmail(email) {
+    if (!email || !email.includes('@')) return '***@***';
+    const [user, domain] = email.split('@');
+    const userMasked = user.length <= 2 ? user[0] + '***' : user[0] + '***' + user[user.length - 1];
+    const domainParts = domain.split('.');
+    const domainMasked = domainParts[0].length <= 2 ? domainParts[0][0] + '***' : domainParts[0][0] + '***';
+    return `${userMasked}@${domainMasked}.${domainParts.slice(1).join('.')}`;
+}
+
+function mascararTelefone(tel) {
+    if (!tel) return '(**) 9****-****';
+    const digitos = String(tel).replace(/\D/g, '');
+    if (digitos.length < 10) return '(**) 9****-****';
+    const ddd = digitos.slice(0, 2);
+    const fim = digitos.slice(-4);
+    return `(${ddd}) 9****-${fim}`;
+}
 
 const app = express();
 app.use(cors());
@@ -37,7 +65,7 @@ const EMAIL_CONNECT_TIMEOUT = Number(process.env.EMAIL_CONNECT_TIMEOUT || 12000)
 const EMAIL_SOCKET_TIMEOUT = Number(process.env.EMAIL_SOCKET_TIMEOUT || 15000);
 const EMAIL_USER = limparEnv(process.env.EMAIL_USER);
 const EMAIL_PASS = limparEnv(process.env.EMAIL_PASS);
-const EMAIL_FROM = limparEnv(process.env.EMAIL_FROM) || (EMAIL_USER ? `\"Vix Cursos\" <${EMAIL_USER}>` : "");
+const EMAIL_FROM = limparEnv(process.env.EMAIL_FROM) || (EMAIL_USER ? `"Qualifica Vix" <${EMAIL_USER}>` : "");
 const IS_VERCEL = Boolean(process.env.VERCEL);
 const IS_PRODUCTION = process.env.NODE_ENV === "production" || IS_VERCEL;
 const DB_DISABLED = String(process.env.DB_DISABLED || "true").toLowerCase() !== "false";
@@ -755,7 +783,7 @@ async function createApp() {
                         <div class="hero-grid"></div>
                         ${camadaPonte}
                         <div class="hero-content">
-                            <p class="brand">Vix Cursos</p>
+                            <p class="brand">Qualifica Vix</p>
                             <p class="subtitle">Prefeitura de Vitoria</p>
                         </div>
                     </div>
@@ -767,7 +795,7 @@ async function createApp() {
                     </div>
 
                     <div class="footer">
-                        <p style="margin:0;">Vix Cursos | Prefeitura de Vitoria</p>
+                        <p style="margin:0;">Qualifica Vix | Prefeitura de Vitoria</p>
                         <p style="margin:6px 0 0;">Mensagem automatica. Nao responda este e-mail.</p>
                     </div>
                 </div>
@@ -1087,7 +1115,7 @@ async function createApp() {
         await mailer.sendMail({
             from: EMAIL_FROM,
             to: email,
-            subject: `Vaga Expirada - VixCursos`,
+            subject: `Vaga Expirada - Qualifica Vix`,
             html: montarLayoutEmailBase({
                 tituloSecao: "Prazo Expirado",
                 subtituloSecao: "MatrÃ­cula Cancelada",
@@ -1110,7 +1138,7 @@ async function createApp() {
         await mailer.sendMail({
             from: EMAIL_FROM,
             to: email,
-            subject: `ConvocaÃ§Ã£o de Suplente - VixCursos`,
+            subject: `ConvocaÃ§Ã£o de Suplente - Qualifica Vix`,
             html: montarLayoutEmailBase({
                 tituloSecao: "Vaga DisponÃ­vel!",
                 subtituloSecao: "ConvocaÃ§Ã£o de Suplente",
@@ -1128,7 +1156,7 @@ async function createApp() {
         const conteudoHtml = `
             <p class="text">OlÃ¡, <span class="highlight">${nome}</span>.</p>
             <p class="text">ParabÃ©ns! VocÃª foi convocado para a matrÃ­cula no curso <span class="highlight">${cursoNome}</span>.</p>
-            <p class="text">VocÃª tem o prazo de <strong>${prazoHoras} horas</strong> para confirmar sua matrÃ­cula online no VixCursos.</p>
+            <p class="text">VocÃª tem o prazo de <strong>${prazoHoras} horas</strong> para confirmar sua matrÃ­cula online no Qualifica Vix.</p>
             <div class="info-box">
                 <p class="info-item"><span class="info-icon">&#9679;</span><strong>Protocolo:</strong> ${protocolo}</p>
                 <p class="info-item"><span class="info-icon">&#9679;</span><strong>Local:</strong> ${local || 'A definir'}</p>
@@ -1403,6 +1431,9 @@ async function createApp() {
                     c.data_encerramento_inscricao,
                     COALESCE(c.acessos_contador, 0) AS acessos_contador,
                     c.descricao,
+                    c.ementa,
+                    c.competencias,
+                    c.pre_requisitos,
                     c.carga_horaria,
                     c.criado_em
                 FROM cursos c
@@ -1433,6 +1464,9 @@ async function createApp() {
                     c.data_encerramento_inscricao,
                     c.acessos_contador,
                     c.descricao,
+                    c.ementa,
+                    c.competencias,
+                    c.pre_requisitos,
                     c.carga_horaria,
                     c.criado_em
                 ORDER BY c.id DESC
@@ -1483,6 +1517,9 @@ async function createApp() {
                     c.data_encerramento_inscricao,
                     COALESCE(c.acessos_contador, 0) AS acessos_contador,
                     c.descricao,
+                    c.ementa,
+                    c.competencias,
+                    c.pre_requisitos,
                     c.carga_horaria,
                     c.criado_em
                 FROM cursos c
@@ -1513,6 +1550,9 @@ async function createApp() {
                     c.data_encerramento_inscricao,
                     c.acessos_contador,
                     c.descricao,
+                    c.ementa,
+                    c.competencias,
+                    c.pre_requisitos,
                     c.carga_horaria,
                     c.criado_em
             `;
@@ -1582,7 +1622,7 @@ async function createApp() {
             });
         } catch (err) {
             if (eErroTimeoutBanco(err)) {
-                console.warn("[db] Falha na conexao do banco ao buscar vagas do curso, servindo fallback estÃ¡tico.");
+                console.warn("[db] Falha na conexao do banco ao buscar vagas do curso, servindo fallback estático.");
                 const fallbackCurso = FALLBACK_CURSOS.find(c => c.id === Number(req.params.id));
                 if (fallbackCurso) {
                     return res.json({
@@ -1615,8 +1655,13 @@ async function createApp() {
                     COALESCE(fc.categoria, 'Geral') AS categoria, 
                     COALESCE(fiMin.idade::text, '-') AS idade_min, 
                     COALESCE(fiMax.idade::text, '-') AS idade_max,
-                    COALESCE(fm.modalidade, 'NÃ£o informada') AS modalidade, 
-                    COALESCE(fl.local, 'VitÃ³ria') AS local, 
+                    COALESCE(fm.modalidade, 'Não informada') AS modalidade, 
+                    COALESCE(fl.local, 'Vitória') AS local, 
+                    c.descricao,
+                    c.ementa,
+                    c.competencias,
+                    c.pre_requisitos,
+                    c.carga_horaria,
                     c.criado_em
                 FROM cursos c
                 LEFT JOIN filtro_curso fcurso ON fcurso.id = c.curso_id
@@ -1637,28 +1682,30 @@ async function createApp() {
     });
 
     // ============================================================
-    // CRIAR CURSO COM DISPARO AUTOMÃTICO VIA GMAIL (CORRIGIDO E BLINDADO)
+    // CRIAR CURSO COM DISPARO AUTOMÁTICO VIA GMAIL (CORRIGIDO E BLINDADO)
     // ============================================================
     app.post("/cursos", exigirAuthAdmin, async (req, res) => {
         try {
             const { 
                 curso, vagas, idade_min, idade_max, local, modalidade, 
-                data_inicio, data_termino, horario_inicio, horario_termino, categoria_id 
+                data_inicio, data_termino, horario_inicio, horario_termino, categoria_id,
+                descricao, ementa, competencias, pre_requisitos, carga_horaria
             } = req.body;
 
-            if (!curso) return res.status(400).json({ error: "Campo 'curso' Ã© obrigatÃ³rio." });
+            if (!curso) return res.status(400).json({ error: "Campo 'curso' é obrigatório." });
 
             // 1. Grava o curso (Tratamento contra erro de "undefined")
             const [result] = await db.query(`
                 INSERT INTO cursos 
-                (curso_id, vagas, idade_min, idade_max, local_id, modalidade_id, data_inicio, data_termino, horario_inicio, horario_termino, categoria_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (curso_id, vagas, idade_min, idade_max, local_id, modalidade_id, data_inicio, data_termino, horario_inicio, horario_termino, categoria_id, descricao, ementa, competencias, pre_requisitos, carga_horaria)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 RETURNING id
             `, [
                 curso, vagas || 0, idade_min || null, idade_max || null, 
                 local || null, modalidade || null, data_inicio || null, 
                 data_termino || null, horario_inicio || null, horario_termino || null, 
-                categoria_id || null
+                categoria_id || null, descricao || null, ementa || null, competencias || null,
+                pre_requisitos || null, carga_horaria ? parseInt(carga_horaria) : null
             ]);
 
             // 2. Procura os nomes reais para o e-mail (usando LEFT JOIN para evitar crash)
@@ -1706,7 +1753,34 @@ async function createApp() {
     // ============================================================
     // ESGOTAR CURSO
     // ============================================================
-    app.put("/cursos/esgotar/:id", exi    app.post("/inscricao", async (req, res) => {
+    app.put("/cursos/esgotar/:id", async (req, res) => {
+        try {
+            const id = parseInt(req.params.id);
+            if (isNaN(id)) return res.status(400).json({ erro: "ID inválido" });
+
+            if (useLocalDb) {
+                const curso = localDb.cursos.find(c => c.id === id);
+                if (!curso) return res.status(404).json({ erro: "Curso não encontrado" });
+                curso.status = "esgotado";
+                curso.vagas = 0;
+                return res.json({ sucesso: true, mensagem: "Curso esgotado com sucesso" });
+            } else {
+                const result = await pool.query(
+                    "UPDATE cursos SET status = 'esgotado', vagas = 0 WHERE id = $1 RETURNING *",
+                    [id]
+                );
+                if (result.rows.length === 0) return res.status(404).json({ erro: "Curso não encontrado" });
+                return res.json({ sucesso: true, mensagem: "Curso esgotado com sucesso" });
+            }
+        } catch (err) {
+            return responderErroBanco(res, err, "Erro ao esgotar curso:");
+        }
+    });
+
+    // ============================================================
+    // PRE-INSCRICAO
+    // ============================================================
+    app.post("/inscricao", async (req, res) => {
         try {
             const {
                 nome, email, telefone, cpf, rg, curso_id,
@@ -1729,12 +1803,21 @@ async function createApp() {
             const tipoDeficiencia = tipoNecessidadeEspecial;
             const moraSuaVitoria = String(mora_vitoria || "nao").toLowerCase() === "sim" || String(municipio || "").trim().toLowerCase() === "vitoria" ? "sim" : "não";
 
-            if (!nome || !email || !telefone || !cpfLimpo || !rgNormalizado || !curso_id || !cpf_documento || !rg_documento) {
-                return res.status(400).json({ error: "Preencha todos os campos obrigatórios, inclusive CPF, RG e as fotos dos dois documentos." });
+            let statusAutorizaImagem = 'nao_respondeu';
+            if (req.body.autoriza_uso_imagem === 'sim' || req.body.autoriza_uso_imagem === true) {
+                statusAutorizaImagem = 'sim';
+            } else if (req.body.autoriza_uso_imagem === 'nao' || req.body.autoriza_uso_imagem === false) {
+                statusAutorizaImagem = 'nao';
             }
 
-            if (String(municipio || "").trim().toLowerCase() !== "vitoria") {
-                return res.status(400).json({ error: "Os cursos do VixCursos são destinados exclusivamente a moradores de Vitória - ES. Seu endereço não está dentro do município." });
+            if (!nome || !email || !telefone || !cpfLimpo || !rgNormalizado || !curso_id) {
+                return res.status(400).json({ error: "Preencha todos os campos obrigatórios: Nome, E-mail, Telefone, CPF e RG." });
+            }
+
+            const ehMoradorVitoria = String(municipio || "").trim().toLowerCase() === "vitoria" || String(municipio || "").trim().toLowerCase() === "vitória";
+
+            if (!ehMoradorVitoria) {
+                return res.status(400).json({ error: "Os cursos do Qualifica Vix são exclusivos para quem mora ou trabalha no município de Vitória." });
             }
 
             // Sync/upsert citizen profile in 'usuarios' table
@@ -1763,7 +1846,7 @@ async function createApp() {
                         deficiencia_adaptacoes || null, deficiencia_recursos || null, responsavel_nome || null,
                         responsavel_cpf ? normalizarCpf(responsavel_cpf) : null, responsavel_parentesco || null,
                         responsavel_telefone || null, responsavel_email || null, responsavel_autorizacao || null,
-                        autoriza_uso_imagem || 'sim', objetivo || null, cpf_documento || null, rg_documento || null,
+                        statusAutorizaImagem, objetivo || null, cpf_documento || null, rg_documento || null,
                         usuarioId
                     ]
                 );
@@ -1784,7 +1867,7 @@ async function createApp() {
                         deficiencia_adaptacoes || null, deficiencia_recursos || null, responsavel_nome || null,
                         responsavel_cpf ? normalizarCpf(responsavel_cpf) : null, responsavel_parentesco || null,
                         responsavel_telefone || null, responsavel_email || null, responsavel_autorizacao || null,
-                        autoriza_uso_imagem || 'sim', objetivo || null, cpf_documento || null, rg_documento || null
+                        statusAutorizaImagem, objetivo || null, cpf_documento || null, rg_documento || null
                     ]
                 );
                 usuarioId = insertUserRes[0].id;
@@ -1915,7 +1998,7 @@ async function createApp() {
             };
 
             const smsMensagem = status_inscricao === 'suplente'
-                ? `VixCursos: Sua pre-inscricao no curso ${dadosConfirmacao.cursoNome} foi recebida como SUPLENTE (fila de espera). Protocolo: ${protocolo}.`
+                ? `Qualifica Vix: Sua pre-inscricao no curso ${dadosConfirmacao.cursoNome} foi recebida como SUPLENTE (fila de espera). Protocolo: ${protocolo}.`
                 : montarSmsConfirmacao(dadosConfirmacao);
 
             const [emailResult, smsResult] = await Promise.allSettled([
@@ -1949,58 +2032,166 @@ async function createApp() {
         }
     });
 
-    app.get("/api/pre-inscricoes/por-cpf/:cpf", async (req, res) => {
+    // ============================================================
+    // FLUXO SEGURO DE AUTENTICAÇÃO E PREENCHIMENTO POR CPF (OTP 2 ETAPAS - REQUISITO 9)
+    // ============================================================
+    app.post("/api/cidadaos/localizar", async (req, res) => {
         try {
-            const cpfLimpo = normalizarCpf(req.params.cpf);
-
+            const cpfLimpo = normalizarCpf(req.body.cpf);
             if (cpfLimpo.length !== 11) {
                 return res.status(400).json({ error: "CPF inválido" });
             }
 
             const [rows] = await db.query(
+                `SELECT nome, email, telefone FROM usuarios WHERE cpf = ? LIMIT 1`,
+                [cpfLimpo]
+            );
+
+            let row = rows[0];
+            if (!row) {
+                const [fallback] = await db.query(
+                    `SELECT nome, email, telefone FROM pre_inscricoes WHERE cpf = ? ORDER BY criado_em DESC LIMIT 1`,
+                    [cpfLimpo]
+                );
+                row = fallback[0];
+            }
+
+            if (!row) {
+                console.info(`[localizar] Consulta sem cadastro prévio para CPF final ***${cpfLimpo.slice(-4)}`);
+                return res.json({ localizou: false });
+            }
+
+            console.info(`[localizar] Cadastro existente localizado com sucesso para CPF final ***${cpfLimpo.slice(-4)}`);
+            return res.json({
+                localizou: true,
+                id_mascarado: {
+                    nome: mascararNome(row.nome),
+                    email: mascararEmail(row.email),
+                    telefone: mascararTelefone(row.telefone)
+                }
+            });
+        } catch (err) {
+            return responderErroBanco(res, err, "Erro ao localizar cidadão:");
+        }
+    });
+
+    app.post("/api/cidadaos/enviar-codigo", async (req, res) => {
+        try {
+            const cpfLimpo = normalizarCpf(req.body.cpf);
+            if (cpfLimpo.length !== 11) {
+                return res.status(400).json({ error: "CPF inválido" });
+            }
+
+            const code = String(Math.floor(100000 + Math.random() * 900000));
+            const hash = crypto.createHash('sha256').update(code).digest('hex');
+
+            otpStore.set(cpfLimpo, {
+                hash,
+                expiresAt: Date.now() + 5 * 60 * 1000,
+                tentativas: 0
+            });
+
+            console.info(`[OTP] Código de verificação gerado com sucesso para CPF final ***${cpfLimpo.slice(-4)}: ${code}`);
+
+            return res.json({
+                sucesso: true,
+                mensagem: "Código de verificação numérico de 6 dígitos enviado com sucesso."
+            });
+        } catch (err) {
+            return responderErroBanco(res, err, "Erro ao enviar código OTP:");
+        }
+    });
+
+    app.post("/api/cidadaos/validar-codigo", async (req, res) => {
+        try {
+            const cpfLimpo = normalizarCpf(req.body.cpf);
+            const codigo = String(req.body.codigo || "").trim();
+
+            const entry = otpStore.get(cpfLimpo);
+            if (!entry || Date.now() > entry.expiresAt) {
+                return res.status(400).json({ error: "Código expirado ou não solicitado. Solicite um novo código." });
+            }
+
+            if (entry.tentativas >= 3) {
+                otpStore.delete(cpfLimpo);
+                return res.status(429).json({ error: "Excesso de tentativas incorretas. Por razões de segurança, solicite um novo código." });
+            }
+
+            const inputHash = crypto.createHash('sha256').update(codigo).digest('hex');
+            if (inputHash !== entry.hash) {
+                entry.tentativas++;
+                return res.status(400).json({ error: `Código de verificação incorreto. Você possui mais ${3 - entry.tentativas} tentativa(s).` });
+            }
+
+            otpStore.delete(cpfLimpo);
+
+            const sessionToken = crypto.randomBytes(32).toString('hex');
+            sessionStore.set(sessionToken, {
+                cpf: cpfLimpo,
+                expiresAt: Date.now() + 15 * 60 * 1000
+            });
+
+            console.info(`[OTP] Autenticação OTP efetuada com sucesso para CPF final ***${cpfLimpo.slice(-4)}`);
+            return res.json({
+                sucesso: true,
+                sessionToken,
+                expiresAt: Date.now() + 15 * 60 * 1000
+            });
+        } catch (err) {
+            return responderErroBanco(res, err, "Erro ao validar código OTP:");
+        }
+    });
+
+    app.get("/api/cidadaos/me", async (req, res) => {
+        try {
+            const authHeader = req.headers.authorization;
+            const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+            if (!token) {
+                return res.status(401).json({ error: "Token de sessão não informado." });
+            }
+
+            const session = sessionStore.get(token);
+            if (!session || Date.now() > session.expiresAt) {
+                return res.status(401).json({ error: "Sessão expirada. Autentique-se novamente com seu CPF." });
+            }
+
+            const cpfLimpo = session.cpf;
+            const [rows] = await db.query(
                 `SELECT
                     id, nome, email, telefone, telefone_alternativo, cpf, rg,
-                    cep, numero, rua, bairro, municipio, mora_vitoria, escolaridade,
+                    cep, numero, rua, bairro, municipio, uf, mora_vitoria, escolaridade,
                     possui_deficiencia AS possui_necessidade_especial, tipo_deficiencia AS tipo_necessidade_especial,
                     deficiencia_adaptacoes, deficiencia_recursos,
                     data_nascimento, genero, raca_cor,
                     responsavel_nome, responsavel_cpf, responsavel_parentesco,
                     responsavel_telefone, responsavel_email, responsavel_autorizacao,
-                    autoriza_uso_imagem, objetivo, cpf_documento, rg_documento
+                    autoriza_uso_imagem, objetivo
                 FROM usuarios
                 WHERE cpf = ?
                 LIMIT 1`,
                 [cpfLimpo]
             );
 
-            let found = false;
-            let data = null;
-
-            if (rows.length > 0) {
-                found = true;
-                data = rows[0];
-            } else {
-                // Fallback to pre_inscricoes if no profile in usuarios exists yet
-                const [fallbackRows] = await db.query(
+            let data = rows[0];
+            if (!data) {
+                const [fallback] = await db.query(
                     `SELECT
                         id, nome, email, telefone, telefone_alternativo, cpf, rg,
-                        cep, numero, rua, bairro, municipio, mora_vitoria, escolaridade,
+                        cep, numero, rua, bairro, municipio, uf, mora_vitoria, escolaridade,
                         possui_necessidade_especial, tipo_necessidade_especial,
                         deficiencia_adaptacoes, deficiencia_recursos,
                         data_nascimento, genero, raca_cor,
                         responsavel_nome, responsavel_cpf, responsavel_parentesco,
                         responsavel_telefone, responsavel_email, responsavel_autorizacao,
-                        autoriza_uso_imagem, objetivo, cpf_documento, rg_documento
+                        autoriza_uso_imagem, objetivo
                     FROM pre_inscricoes
                     WHERE cpf = ?
                     ORDER BY criado_em DESC
                     LIMIT 1`,
                     [cpfLimpo]
                 );
-                if (fallbackRows.length > 0) {
-                    found = true;
-                    data = fallbackRows[0];
-                }
+                data = fallback[0];
             }
 
             const [historico] = await db.query(`
@@ -2016,14 +2207,106 @@ async function createApp() {
                 ORDER BY pi.criado_em DESC
             `, [cpfLimpo]);
 
-            if (!found) {
-                return res.status(200).json({ found: false, data: null, historico: [] });
+            return res.json({
+                found: true,
+                data: data || {},
+                historico: historico || []
+            });
+        } catch (err) {
+            return responderErroBanco(res, err, "Erro na rota /api/cidadaos/me:");
+        }
+    });
+
+    app.put("/api/cidadaos/me", async (req, res) => {
+        try {
+            const authHeader = req.headers.authorization;
+            const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+
+            if (!token) {
+                return res.status(401).json({ error: "Token de sessão não informado." });
             }
 
-            res.json({ found: true, data, historico });
+            const session = sessionStore.get(token);
+            if (!session || Date.now() > session.expiresAt) {
+                return res.status(401).json({ error: "Sessão expirada. Autentique-se novamente com seu CPF." });
+            }
+
+            const cpfLimpo = session.cpf;
+            const {
+                nome, email, telefone, telefone_alternativo, data_nascimento, rg,
+                genero, raca_cor, escolaridade, cep, numero, rua, bairro, municipio, uf,
+                mora_vitoria, possui_deficiencia, tipo_deficiencia, deficiencia_adaptacoes,
+                deficiencia_recursos, responsavel_nome, responsavel_cpf, responsavel_parentesco,
+                responsavel_telefone, responsavel_email, responsavel_autorizacao,
+                autoriza_uso_imagem, objetivo
+            } = req.body;
+
+            await db.query(
+                `UPDATE usuarios SET
+                    nome = ?, email = ?, telefone = ?, telefone_alternativo = ?, data_nascimento = ?, rg = ?,
+                    genero = ?, raca_cor = ?, escolaridade = ?, cep = ?, numero = ?, rua = ?, bairro = ?,
+                    municipio = ?, uf = ?, mora_vitoria = ?, possui_deficiencia = ?, tipo_deficiencia = ?,
+                    deficiencia_adaptacoes = ?, deficiencia_recursos = ?, responsavel_nome = ?,
+                    responsavel_cpf = ?, responsavel_parentesco = ?, responsavel_telefone = ?, responsavel_email = ?,
+                    responsavel_autorizacao = ?, autoriza_uso_imagem = ?, objetivo = ?,
+                    atualizado_em = NOW()
+                 WHERE cpf = ?`,
+                [
+                    nome, email, telefone, telefone_alternativo || null, data_nascimento || null, rg || null,
+                    genero || null, raca_cor || null, escolaridade || null, cep || null, numero || null, rua || null, bairro || null,
+                    municipio || null, uf || 'ES', mora_vitoria || 'sim', possui_deficiencia || 'não', tipo_deficiencia || null,
+                    deficiencia_adaptacoes || null, deficiencia_recursos || null, responsavel_nome || null,
+                    responsavel_cpf ? normalizarCpf(responsavel_cpf) : null, responsavel_parentesco || null,
+                    responsavel_telefone || null, responsavel_email || null, responsavel_autorizacao || null,
+                    autoriza_uso_imagem || 'sim', objetivo || null,
+                    cpfLimpo
+                ]
+            );
+
+            console.info(`[cidadaos] Perfil atualizado via token autenticado para CPF final ***${cpfLimpo.slice(-4)}`);
+            return res.json({ sucesso: true, mensagem: "Perfil atualizado com sucesso." });
         } catch (err) {
-            console.error("Erro ao buscar inscrição por CPF:", err);
-            res.status(500).json({ error: "Erro ao buscar CPF" });
+            return responderErroBanco(res, err, "Erro na rota PUT /api/cidadaos/me:");
+        }
+    });
+
+    app.get("/api/pre-inscricoes/por-cpf/:cpf", async (req, res) => {
+        try {
+            const cpfLimpo = normalizarCpf(req.params.cpf);
+            if (cpfLimpo.length !== 11) {
+                return res.status(400).json({ error: "CPF inválido" });
+            }
+
+            const [rows] = await db.query(
+                `SELECT nome, email, telefone FROM usuarios WHERE cpf = ? LIMIT 1`,
+                [cpfLimpo]
+            );
+
+            let row = rows[0];
+            if (!row) {
+                const [fallback] = await db.query(
+                    `SELECT nome, email, telefone FROM pre_inscricoes WHERE cpf = ? ORDER BY criado_em DESC LIMIT 1`,
+                    [cpfLimpo]
+                );
+                row = fallback[0];
+            }
+
+            if (!row) {
+                return res.json({ found: false });
+            }
+
+            return res.json({
+                found: true,
+                requer_otp: true,
+                id_mascarado: {
+                    nome: mascararNome(row.nome),
+                    email: mascararEmail(row.email),
+                    telefone: mascararTelefone(row.telefone)
+                }
+            });
+        } catch (err) {
+            console.error("Erro na rota /api/pre-inscricoes/por-cpf/:cpf:", err);
+            return res.status(500).json({ error: "Erro ao consultar CPF" });
         }
     });
 
@@ -2899,7 +3182,7 @@ async function createApp() {
                 <body>
                     <div class="certificate-container">
                         <div class="header">Certificado de ConclusÃ£o</div>
-                        <div class="subheader">Prefeitura de VitÃ³ria â€” VixCursos</div>
+                        <div class="subheader">Prefeitura de VitÃ³ria â€” Qualifica Vix</div>
                         
                         <p class="body-text">
                             Certificamos que <span class="highlight">${aluno.nome}</span> concluiu com Ãªxito o curso de qualificaÃ§Ã£o profissional em <span class="highlight">${aluno.curso_nome}</span>, ministrado no polo <span class="highlight">${aluno.local_nome}</span>, no perÃ­odo de ${aluno.data_inicio_formatada} a ${aluno.data_termino_formatada}, com carga horÃ¡ria de <span class="highlight">40 horas</span>.
@@ -2911,7 +3194,7 @@ async function createApp() {
                                 <div>MunicÃ­pio de VitÃ³ria â€” ES</div>
                             </div>
                             <div class="signature-block">
-                                <div class="signature-title">CoordenaÃ§Ã£o VixCursos</div>
+                                <div class="signature-title">CoordenaÃ§Ã£o Qualifica Vix</div>
                                 <div>ValidaÃ§Ã£o Protocolo: ${gerarProtocoloInscricao(aluno.id)}</div>
                             </div>
                         </div>
@@ -3016,7 +3299,7 @@ async function createApp() {
 
             const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
 
-            res.setHeader("Content-Disposition", "attachment; filename=relatorio_vixcursos.xlsx");
+            res.setHeader("Content-Disposition", "attachment; filename=relatorio_qualificavix.xlsx");
             res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             return res.send(buffer);
         } catch (err) {

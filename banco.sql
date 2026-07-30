@@ -70,6 +70,7 @@ CREATE TABLE cursos (
     horario_inicio TIME NULL,
     horario_termino TIME NULL,
     descricao TEXT NULL,
+    ementa TEXT NULL,
     competencias TEXT NULL,
     pre_requisitos TEXT NULL,
     carga_horaria INT NULL,

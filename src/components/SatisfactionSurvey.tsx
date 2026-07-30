@@ -85,7 +85,7 @@ export default function SatisfactionSurvey({ isOpen, onClose }: SatisfactionSurv
     },
     {
       id: 15,
-      question: "15. (Opcional) Se pudesse mudar apenas uma coisa no site do VixCursos, o que mudaria?",
+      question: "15. (Opcional) Se pudesse mudar apenas uma coisa no site do Qualifica Vix, o que mudaria?",
       options: ["Mais cursos no período noturno", "Mais vagas por turma", "Melhor navegação pelo celular", "Aviso antecipado de vagas", "Nenhuma alteração"]
     }
   ];
@@ -193,7 +193,7 @@ export default function SatisfactionSurvey({ isOpen, onClose }: SatisfactionSurv
                 Obrigado por participar!
               </h4>
               <p className="text-xs text-slate-500 max-w-sm leading-relaxed">
-                Sua avaliação foi registrada com sucesso e orientará as próximas melhorias no portal VixCursos.
+                Sua avaliação foi registrada com sucesso e orientará as próximas melhorias no portal Qualifica Vix.
               </p>
               <button
                 onClick={() => {

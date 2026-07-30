@@ -55,7 +55,7 @@ export default function Header({ transparent = false }: HeaderProps) {
         <Link to="/" className="flex items-center gap-4 select-none">
           <img 
             src="/imagem/VIxcursos.png" 
-            alt="VIX Cursos" 
+            alt="Qualifica Vix" 
             className="h-10 md:h-12 w-auto object-contain transition-transform duration-300 hover:scale-[1.02]"
           />
           <div className="w-[1px] h-8 bg-white/20 hidden sm:block" />

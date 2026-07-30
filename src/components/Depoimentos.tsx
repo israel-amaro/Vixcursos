@@ -14,7 +14,7 @@ export default function Depoimentos() {
   const list: Testimonial[] = [
     {
       name: "João Carlos M.",
-      text: "Depois do curso de Barbeiro, abri meu próprio salão em menos de 6 meses. VIX Cursos me deu a base técnica e a confiança que eu precisava.",
+      text: "Depois do curso de Barbeiro, abri meu próprio salão em menos de 6 meses. O Qualifica Vix me deu a base técnica e a confiança que eu precisava.",
       course: "Barbeiro",
       neighborhood: "São Pedro",
       year: "2025"
@@ -28,7 +28,7 @@ export default function Depoimentos() {
     },
     {
       name: "Rosane T.",
-      text: "Aprendi Confeitaria do zero e hoje vendo bolos artesanais na minha comunidade. O que era hobby virou renda real. Gratidão ao VIX Cursos!",
+      text: "Aprendi Confeitaria do zero e hoje vendo bolos artesanais na minha comunidade. O que era hobby virou renda real. Gratidão ao Qualifica Vix!",
       course: "Confeitaria",
       neighborhood: "Maruípe",
       year: "2025"
@@ -49,7 +49,7 @@ export default function Depoimentos() {
             O que dizem nossos alunos
           </h2>
           <p className="text-sm md:text-base text-gray-400 mt-3 max-w-xl mx-auto font-medium">
-            Pessoas que transformaram suas vidas através dos cursos VIX Cursos
+            Pessoas que transformaram suas vidas através dos cursos do Qualifica Vix
           </p>
         </div>
 

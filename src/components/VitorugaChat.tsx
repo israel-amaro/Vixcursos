@@ -277,7 +277,7 @@ export default function VitorugaChat() {
         await new Promise((r) => setTimeout(r, 1000));
         setIsTyping(false);
         
-        const welcomeText = "Olá! 🐢 Eu sou o **Vitoruga**, o assistente virtual da VIX Cursos. Precisa de ajuda para encontrar um curso?\n\nVocê também pode fazer o nosso **Quiz Vocacional** para descobrir o curso ideal para o seu perfil.\n\nPergunte-me sobre:\n• **'vagas'**\n• **'lista de cursos'**\n• **'como me inscrever'**";
+        const welcomeText = "Olá! 🐢 Eu sou o **Vitoruga, assistente virtual do Qualifica Vix**. Precisa de ajuda para encontrar um curso?\n\nVocê também pode fazer o nosso **Quiz Vocacional** para descobrir o curso ideal para o seu perfil.\n\nPergunte-me sobre:\n• **'vagas'**\n• **'lista de cursos'**\n• **'como me inscrever'**";
         
         setMessages([
           {
@@ -560,8 +560,29 @@ export default function VitorugaChat() {
       }
 
       const data = await res.json();
+
+      if (!data.found) {
+        const reply = "Não encontrei nenhuma inscrição vinculada a este CPF. 🐢";
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `bot-lookup-res-${Date.now()}`,
+            sender: 'bot',
+            text: reply,
+            options: [
+              { texto: "Fazer Quiz Vocacional 🎯", valor: "iniciar_quiz" },
+              { texto: "Consultar Histórico 📂", valor: "consultar_historico" },
+              { texto: "Sugerir Cursos Futuros 💡", valor: "sugerir_cursos" }
+            ]
+          }
+        ]);
+        speakText(reply);
+        setLookup({ active: false, step: 'finished' });
+        return;
+      }
       
-      let reply = `Encontrei seu cadastro! Olá, **${data.data.nome}**.\n\nAqui está o histórico das suas inscrições:\n\n`;
+      const nomeAluno = data.data?.nome || data.id_mascarado?.nome || 'Cidadão';
+      let reply = `Encontrei seu cadastro! Olá, **${nomeAluno}**.\n\nPor motivos de privacidade e segurança da LGPD, os dados completos do seu histórico e comprovante são exibidos com autenticação por código OTP durante a pré-inscrição.\n\n`;
       if (data.historico && data.historico.length > 0) {
         data.historico.forEach((h: any) => {
           const classif = String(h.status_inscricao).toLowerCase() === 'suplente' ? 'Suplente' : 'Titular';
@@ -575,7 +596,7 @@ export default function VitorugaChat() {
           reply += `\n`;
         });
       } else {
-        reply += "Nenhuma turma cadastrada no histórico.";
+        reply += "Seu cadastro está ativo na Prefeitura de Vitória! Para realizar uma nova pré-inscrição, selecione um dos cursos disponíveis.";
       }
 
       setMessages((prev) => [
@@ -708,7 +729,7 @@ export default function VitorugaChat() {
         });
 
         setIsTyping(false);
-        const reply = "Obrigado! Sua sugestão de curso foi recebida com sucesso e enviada ao setor de planejamento do VixCursos. 🐢💡";
+        const reply = "Obrigado! Sua sugestão de curso foi recebida com sucesso e enviada ao setor de planejamento do Qualifica Vix. 🐢💡";
         setMessages((prev) => [
           ...prev,
           {
@@ -884,9 +905,9 @@ export default function VitorugaChat() {
       } else if (cleanText.includes("localizacao") || cleanText.includes("onde e o curso") || cleanText.includes("polo")) {
         customReply = "Os cursos são ministrados em diversos polos parceiros da PMV, incluindo o **Senac Bento Ferreira**, o **Senai** na Av. Mascarenhas de Moraes, e carretas móveis. A localização exata está destacada no catálogo e na confirmação da sua pré-inscrição!";
       } else if (cleanText.includes("certificado") || cleanText.includes("emissao de certificado")) {
-        customReply = "Para emitir o seu certificado do VixCursos, você deve comparecer à área do aluno no site, informar seu CPF, responder o questionário rápido pós-curso (Módulo 5) e fazer o download do PDF. Prático e rápido! 🎓";
+        customReply = "Para emitir o seu certificado do Qualifica Vix, você deve comparecer à área do aluno no site, informar seu CPF, responder o questionário rápido pós-curso (Módulo 5) e fazer o download do PDF. Prático e rápido! 🎓";
       } else if (cleanText.includes("deficiencia") || cleanText.includes("adaptacao") || cleanText.includes("pcd")) {
-        customReply = "Candidatos com deficiência têm reserva de vaga garantida e prioritária no VixCursos! Durante a pré-inscrição, declare a sua necessidade especial para que a gestão providencie os recursos e adaptações assistivas necessárias.";
+        customReply = "Candidatos com deficiência têm reserva de vaga garantida e prioritária no Qualifica Vix! Durante a pré-inscrição, declare a sua necessidade especial para que a gestão providencie os recursos e adaptações assistivas necessárias.";
       } else if (cleanText.includes("contato") || cleanText.includes("semcid") || cleanText.includes("falar com atendente") || cleanText.includes("humano")) {
         customReply = "Você pode entrar em contato com a equipe de suporte da Semcid pelo e-mail **crassenaitcc@gmail.com** ou pelo telefone de atendimento municipal 156. Se desejar, posso encaminhar sua mensagem para um atendente humano! 📞";
       }
@@ -965,7 +986,7 @@ export default function VitorugaChat() {
         {
           id: `bot-lookup-${Date.now()}`,
           sender: 'bot',
-          text: "📂 **Consulta de Histórico e Certificados**\n\nPor favor, digite seu **CPF** (apenas números ou formatado) para buscarmos seu cadastro e certificados no VixCursos:"
+          text: "📂 **Consulta de Histórico e Certificados**\n\nPor favor, digite seu **CPF** (apenas números ou formatado) para buscarmos seu cadastro e certificados no Qualifica Vix:"
         }
       ]);
     } else if (valor === 'sugerir_cursos') {
@@ -1136,7 +1157,7 @@ export default function VitorugaChat() {
                   <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-success rounded-full border border-slate-900" />
                 </div>
                 <div>
-                  <h2 className="font-display font-bold text-white text-xs tracking-wider">Vitoruga</h2>
+                  <h2 className="font-display font-bold text-white text-xs tracking-wider">Vitoruga, assistente virtual do Qualifica Vix</h2>
                   <p className="text-[10px] text-success font-semibold">Online</p>
                 </div>
               </div>

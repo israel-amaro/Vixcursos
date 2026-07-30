@@ -27,11 +27,11 @@ export default function Home() {
   const [isMobile, setIsMobile] = useState(false);
 
   const [showIntro, setShowIntro] = useState(() => {
-    return !sessionStorage.getItem('vixcursos-intro-shown');
+    return !(sessionStorage.getItem('qualificavix-intro-shown') || sessionStorage.getItem('vixcursos-intro-shown'));
   });
 
   const [contentRevealed, setContentRevealed] = useState(() => {
-    return !!sessionStorage.getItem('vixcursos-intro-shown');
+    return !!(sessionStorage.getItem('qualificavix-intro-shown') || sessionStorage.getItem('vixcursos-intro-shown'));
   });
 
   useEffect(() => {
@@ -51,7 +51,7 @@ export default function Home() {
 
       const timer = setTimeout(() => {
         setShowIntro(false);
-        sessionStorage.setItem('vixcursos-intro-shown', 'true');
+        sessionStorage.setItem('qualificavix-intro-shown', 'true');
       }, 4000);
 
       return () => {
@@ -105,7 +105,7 @@ export default function Home() {
               >
                 <img
                   src="/imagem/VIxcursos.png"
-                  alt="VIX Cursos"
+                  alt="Qualifica Vix"
                   className="h-12 sm:h-16 md:h-20 w-auto object-contain select-none"
                 />
               </motion.div>

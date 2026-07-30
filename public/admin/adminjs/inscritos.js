@@ -311,10 +311,10 @@ function exibirFichaCompleta(aluno, historico) {
 
     const renderizarDocumento = (documento, label) => {
         if (!documento) {
-            return '<em style="color:#64748b">Não enviado</em>';
+            return '<em style="color:#94a3b8; font-style:normal; font-weight:500;"><i class="bi bi-person-badge icon-inline"></i> Apresentação presencial exigida na matrícula</em>';
         }
         if (String(documento).startsWith('data:application/pdf') || String(documento).includes('.pdf')) {
-            return `<a href="${documento}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:10px;padding:8px 12px;border-radius:6px;background:#0f172a;border:1px solid #334155;color:#e2e8f0;text-decoration:none;"><i class="bi bi-filetype-pdf" aria-hidden="true"></i> Abrir PDF do ${label}</a>`;
+            return `<a href="${documento}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:10px;padding:8px 12px;border-radius:6px;background:#0f172a;border:1px solid #334155;color:#e2e8f0;text-decoration:none;"><i class="bi bi-filetype-pdf" aria-hidden="true"></i> Abrir PDF do ${label} (Histórico)</a>`;
         }
         return `<img src="${documento}" alt="Documento ${label}" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;border:1px solid #334155;background:#0f172a;padding:6px;">`;
     };
@@ -610,7 +610,7 @@ function imprimirFichaAluno(aluno, historico) {
         <body>
             <div class="header-print">
                 <h1>Ficha de Cadastro do Aluno</h1>
-                <p>Prefeitura Municipal de Vitória — VixCursos</p>
+                <p>Prefeitura Municipal de Vitória — Qualifica Vix</p>
                 <p>Data de Emissão: \${new Date().toLocaleString('pt-BR')}</p>
             </div>
 
@@ -714,7 +714,7 @@ function gerarPdfInscritos() {
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
-    doc.text('Relatório de Inscritos - Vix Cursos', 14, 16);
+    doc.text('Relatório de Inscritos - Qualifica Vix', 14, 16);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);

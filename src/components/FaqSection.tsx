@@ -57,7 +57,7 @@ export default function FaqSection() {
             transition={{ delay: 0.2 }}
             className="text-white/60 text-sm max-w-xl mx-auto"
           >
-            Encontre respostas rápidas para as principais dúvidas sobre inscrições, matrículas, suplência e certificados do VixCursos.
+            Encontre respostas rápidas para as principais dúvidas sobre inscrições, matrículas, suplência e certificados do Qualifica Vix.
           </motion.p>
         </div>
 

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, BookX, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, XCircle, Clock, Calendar, BookmarkPlus, TrendingUp, DollarSign, Tag } from 'lucide-react';
+import { MapPin, BookX, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, XCircle, Clock, Calendar, BookmarkPlus, TrendingUp, DollarSign, Tag, Info, BookOpen } from 'lucide-react';
 import { FilterState } from './FiltroBusca';
+import CourseModal, { CourseModalData } from './CourseModal';
 
 const imagensCursos: { [key: string]: string } = {
   'Beleza':                       'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&q=80&w=800',
@@ -66,11 +67,14 @@ interface Course {
   data_inicio: string;
   data_termino: string;
   categoria: string;
-  idade_min: string;
-  idade_max: string;
+  idade_min: string | number;
+  idade_max: string | number;
   modalidade: string;
   local: string;
   descricao?: string;
+  ementa?: string;
+  competencias?: string;
+  pre_requisitos?: string;
   carga_horaria?: number;
   isNovo?: boolean;
   isMaisProcurado?: boolean;
@@ -87,6 +91,11 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
   const [activeTab, setActiveTab] = useState<'todos' | 'mais_procurados' | 'novos'>('todos');
   const [sortBy, setSortBy] = useState<string>('recentes');
+
+  // Modal State
+  const [selectedCourseForModal, setSelectedCourseForModal] = useState<CourseModalData | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const triggerRef = React.useRef<HTMLButtonElement | null>(null);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -396,6 +405,11 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
                         </div>
                       </div>
 
+                      {/* Pre-requisites display */}
+                      <p className="text-[11px] font-semibold text-slate-500 mb-2">
+                        <strong>Pré-requisitos:</strong> {course.pre_requisitos || "Nenhum pré-requisito adicional informado"}
+                      </p>
+
                       {/* Informações adicionais */}
                       <div className="flex flex-col gap-1.5 text-xs text-slate-500 pt-3 border-t border-slate-100">
                         <div className="flex items-center gap-2">
@@ -409,8 +423,8 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
                       </div>
                     </div>
 
-                    {/* Footer Vagas & Botão CTA */}
-                    <div className="pt-4 border-t border-slate-100 mt-5 flex flex-col gap-3">
+                    {/* Footer Vagas & Botões CTA */}
+                    <div className="pt-4 border-t border-slate-100 mt-5 flex flex-col gap-2.5">
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-slate-400 font-bold uppercase tracking-wider">Vagas Disponíveis</span>
                         <span className="font-mono font-extrabold text-slate-900 text-sm">
@@ -419,8 +433,20 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
                       </div>
                       
                       <button
+                        onClick={(e) => {
+                          triggerRef.current = e.currentTarget;
+                          setSelectedCourseForModal(course);
+                          setIsModalOpen(true);
+                        }}
+                        className="w-full py-2.5 rounded-xl border border-slate-300 hover:border-accent/40 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                      >
+                        <BookOpen className="w-3.5 h-3.5 text-accent" />
+                        Ver ementa e mais informações
+                      </button>
+
+                      <button
                         onClick={() => navigate(`/pre-inscricao/${course.id}`)}
-                        className={`w-full py-3.5 rounded-2xl text-xs font-extrabold uppercase tracking-widest text-white transition-all duration-300 cursor-pointer text-center shadow-md transform hover:scale-[1.02] ${
+                        className={`w-full py-3 rounded-xl text-xs font-extrabold uppercase tracking-widest text-white transition-all duration-300 cursor-pointer text-center shadow-md transform hover:scale-[1.02] ${
                           isEsgotado
                             ? 'bg-orange-500 hover:bg-orange-600'
                             : 'bg-accent hover:bg-accent/90'
@@ -471,6 +497,16 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
           </div>
         )}
 
+        {/* Modal de Ementa e Informações do Curso */}
+        <CourseModal
+          course={selectedCourseForModal}
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedCourseForModal(null);
+          }}
+          triggerRef={triggerRef}
+        />
       </div>
     </section>
   );

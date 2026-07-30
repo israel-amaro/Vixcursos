@@ -317,6 +317,7 @@ function createLocalDb() {
             modalidade: modalidadeNome(curso.modalidade_id),
             local: localNome(curso.local_id),
             descricao: curso.descricao,
+            ementa: curso.ementa || curso.competencias || curso.descricao,
             competencias: curso.competencias,
             pre_requisitos: curso.pre_requisitos,
             carga_horaria: curso.carga_horaria,

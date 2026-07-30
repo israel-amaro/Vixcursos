@@ -279,11 +279,11 @@ INSERT INTO filtro_curso (curso) VALUES
 
 -- Seed FAQs
 INSERT INTO faq (pergunta, resposta, ordem) VALUES
-('Quem pode se inscrever?', 'Os cursos do VixCursos são destinados exclusivamente a moradores de Vitória - ES que atendam aos pré-requisitos de idade e escolaridade do curso pretendido.', 0),
-('Como funciona a confirmação de matrícula?', 'Após a pré-inscrição online, o aluno titular recebe uma notificação por e-mail/SMS com prazo de 48 horas para confirmar sua matrícula.', 1),
-('O que acontece se eu for suplente?', 'Caso as vagas imediatas estejam preenchidas, você entrará na fila de suplência automática. Se um candidato titular desistir, o próximo suplente da fila é convocado.', 2),
-('Qual o limite de cursos por semestre?', 'Cada cidadão pode se inscrever em até 4 cursos por semestre. A partir da 3ª inscrição simultânea, a inscrição entra automaticamente como suplente.', 3),
-('Os cursos são gratuitos?', 'Sim, todos os cursos oferecidos pelo portal VixCursos são 100% gratuitos.', 4);
+('Quem pode se inscrever?', 'Os cursos do Qualifica Vix são destinados exclusivamente a moradores de Vitória - ES que atendam aos pré-requisitos de idade e escolaridade do curso pretendido.', 0),
+('Quais os documentos necessários para a matrícula?', 'Após a pré-inscrição online, ao ser convocado você deverá apresentar CPF, RG, Comprovante de Residência em Vitória e Comprovante de Escolaridade.', 1),
+('Como sei se fui selecionado?', 'Você receberá uma notificação por e-mail e SMS cadastrados e também poderá consultar o status com seu CPF no portal.', 2),
+('O que acontece se a turma lotar?', 'Caso as vagas esgotem, você entrará automaticamente na lista de suplentes e será convocado se houver desistência.', 3),
+('Os cursos são gratuitos?', 'Sim, todos os cursos oferecidos pelo portal Qualifica Vix são 100% gratuitos.', 4);
 
 -- Seed Configs
 INSERT INTO configuracoes (limite_inscricoes_semestre, prazo_confirmacao_horas) VALUES (4, 48);

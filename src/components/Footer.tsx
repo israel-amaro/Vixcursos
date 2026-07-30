@@ -26,7 +26,7 @@ export default function Footer({ onOpenSurvey }: FooterProps) {
             <div className="flex select-none mb-2">
               <img 
                 src="/imagem/VIxcursos.png" 
-                alt="VIX Cursos" 
+                alt="Qualifica Vix" 
                 className="h-10 w-auto object-contain"
               />
             </div>
@@ -108,7 +108,7 @@ export default function Footer({ onOpenSurvey }: FooterProps) {
                 </button>
               )}
               <Link to="/sobre" className="text-white/50 hover:text-white transition-colors">
-                Sobre o VIX Cursos
+                Sobre o Qualifica Vix
               </Link>
             </nav>
           </div>
@@ -150,7 +150,7 @@ export default function Footer({ onOpenSurvey }: FooterProps) {
         {/* Bottom footer */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-center">
           <span className="text-[10px] text-white/20 tracking-wider font-mono">
-            © 2026 VIX Cursos — Prefeitura Municipal de Vitória. Todos os direitos reservados.
+            © 2026 Qualifica Vix — Prefeitura Municipal de Vitória. Todos os direitos reservados.
           </span>
           <div className="flex items-center gap-3 justify-center md:justify-end select-none">
             <span className="text-[10px] text-white/20 tracking-wider font-mono">

@@ -60,7 +60,7 @@ export default function Sobre() {
               Qualificação gratuita com foco em oportunidade real
             </h1>
             <p className="text-white/80 text-sm md:text-base mt-4 leading-relaxed max-w-xl">
-              O VIX Cursos conecta formação, empregabilidade e desenvolvimento local. 
+              O Qualifica Vix conecta formação, empregabilidade e desenvolvimento local. 
               A proposta é aproximar cursos profissionalizantes de quem quer iniciar, 
               retomar ou fortalecer sua trajetória no mercado.
             </p>
@@ -151,7 +151,7 @@ export default function Sobre() {
               Público prioritário
             </span>
             <h3 className="text-xl font-display font-extrabold text-white mb-6 leading-snug">
-              Para quem o VIX Cursos foi desenhado
+              Para quem o Qualifica Vix foi desenhado
             </h3>
             <ul className="flex flex-col gap-4 text-sm text-white/85">
               <li className="flex items-start gap-3">
