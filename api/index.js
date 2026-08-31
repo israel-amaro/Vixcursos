@@ -1,4 +1,4 @@
-const createApp = require("../server");
+const createApp = require("../server/server");
 
 let appPromise;
 

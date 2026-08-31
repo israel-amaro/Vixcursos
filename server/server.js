@@ -246,7 +246,7 @@ app.use((req, res, next) => {
 let baseUrl = process.env.PUBLIC_BASE_URL || `http://localhost:${SERVER_PORT}`;
 
 // Servir frontend
-app.use(express.static(path.join(__dirname, "dist")));
+app.use(express.static(path.join(__dirname, "..", "dist")));
 
 async function createApp() {
     // ======================================
@@ -712,7 +712,7 @@ async function createApp() {
     }
 
     const EMAIL_BRIDGE_CID = "vix-terceira-ponte";
-    const EMAIL_BRIDGE_ASSET_PATH = path.join(__dirname, "public", "imagem", "terceira_ponte.png");
+    const EMAIL_BRIDGE_ASSET_PATH = path.join(__dirname, "..", "public", "imagem", "terceira_ponte.png");
 
     function montarAnexosEmailPadrao() {
         if (!fs.existsSync(EMAIL_BRIDGE_ASSET_PATH)) {
@@ -3452,7 +3452,7 @@ async function createApp() {
         if (req.path.startsWith("/admin")) {
             return next();
         }
-        res.sendFile(path.join(__dirname, "dist", "index.html"));
+        res.sendFile(path.join(__dirname, "..", "dist", "index.html"));
     });
 
     return app;
