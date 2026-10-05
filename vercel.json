@@ -2,15 +2,18 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": "vite",
-  "functions": {
-    "api/index.js": {
-      "includeFiles": "dist/admin/**"
-    }
-  },
-  "routes": [
-    { "src": "/admin(?:/.*)?", "dest": "/api/index.js" },
-    { "src": "/(?:api|public|cursos|inscritos|inscricao|chat|certificado)(?:/.*)?", "dest": "/api/index.js" },
-    { "handle": "filesystem" },
-    { "src": "/.*", "dest": "/index.html" }
+  "redirects": [
+    { "source": "/admin", "destination": "/admin/login.html", "permanent": false },
+    { "source": "/admin/", "destination": "/admin/login.html", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "/api/index.js" },
+    { "source": "/public/:path*", "destination": "/api/index.js" },
+    { "source": "/cursos/:path*", "destination": "/api/index.js" },
+    { "source": "/inscritos/:path*", "destination": "/api/index.js" },
+    { "source": "/inscricao", "destination": "/api/index.js" },
+    { "source": "/chat", "destination": "/api/index.js" },
+    { "source": "/certificado/:path*", "destination": "/api/index.js" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

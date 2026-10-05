@@ -3,16 +3,18 @@ const assert = require('node:assert/strict');
 const { once } = require('node:events');
 const config = require('../vercel.json');
 
-test('Vercel: painel e APIs passam pelo backend antes dos arquivos estáticos', () => {
-    const filesystemIndex = config.routes.findIndex(route => route.handle === 'filesystem');
-    for (const path of ['/admin', '/admin/', '/admin/login.html', '/admin/menu.html', '/admin/adminjs/inscritos.js', '/api/admin/me', '/public/categoria', '/cursos', '/inscritos/1', '/inscricao', '/chat', '/certificado/1']) {
-        const index = config.routes.findIndex(route => route.src && new RegExp(`^(?:${route.src})$`).test(path));
-        assert.ok(index >= 0 && index < filesystemIndex, path);
-        assert.equal(config.routes[index].dest, '/api/index.js', path);
+test('Vercel: raiz admin leva ao login e APIs não caem no fallback React', () => {
+    for (const path of ['/admin', '/admin/']) {
+        const redirect = config.redirects.find(route => route.source === path);
+        assert.equal(redirect.destination, '/admin/login.html', path);
+        assert.equal(redirect.permanent, false, path);
     }
-    assert.equal(config.functions['api/index.js'].includeFiles, 'dist/admin/**');
-    for (const path of ['/', '/pre-inscricao/1', '/imagem/Vitoruga.png']) {
-        assert.ok(!config.routes.slice(0, filesystemIndex).some(route => new RegExp(`^(?:${route.src})$`).test(path)), path);
+    const match = (route, path) => new RegExp(`^(?:${route.source.replace('/:path*', '(?:/.*)?')})$`).test(path);
+    for (const path of ['/api/admin/me', '/public/categoria', '/cursos', '/cursos/esgotar/1', '/inscritos/1', '/inscricao', '/chat', '/certificado/1']) {
+        assert.equal(config.rewrites.find(route => match(route, path)).destination, '/api/index.js', path);
+    }
+    for (const path of ['/', '/pre-inscricao/1']) {
+        assert.equal(config.rewrites.find(route => match(route, path)).destination, '/index.html', path);
     }
 });
 
