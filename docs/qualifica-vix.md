@@ -36,6 +36,8 @@ O formulário consulta o CEP de residência. Para endereços fora de Vitória/ES
 
 ## Persistência e acesso
 
+Na Vercel, `/admin` redireciona ao login ou ao dashboard conforme a sessão. As páginas administrativas e as rotas `/api`, `/public`, `/cursos`, `/inscritos`, `/inscricao`, `/chat` e `/certificado` passam pela função Express antes do fallback React. Os arquivos `dist/admin/**` são incluídos na função para servir o painel após autenticação. As credenciais administrativas e do Firebase precisam ser configuradas também nas variáveis de ambiente da Vercel; o `.env.local` pertence somente ao computador local.
+
 O backend grava cursos, fichas, inscrições, consentimentos, preferências, FAQs e interessados sob `qualificaVix/data`. Cadastro, atualização da ficha e reserva de vaga são transações, evitando titularidade acima da capacidade e alteração de fichas sem autenticação. As regras em `firebase/database.rules.json` negam leitura e gravação direta pelo cliente; as APIs públicas retornam somente o catálogo e informações permitidas.
 
 O painel tem rotas nativas para cursos, fichas, inscrições, configurações, indicadores, relatórios e exportação Excel. As demais consultas herdadas têm uma camada de compatibilidade explícita; consultas sem implementação falham, em vez de apresentar um resultado vazio como se fosse real. As transações atuais operam sobre o conjunto do portal, adequado ao início do projeto; para um grande volume de inscrições, convém particionar as reservas por turma e os perfis por cidadão.
