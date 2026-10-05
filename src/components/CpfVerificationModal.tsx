@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, Lock, ArrowRight, RefreshCw, KeyRound, AlertCircle } from 'lucide-react';
+import { ShieldCheck, ArrowRight, RefreshCw, KeyRound, AlertCircle } from 'lucide-react';
 
 interface MaskedIdentity {
   nome: string;
@@ -20,7 +20,6 @@ export default function CpfVerificationModal({
   cpf,
   maskedIdentity,
   isOpen,
-  onClose,
   onVerified,
   onStartFromScratch
 }: CpfVerificationModalProps) {
@@ -117,9 +116,9 @@ export default function CpfVerificationModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
+    <div data-lenis-prevent className="responsive-overlay fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
       <div 
-        className="w-full max-w-md bg-slate-900 border border-white/15 rounded-3xl p-6 shadow-2xl text-left flex flex-col gap-5"
+        className="responsive-dialog overflow-y-auto overscroll-contain w-full max-w-md bg-slate-900 border border-white/15 rounded-3xl p-5 sm:p-6 shadow-2xl text-left flex flex-col gap-5"
         role="dialog"
         aria-modal="true"
       >
@@ -130,7 +129,7 @@ export default function CpfVerificationModal({
           </div>
           <div>
             <h3 className="font-display font-bold text-white text-lg leading-snug">
-              Validação de Segurança (OTP)
+              Recuperar meu cadastro
             </h3>
             <p className="text-xs text-white/60">
               Proteção de dados do cidadão — Qualifica Vix
@@ -199,7 +198,7 @@ export default function CpfVerificationModal({
         {step === 'code' && (
           <form onSubmit={handleVerifyCode} className="flex flex-col gap-4">
             <p className="text-xs text-white/80 leading-relaxed">
-              Enviamos um código de 6 dígitos para o e-mail <strong>{maskedIdentity.email}</strong> e celular <strong>{maskedIdentity.telefone}</strong>. Digite-o abaixo:
+              Enviamos um código de 6 dígitos para o e-mail <strong>{maskedIdentity.email}</strong>. Digite-o abaixo:
             </p>
 
             <div className="flex flex-col gap-1.5">
@@ -208,6 +207,9 @@ export default function CpfVerificationModal({
               </label>
               <input
                 type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                aria-label="Código de verificação"
                 maxLength={6}
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}

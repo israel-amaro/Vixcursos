@@ -218,7 +218,7 @@ const initialCursos = [
 const defaultFaqs = [
     {
         pergunta: "Quem pode se inscrever?",
-        resposta: "Os cursos do VixCursos são destinados exclusivamente a moradores de Vitória - ES que atendam aos pré-requisitos de idade e escolaridade do curso pretendido.",
+        resposta: "Os cursos do Qualifica Vix são destinados exclusivamente a moradores de Vitória - ES que atendam aos pré-requisitos de idade e escolaridade do curso pretendido.",
         ordem: 0
     },
     {
@@ -238,7 +238,7 @@ const defaultFaqs = [
     },
     {
         pergunta: "Os cursos são realmente gratuitos?",
-        resposta: "Sim, todos os cursos oferecidos pelo portal VixCursos são 100% gratuitos e contam com fornecimento de vale-transporte.",
+        resposta: "Sim, todos os cursos oferecidos pelo portal Qualifica Vix são 100% gratuitos e contam com fornecimento de vale-transporte.",
         ordem: 4
     },
     {
@@ -275,9 +275,10 @@ function toTime(value) {
     return String(value).slice(0, 5);
 }
 
-function createLocalState() {
+function createLocalState(withExamples = true) {
     return {
-        cursos: clone(initialCursos),
+        cursos: withExamples ? clone(initialCursos) : [],
+        usuarios: [],
         preInscricoes: [],
         interessados: [],
         sugestoes: [],
@@ -286,8 +287,8 @@ function createLocalState() {
     };
 }
 
-function createLocalDb() {
-    const state = createLocalState();
+function createLocalDb(initialState, options = {}) {
+    const state = initialState || createLocalState();
 
     const nextId = (rows) => rows.reduce((max, row) => Math.max(max, Number(row.id) || 0), 0) + 1;
     const cursoNome = (id) => filtroCursos.find((item) => item.id === Number(id))?.curso || "Curso";
@@ -295,7 +296,7 @@ function createLocalDb() {
     const modalidadeNome = (id) => filtroModalidades.find((item) => item.id === Number(id))?.modalidade || "Não informada";
     const localNome = (id) => filtroLocais.find((item) => item.id === Number(id))?.local || "Vitória";
 
-    const titularesCurso = (cursoId) => state.preInscricoes.filter((item) => Number(item.curso_id) === Number(cursoId) && item.status_inscricao === "titular").length;
+    const titularesCurso = (cursoId) => state.preInscricoes.filter((item) => Number(item.curso_id) === Number(cursoId) && item.status_inscricao === "titular" && !['cancelado', 'desistencia', 'nao_concluido', 'desistente', 'nao_compareceu', 'concluido', 'evadido'].includes(item.status)).length;
     const publicCourse = (curso) => {
         const inscritos = titularesCurso(curso.id);
         const vagasDisponiveis = Math.max(0, Number(curso.vagas || 0) - inscritos);
@@ -317,6 +318,7 @@ function createLocalDb() {
             modalidade: modalidadeNome(curso.modalidade_id),
             local: localNome(curso.local_id),
             descricao: curso.descricao,
+            mascote_id: curso.mascote_id || null,
             ementa: curso.ementa || curso.competencias || curso.descricao,
             competencias: curso.competencias,
             pre_requisitos: curso.pre_requisitos,
@@ -350,9 +352,13 @@ function createLocalDb() {
             local_nome: localNome(state.cursos.find((curso) => curso.id === Number(item.curso_id))?.local_id)
         }));
 
-    const query = async (sql, values = []) => {
+    const query = (sql, values = []) => {
         const rawSql = String(sql || "");
         const s = normalizeSql(rawSql);
+        if (s.includes('from usuarios') && s.startsWith('select')) {
+            const rows = state.usuarios.filter(u => s.includes('where cpf') ? u.cpf === values[0] : true);
+            return [clone(rows), []];
+        }
 
         if (!s || s.startsWith("create table") || s.startsWith("alter table") || s.startsWith("create index") || s.startsWith("create unique index")) {
             return [[], []];
@@ -439,6 +445,12 @@ function createLocalDb() {
                 horario_inicio: values[8] || null,
                 horario_termino: values[9] || null,
                 categoria_id: values[10] ? Number(values[10]) : Number(values[0]) || null,
+                descricao: values[11] || null,
+                ementa: values[12] || null,
+                competencias: values[13] || null,
+                pre_requisitos: values[14] || null,
+                carga_horaria: Number(values[15]) || null,
+                mascote_id: values[16] || null,
                 criado_em: new Date().toISOString(),
                 acessos_contador: 0
             };
@@ -456,7 +468,7 @@ function createLocalDb() {
             return [[], []];
         }
         if (s.startsWith("update cursos set status")) {
-            const curso = state.cursos.find((item) => Number(item.id) === Number(values[0] ?? values[1]));
+            const curso = state.cursos.find((item) => Number(item.id) === Number(values.length > 1 ? values[1] : values[0]));
             if (curso) curso.status = values.length > 1 ? values[0] : "esgotado";
             return [[], []];
         }
@@ -656,6 +668,7 @@ function createLocalDb() {
             }], []];
         }
 
+        if (options.strict) throw new Error(`Consulta ainda não suportada pelo provedor Firebase: ${rawSql.slice(0, 100)}`);
         if (s.includes("group by")) return [[], []];
         if (s.includes("count(*) as total")) return [[{ total: 0 }], []];
 
@@ -664,6 +677,14 @@ function createLocalDb() {
     };
 
     return {
+        provider: 'local',
+        readState: async () => clone(state),
+        mutate: async (operation) => {
+            const working = clone(state);
+            const result = operation(working);
+            Object.assign(state, working);
+            return result;
+        },
         query,
         getConnection: async () => ({ release: () => undefined }),
         state,
@@ -675,5 +696,6 @@ const LOCAL_PUBLIC_CURSOS = createLocalDb().getPublicCourses();
 
 module.exports = {
     LOCAL_PUBLIC_CURSOS,
-    createLocalDb
+    createLocalDb,
+    createLocalState
 };

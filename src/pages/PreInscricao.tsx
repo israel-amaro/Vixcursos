@@ -1,17 +1,18 @@
+import DOMPurify from 'dompurify';
+import MascotPicker from '../components/MascotPicker';
+import { getMascot, useMascotPreference, saveMascotPreference } from '../lib/mascots';
+import { useSmallScreen } from '../lib/useSmallScreen';
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  Send, 
-  Upload, 
-  Check, 
-  X, 
-  AlertCircle, 
-  Volume2, 
-  VolumeX, 
-  Smile, 
-  FileText, 
-  MapPin, 
+import {
+  ArrowLeft,
+  Send,
+  Check,
+  X,
+  Volume2,
+  VolumeX,
+  FileText,
+  MapPin,
   Loader2,
   ExternalLink
 } from 'lucide-react';
@@ -19,7 +20,7 @@ import CpfVerificationModal from '../components/CpfVerificationModal';
 
 interface Question {
   pergunta: string;
-  tipo: 'texto' | 'botoes' | 'arquivo';
+  tipo: 'texto' | 'botoes';
   chave: string;
   mascara?: 'cpf' | 'telefone' | 'cep' | 'data';
   opcoes?: { texto: string; valor: string }[];
@@ -35,14 +36,18 @@ interface Message {
 }
 
 export default function PreInscricao() {
+  const smallScreen = useSmallScreen();
   const { id: cursoId } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
   const [cursoNome, setCursoNome] = useState('o curso selecionado');
+  const { preference } = useMascotPreference();
+  const [courseMascot, setCourseMascot] = useState('vitoruga');
+  const mascot = getMascot(preference === 'auto' ? courseMascot : preference);
   const [cursoLocal, setCursoLocal] = useState('');
   const [vagasVerificadas, setVagasVerificadas] = useState(false);
   const [cursoDisponivel, setCursoDisponivel] = useState(true);
-  const [vagasInfo, setVagasInfo] = useState<{ inscritos: number; totais: number } | null>(null);
+  const [, setVagasInfo] = useState<{ inscritos: number; totais: number } | null>(null);
   const [loadingCurso, setLoadingCurso] = useState(true);
 
   // Voice synthesis settings
@@ -54,19 +59,17 @@ export default function PreInscricao() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  
+
   // Specific flow stages
+  const [profileOnly, setProfileOnly] = useState(false);
+  const [fastEnrollment, setFastEnrollment] = useState(false);
   const [aguardandoEscolhaCpf, setAguardandoEscolhaCpf] = useState(false);
-  const [aguardandoConfirmacaoFoto, setAguardandoConfirmacaoFoto] = useState(false);
   const [dadosSalvosExito, setDadosSalvosExito] = useState(false);
   const [protocoloGerado, setProtocoloGerado] = useState('');
-  const [modoAutoPreenchimento, setModoAutoPreenchimento] = useState(false);
-  const [documentoPendente, setDocumentoPendente] = useState<{ dataUrl: string; nome: string; tipo: string } | null>(null);
-  
+
   // Validation checks
   const [enderecoValido, setEnderecoValido] = useState<boolean | null>(null);
   const [dadosSalvos, setDadosSalvos] = useState<any>(null);
-  const [historicoCpf, setHistoricoCpf] = useState<any[]>([]);
   const [limiteInscricoes, setLimiteInscricoes] = useState(4);
   const [inscricoesAtivas, setInscricoesAtivas] = useState(0);
   const [objetivo1, setObjetivo1] = useState<string | null>(null);
@@ -80,6 +83,7 @@ export default function PreInscricao() {
 
   // Non-Vitória CEP prompt state
   const [aguardandoConfirmacaoCepForaVitoria, setAguardandoConfirmacaoCepForaVitoria] = useState(false);
+  const [semVinculoVitoria, setSemVinculoVitoria] = useState(false);
   const [dadosCepForaVitoria, setDadosCepForaVitoria] = useState<{ localidade: string; uf: string; cep: string; logradouro: string; bairro: string } | null>(null);
 
   // Secure OTP Authentication State
@@ -87,8 +91,8 @@ export default function PreInscricao() {
   const [maskedIdentity, setMaskedIdentity] = useState<{ nome: string; email: string; telefone: string } | null>(null);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const responseInFlight = useRef(false);
 
   // Form payload
   const [respostasUsuario, setRespostasUsuario] = useState<Record<string, any>>({
@@ -105,7 +109,7 @@ export default function PreInscricao() {
     cpf: '',
     rg: '',
     mora_vitoria: '',
-    confirmou_cep_fora_vitoria: false,
+    trabalha_vitoria: '',
     escolaridade: '',
     cep: '',
     numero: '',
@@ -155,7 +159,7 @@ export default function PreInscricao() {
 
   const obterRoteiroAtivo = (): Question[] => {
     const list: Question[] = [];
-    
+
     // 1. CPF
     list.push({
       pergunta: `Olá! 🐢 Eu sou o Vitoruga, assistente virtual do Qualifica Vix. Que legal que você quer se inscrever para <strong>{CURSO_NOME}</strong>! <br/><br/>Para começar, digite seu <strong>CPF</strong> no campo abaixo, só os números.`,
@@ -163,7 +167,7 @@ export default function PreInscricao() {
       chave: 'cpf',
       mascara: 'cpf',
     });
-    
+
     // 2. CEP
     list.push({
       pergunta: 'Perfeito. Agora me informe o seu <strong>CEP</strong> de residência para validar se você mora em Vitória.',
@@ -172,21 +176,21 @@ export default function PreInscricao() {
       mascara: 'cep',
       buscaCep: true,
     });
-    
+
     // 3. Número da residência
     list.push({
       pergunta: 'Qual é o <strong>Número</strong> da sua residência?',
       tipo: 'texto',
       chave: 'numero',
     });
-    
+
     // 4. Nome Completo
     list.push({
       pergunta: 'Qual é o seu <strong>Nome Completo</strong>?',
       tipo: 'texto',
       chave: 'nome',
     });
-    
+
     // 5. RG
     list.push({
       pergunta: 'Informe o número do seu <strong>RG</strong>.',
@@ -350,7 +354,7 @@ export default function PreInscricao() {
         chave: 'responsavel_email'
       });
       list.push({
-        pergunta: 'Você autoriza a participação do menor nos cursos oferecidos pelo VixCursos, conforme regulamento?',
+        pergunta: 'Você autoriza a participação do menor nos cursos oferecidos pelo Qualifica Vix, conforme regulamento?',
         tipo: 'botoes',
         chave: 'responsavel_autorizacao',
         opcoes: [
@@ -407,13 +411,13 @@ export default function PreInscricao() {
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = 'pt-BR';
     utterance.rate = 1.0;
-    
+
     const voices = synthRef.current.getVoices();
     const ptVoice = voices.find(voice => voice.lang.includes('pt-BR') || voice.lang.includes('pt'));
     if (ptVoice) {
       utterance.voice = ptVoice;
     }
-    
+
     synthRef.current.speak(utterance);
   };
 
@@ -433,12 +437,13 @@ export default function PreInscricao() {
           throw new Error('Curso não encontrado');
         }
         const dadosCurso = await resCurso.json();
+        setCourseMascot(getMascot(dadosCurso.mascote_id, dadosCurso.categoria).id);
         setCursoNome(dadosCurso.nome);
         setCursoLocal(dadosCurso.local);
 
         const resVagas = await fetch(`/api/cursos-public/${cursoId}/vagas`);
         const dadosVagas = await resVagas.json();
-        
+
         setVagasInfo({
           inscritos: dadosVagas.inscritos,
           totais: dadosVagas.vagas_totais
@@ -451,7 +456,7 @@ export default function PreInscricao() {
 
         // Fetch general configs for enrollment limit
         try {
-          const resConf = await fetch('/api/admin/configuracoes');
+          const resConf = await fetch('/api/configuracoes-public');
           if (resConf.ok) {
             const confData = await resConf.json();
             if (confData.limite_inscricoes_semestre) {
@@ -491,18 +496,19 @@ export default function PreInscricao() {
       };
       startChat();
     }
-  }, [vagasVerificadas, cursoDisponivel, cursoNome, speechEnabled]);
+  }, [vagasVerificadas, cursoDisponivel, cursoNome]);
 
   // Autoscroll to bottom
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping, documentoPendente, aguardandoObjetivo2]);
+    const messageList = chatEndRef.current?.parentElement;
+    messageList?.scrollTo({ top: messageList.scrollHeight, behavior: 'smooth' });
+  }, [messages, isTyping, aguardandoObjetivo2]);
 
   const addBotMessage = async (text: string, delay = 1000) => {
     setIsTyping(true);
     await new Promise((r) => setTimeout(r, delay));
     setIsTyping(false);
-    
+
     setMessages((prev) => [
       ...prev,
       {
@@ -576,16 +582,19 @@ export default function PreInscricao() {
     if (clean.length !== 8) return false;
 
     try {
-      const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`);
+      const res = await fetch(`/api/cep/${clean}`);
+      if (!res.ok) throw new Error('Consulta de CEP indisponível');
       const data = await res.json();
-      
+
       if (!data.erro) {
         const localidade = (data.localidade || '').trim();
         const uf = (data.uf || '').trim().toUpperCase();
-        const ehVitoria = localidade.toLowerCase() === 'vitória' || localidade.toLowerCase() === 'vitoria';
-        
+        const ehVitoria = (localidade.toLowerCase() === 'vitória' || localidade.toLowerCase() === 'vitoria') && uf === 'ES';
+
         if (!ehVitoria) {
           setEnderecoValido(false);
+          setSemVinculoVitoria(false);
+          setRespostasUsuario(prev => ({ ...prev, mora_vitoria: 'nao', trabalha_vitoria: '' }));
           setDadosCepForaVitoria({
             localidade: localidade || 'Outro município',
             uf: uf || 'ES',
@@ -595,7 +604,7 @@ export default function PreInscricao() {
           });
           setAguardandoConfirmacaoCepForaVitoria(true);
           await addBotMessage(
-            `⛔ <strong>ELEGIBILIDADE RESTRITA:</strong> Os cursos gratuitos do Qualifica Vix são <strong>exclusivos para pessoas que moram ou trabalham no município de Vitória</strong>.<br/><br/>O CEP <strong>${cepValue}</strong> refere-se à cidade de <strong>${localidade} - ${uf}</strong>.<br/><br/>Você pode <strong>corrigir o CEP</strong> digitando um endereço de Vitória ou <strong>sair do formulário</strong>.`,
+            `🐢 Seu CEP fica em <strong>${localidade}/${uf}</strong>. Os cursos do Qualifica Vix são destinados a quem <strong>mora ou trabalha em Vitória</strong>.<br/><br/>Se digitou o CEP por engano, pode corrigi-lo abaixo. Se este é o seu endereço de residência, precisamos confirmar:<br/><br/><strong>Você trabalha em Vitória?</strong> A instituição validará esse vínculo antes de confirmar a matrícula.`,
             600
           );
           return false;
@@ -609,9 +618,9 @@ export default function PreInscricao() {
           municipio: localidade || 'Vitória',
           uf: uf || 'ES',
           mora_vitoria: 'sim',
-          confirmou_cep_fora_vitoria: false
+          trabalha_vitoria: ''
         }));
-        
+
         await addBotMessage(
           `Endereço localizado com sucesso: <strong>${data.logradouro || 'Rua cadastrada'}</strong>, Bairro <strong>${data.bairro || 'Bairro'}</strong> — ${localidade}/${uf}! ✅`,
           800
@@ -627,11 +636,11 @@ export default function PreInscricao() {
     } catch (e) {
       console.error('Erro na busca de CEP', e);
       await addBotMessage(
-        `⚠️ <strong>Serviço ViaCEP temporariamente indisponível.</strong> Não se preocupe! Você pode continuar preenchendo os dados do seu endereço normalmente.`,
+        `⚠️ <strong>Consulta de endereço temporariamente indisponível.</strong> Seus dados continuam nesta tela. Tente enviar o CEP novamente em alguns instantes.`,
         800
       );
-      setEnderecoValido(true);
-      return true;
+      setEnderecoValido(null);
+      return false;
     }
   };
 
@@ -644,20 +653,26 @@ export default function PreInscricao() {
       aceitou_termos_ciencia: aceitouTermosCompromisso,
       aceitou_aviso_lgpd: aceitouAvisoLgpd,
       autoriza_uso_imagem: autorizaUsoImagem ? 'sim' : 'nao',
-      versao_termos: '1.0',
+      versao_termos: '2.0',
+      mascote_preferido: preference,
       timestamp_aceite_lgpd: new Date().toISOString()
     };
 
     try {
-      const res = await fetch('/inscricao', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch(profileOnly ? '/api/cidadaos/me' : '/inscricao', {
+        method: profileOnly ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json', ...(sessionToken ? { Authorization: `Bearer ${sessionToken}` } : {}) },
         body: JSON.stringify(payloadEnviado),
       });
 
       const responseData = await res.json();
 
       if (res.ok && !responseData.error) {
+        if (profileOnly) {
+          setDadosSalvosExito(true);
+          await addBotMessage('✅ Sua ficha foi atualizada. Os dados estarão disponíveis para suas próximas inscrições.', 600);
+          return;
+        }
         setProtocoloGerado(responseData.protocolo);
         setDadosSalvosExito(true);
 
@@ -666,7 +681,7 @@ export default function PreInscricao() {
           `🎉 <strong>INSCRIÇÃO REALIZADA!</strong><br/><br/>Seu número de protocolo é: <strong>${responseData.protocolo}</strong>.<br/>Classificação: <strong>${statusLabel}</strong>.<br/><br/>Daremos o retorno no seu e-mail e celular assim que as vagas forem validadas.`,
           1500
         );
-        
+
         if (responseData.notificacoes?.canal === 'sms') {
           await addBotMessage(
             'ℹ️ Enviamos o comprovante por <strong>SMS</strong>. Caso seu telefone tenha WhatsApp, certifique-se de que nossa central está habilitada.',
@@ -678,13 +693,12 @@ export default function PreInscricao() {
           `❌ <strong>Falha na inscrição:</strong> ${responseData.error || 'Vagas esgotadas'}.<br/><br/>Tente novamente ou selecione outra turma.`,
           1200
         );
-        setTimeout(() => {
-          window.location.reload();
-        }, 4000);
+        setEtapaAtual(roteiro.findIndex(q => q.chave === 'confirmacao_final'));
       }
     } catch (err) {
       console.error('Erro ao enviar inscrição:', err);
       await addBotMessage('❌ Falha na conexão com o servidor. Verifique sua conexão com a internet e tente novamente.', 1000);
+      setEtapaAtual(roteiro.findIndex(q => q.chave === 'confirmacao_final'));
     }
   };
 
@@ -693,11 +707,12 @@ export default function PreInscricao() {
     setRespostasUsuario((prev) => {
       const novo = { ...prev };
       [
-        'nome', 'email', 'telefone', 'telefone_alternativo', 'rg', 'mora_vitoria', 
-        'escolaridade', 'possui_necessidade_especial', 
+        'nome', 'email', 'telefone', 'telefone_alternativo', 'rg', 'mora_vitoria',
+        'escolaridade', 'possui_necessidade_especial',
         'tipo_necessidade_especial', 'deficiencia_adaptacoes', 'deficiencia_recursos',
         'cep', 'numero', 'rua', 'bairro', 'municipio', 'data_nascimento', 'genero', 'raca_cor',
-        'cpf_documento', 'rg_documento'
+        'uf', 'responsavel_nome', 'responsavel_cpf', 'responsavel_parentesco',
+        'responsavel_telefone', 'responsavel_email', 'responsavel_autorizacao'
       ].forEach((campo) => {
         if (dados[campo] !== undefined && dados[campo] !== null) {
           novo[campo] = dados[campo];
@@ -710,6 +725,14 @@ export default function PreInscricao() {
 
   // Main flow controller
   const prosseguirEtapa = async (valor: string, labelExibida?: string) => {
+    if (responseInFlight.current || isTyping) return;
+    responseInFlight.current = true;
+    try { await processarEtapa(valor, labelExibida); }
+    finally { responseInFlight.current = false; }
+  };
+
+  const processarEtapa = async (valor: string, labelExibida?: string) => {
+    if (isTyping) return;
     const qAtual = roteiro[etapaAtual];
 
     // 1. Handle CPF auto-fill prompt
@@ -717,7 +740,6 @@ export default function PreInscricao() {
       const confirmou = valor === 'auto';
       addUserMessage(labelExibida || (confirmou ? 'Auto-preencher' : 'Quero mudar algo'));
       setAguardandoEscolhaCpf(false);
-      setModoAutoPreenchimento(confirmou);
 
       if (confirmou) {
         aplicarDadosAutopreenchimento(dadosSalvos);
@@ -725,8 +747,9 @@ export default function PreInscricao() {
           'Perfeito! Reativei seus dados de cadastro para acelerar sua inscrição. ⚡',
           800
         );
-        const indexLgpd = roteiro.findIndex((x) => x.chave === 'autoriza_lgpd');
-        setEtapaAtual(indexLgpd !== -1 ? indexLgpd : roteiro.length - 1);
+        setFastEnrollment(true);
+        const indexCep = roteiro.findIndex((x) => x.chave === 'cep');
+        setEtapaAtual(indexCep);
         return;
       } else {
         aplicarDadosAutopreenchimento(dadosSalvos);
@@ -739,49 +762,6 @@ export default function PreInscricao() {
         setEtapaAtual(indexCep);
         return;
       }
-    }
-
-    // 2. Handle Document photo confirmation
-    if (aguardandoConfirmacaoFoto) {
-      const confirmou = valor === 'confirmar_foto';
-      addUserMessage(labelExibida || (confirmou ? 'Usar esta foto' : 'Trocar foto'));
-      setAguardandoConfirmacaoFoto(false);
-      
-      const configDoc = obterConfigDocumento();
-
-      if (!confirmou) {
-        setDocumentoPendente(null);
-        if (configDoc.chave) {
-          setRespostasUsuario((prev) => ({
-            ...prev,
-            [configDoc.chave]: '',
-          }));
-        }
-        await addBotMessage(`Sem problemas! Envie outra foto ou arquivo do seu ${configDoc.nome}.`, 600);
-        return;
-      }
-
-      // Save file to payload
-      if (documentoPendente && configDoc.chave) {
-        setRespostasUsuario((prev) => ({
-          ...prev,
-          [configDoc.chave]: documentoPendente.dataUrl,
-        }));
-      }
-
-      setDocumentoPendente(null);
-
-      // Advance stage
-      const proxEtapa = etapaAtual + 1;
-      
-      // If we are auto-filling and finished both documents, skip straight to LGPD / confirmation
-      if (modoAutoPreenchimento && roteiro[proxEtapa]?.chave === 'autoriza_lgpd') {
-        const indexLgpd = roteiro.findIndex((x) => x.chave === 'autoriza_lgpd');
-        setEtapaAtual(indexLgpd);
-      } else {
-        setEtapaAtual(proxEtapa);
-      }
-      return;
     }
 
     // 3. Handle double objectives check
@@ -934,6 +914,11 @@ export default function PreInscricao() {
       return;
     }
 
+    if (qAtual.chave === 'numero' && fastEnrollment) {
+      setEtapaAtual(roteiro.findIndex(q => q.chave === 'autoriza_lgpd'));
+      return;
+    }
+
     // Advance to next step
     const prox = etapaAtual + 1;
     setEtapaAtual(prox);
@@ -951,7 +936,7 @@ export default function PreInscricao() {
 
       const askQuestion = async () => {
         const rawText = q.pergunta.replace('{CURSO_NOME}', cursoNome);
-        
+
         // Custom warning message on 2nd and 3rd active enrollments
         if (q.chave === 'nome' && inscricoesAtivas > 0) {
           if (inscricoesAtivas === 1) {
@@ -974,94 +959,9 @@ export default function PreInscricao() {
     }
   }, [etapaAtual]);
 
-  const obterConfigDocumento = () => {
-    const q = roteiro[etapaAtual];
-    if (!q || q.tipo !== 'arquivo') {
-      return { nome: 'Documento', artigo: 'o', chave: '' };
-    }
-    return q.chave === 'cpf_documento'
-      ? { nome: 'CPF (Frente)', artigo: 'o', chave: 'cpf_documento' }
-      : { nome: 'RG (Frente/Verso)', artigo: 'o', chave: 'rg_documento' };
-  };
-
-  // Handle file uploads
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsTyping(true);
-    const configDoc = obterConfigDocumento();
-
-    try {
-      const isPdf = file.type.toLowerCase() === 'application/pdf';
-      let finalDataUrl = '';
-
-      if (isPdf) {
-        finalDataUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result as string);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-      } else {
-        finalDataUrl = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            const img = new Image();
-            img.onload = () => {
-              let { width, height } = img;
-              const maxLado = 1280;
-              if (width > height && width > maxLado) {
-                height = Math.round((height * maxLado) / width);
-                width = maxLado;
-              } else if (height >= width && height > maxLado) {
-                width = Math.round((width * maxLado) / height);
-                height = maxLado;
-              }
-
-              const canvas = document.createElement('canvas');
-              canvas.width = width;
-              canvas.height = height;
-              const ctx = canvas.getContext('2d');
-              if (!ctx) {
-                reject(new Error('Canvas error'));
-                return;
-              }
-              ctx.drawImage(img, 0, 0, width, height);
-              resolve(canvas.toDataURL('image/jpeg', 0.82));
-            };
-            img.onerror = () => reject(new Error('Image load error'));
-            img.src = reader.result as string;
-          };
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-      }
-
-      setDocumentoPendente({
-        dataUrl: finalDataUrl,
-        nome: file.name,
-        tipo: file.type || (isPdf ? 'application/pdf' : 'image/jpeg'),
-      });
-      setIsTyping(false);
-
-      addUserMessage(`📎 ${configDoc.nome}: ${file.name}`, true, file.name);
-
-      await addBotMessage(
-        isPdf
-          ? `Recebi o PDF do seu ${configDoc.nome}. Gostaria de confirmar e usar este arquivo ou quer trocar por outro?`
-          : `Recebi a imagem do seu ${configDoc.nome}. Gostaria de usar esta foto ou quer tirar outra?`,
-        800
-      );
-      setAguardandoConfirmacaoFoto(true);
-    } catch (err) {
-      setIsTyping(false);
-      await addBotMessage('❌ Não consegui processar esse arquivo. Tente enviar uma foto JPG/PNG comum ou um PDF legível.', 600);
-    }
-  };
-
   const handleTextSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isTyping) return;
     const val = inputValue.trim();
     if (!val) return;
     prosseguirEtapa(val);
@@ -1115,29 +1015,6 @@ export default function PreInscricao() {
     );
   }
 
-  // CEP blocked view
-  if (enderecoValido === false) {
-    return (
-      <div className="min-h-screen bg-[linear-gradient(120deg,rgba(4,8,22,0.92),rgba(7,17,31,0.85),rgba(11,23,48,0.9)),url('https://images.unsplash.com/photo-1606761568499-6d2451b23c66?auto=format&fit=crop&q=80&w=2000')] bg-center bg-cover bg-no-repeat flex items-center justify-center p-4">
-        <div className="w-full max-w-md glass-dark rounded-3xl p-8 border border-danger/20 text-center shadow-2xl animate-float">
-          <div className="w-16 h-16 bg-danger/10 border border-danger/20 rounded-2xl flex items-center justify-center mx-auto mb-6 text-danger">
-            <X className="w-8 h-8" />
-          </div>
-          <h2 className="font-display font-bold text-2xl text-white mb-2">Cadastro Bloqueado</h2>
-          <p className="text-white/70 mb-6 leading-relaxed">
-            Este curso é destinado exclusivamente a moradores de Vitória. No momento, não será possível continuar sua inscrição.
-          </p>
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-full font-bold uppercase text-xs tracking-wider transition-all hover:scale-105 hover:bg-primary/95 shadow-lg shadow-primary/20 cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4" /> Voltar para Cursos
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   // Course sold out/closed view
   if (!cursoDisponivel && vagasVerificadas) {
     return (
@@ -1162,17 +1039,17 @@ export default function PreInscricao() {
   }
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(120deg,rgba(4,8,22,0.94),rgba(7,17,31,0.85),rgba(11,23,48,0.92)),url('https://images.unsplash.com/photo-1606761568499-6d2451b23c66?auto=format&fit=crop&q=80&w=2000')] bg-center bg-cover bg-no-repeat flex items-center justify-center p-4 md:p-8 select-none relative overflow-hidden">
-      
+    <div className="registration-page min-h-screen bg-[linear-gradient(120deg,rgba(4,8,22,0.94),rgba(7,17,31,0.85),rgba(11,23,48,0.92)),url('https://images.unsplash.com/photo-1606761568499-6d2451b23c66?auto=format&fit=crop&q=80&w=2000')] bg-center bg-cover bg-no-repeat flex items-center justify-center p-4 md:p-8 select-none relative overflow-hidden">
+
       {/* Background Ambient Glow */}
       <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-sky-500/10 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-20%] w-[70%] h-[70%] rounded-full bg-coral/10 blur-[120px] pointer-events-none" />
 
-      <div className="w-full max-w-lg h-[88vh] md:max-h-[820px] glass-dark rounded-3xl flex flex-col overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)] border border-white/10 relative z-10">
-        
+      <div className="registration-shell w-full max-w-lg h-[88vh] md:max-h-[820px] glass-dark rounded-3xl flex flex-col overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)] border border-white/10 relative z-10">
+
         {/* Chat Header */}
-        <header className="bg-black/40 px-6 py-4 flex items-center justify-between border-b border-white/5 shadow-md">
-          <div className="flex items-center gap-4">
+        <header className="bg-black/40 px-4 sm:px-6 py-3 sm:py-4 shrink-0 flex items-center justify-between gap-2 border-b border-white/5 shadow-md">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-4">
             <Link
               to="/"
               aria-label="Voltar para página inicial"
@@ -1180,11 +1057,11 @@ export default function PreInscricao() {
             >
               <ArrowLeft className="w-5 h-5" />
             </Link>
-            <div className="relative">
-              <img 
-                src="/imagem/vitorugaoficial.png" 
-                alt="Vitoruga" 
-                className="w-11 h-11 rounded-full border-2 border-accent p-[2px] bg-slate-900 object-contain"
+            <div className="relative shrink-0">
+              <img
+                src={mascot.imagem}
+                alt="Vitoruga"
+                className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 border-accent p-[2px] bg-slate-900 object-contain"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = '/imagem/Vitoruga.png';
                 }}
@@ -1194,7 +1071,7 @@ export default function PreInscricao() {
             <div>
               <h1 className="font-display font-bold text-white text-sm tracking-wide">Vitoruga</h1>
               <p className="text-[11px] text-success font-semibold flex items-center gap-1">
-                Assistente de Matrícula
+                Assistente virtual do Qualifica Vix
               </p>
             </div>
           </div>
@@ -1205,8 +1082,8 @@ export default function PreInscricao() {
             title={speechEnabled ? 'Mutar leitura' : 'Ativar leitura por voz'}
             aria-label={speechEnabled ? 'Mutar Vitoruga' : 'Ativar voz do Vitoruga'}
             className={`p-2.5 rounded-full border transition-all ${
-              speechEnabled 
-                ? 'bg-accent/20 border-accent text-accent glow-accent' 
+              speechEnabled
+                ? 'bg-accent/20 border-accent text-accent glow-accent'
                 : 'bg-white/5 border-white/10 text-white/50 hover:text-white'
             }`}
           >
@@ -1215,10 +1092,10 @@ export default function PreInscricao() {
         </header>
 
         {/* Info Strip */}
-        <div className="bg-primary/20 px-6 py-2 border-b border-white/5 flex items-center justify-between text-white/70 text-xs">
-          <div className="flex items-center gap-2">
+        <div className="bg-primary/20 px-4 sm:px-6 py-2 shrink-0 border-b border-white/5 flex flex-wrap items-center justify-between gap-2 text-white/70 text-xs">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
             <MapPin className="w-3.5 h-3.5 text-accent flex-shrink-0" />
-            <span className="truncate">
+            <span className="line-clamp-2 break-words">
               Turma: <strong className="text-white">{cursoNome}</strong> no {cursoLocal || 'Senai'}
             </span>
           </div>
@@ -1228,11 +1105,11 @@ export default function PreInscricao() {
         </div>
 
         {/* Message Board */}
-        <div className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-4">
+        <div data-lenis-prevent className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-6 py-5 sm:py-6 flex flex-col gap-4">
           {messages.map((msg) => (
             <div
               key={msg.id}
-              className={`max-w-[85%] rounded-2xl px-4 py-3 text-[14px] leading-relaxed shadow-lg transition-all animate-[popIn_0.35s_cubic-bezier(0.175,0.885,0.32,1.275)] ${
+              className={`max-w-[94%] sm:max-w-[85%] break-words rounded-2xl px-4 py-3 text-[14px] leading-relaxed shadow-lg transition-all animate-[popIn_0.35s_cubic-bezier(0.175,0.885,0.32,1.275)] ${
                 msg.sender === 'bot'
                   ? 'bg-slate-800/90 text-white border border-white/5 self-start rounded-tl-sm'
                   : 'bg-gradient-to-r from-coral to-accent text-white self-end rounded-tr-sm shadow-accent/10'
@@ -1244,7 +1121,7 @@ export default function PreInscricao() {
                   <span className="truncate">{msg.docName}</span>
                 </div>
               ) : (
-                <div dangerouslySetInnerHTML={{ __html: msg.text }} />
+                <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(msg.text) }} />
               )}
             </div>
           ))}
@@ -1261,9 +1138,9 @@ export default function PreInscricao() {
           {/* Success Banner context links */}
           {dadosSalvosExito && (
             <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-6 mt-4 text-center">
-              <h3 className="font-bold text-white text-base mb-2">Comprovante de Pré-Inscrição</h3>
-              <p className="text-white/60 text-xs mb-4">Sua inscrição foi confirmada no sistema. Você pode acompanhar pelo código: <strong>{protocoloGerado}</strong>.</p>
-              
+              <h3 className="font-bold text-white text-base mb-2">{profileOnly ? 'Ficha atualizada' : 'Comprovante de Pré-Inscrição'}</h3>
+              <p className="text-white/60 text-xs mb-4">{profileOnly ? 'Seus dados foram salvos para facilitar as próximas inscrições.' : <>Sua pré-inscrição foi recebida. A instituição entrará em contato para validar a matrícula. Protocolo: <strong>{protocoloGerado}</strong>.</>}</p>
+
               {/* SINE Link */}
               {(respostasUsuario.objetivo?.includes('conseguir emprego') || respostasUsuario.objetivo?.includes('mudar de área')) && (
                 <div className="bg-accent/15 border border-accent/30 rounded-xl p-4 mb-4 text-left">
@@ -1298,24 +1175,41 @@ export default function PreInscricao() {
           <div ref={chatEndRef} />
         </div>
 
+        <div className="shrink-0 max-h-[25%] overflow-y-auto overscroll-contain px-4"><MascotPicker /></div>
         {/* Form Controls / Inputs */}
-        <footer className="bg-black/20 border-t border-white/5 p-4 flex flex-col gap-3">
+        <footer data-lenis-prevent className="registration-controls shrink-0 overflow-y-auto overscroll-contain bg-black/20 border-t border-white/5 p-3 sm:p-4 flex flex-col gap-3">
 
           {/* CEP fora de Vitoria prompt buttons */}
           {aguardandoConfirmacaoCepForaVitoria && !dadosSalvosExito && (
-            <div className="flex flex-wrap gap-2 justify-end">
+            <div className="registration-options flex flex-wrap gap-2 justify-end">
+              {!semVinculoVitoria && <button type="button" disabled={isTyping} className="bg-accent text-white rounded-xl py-2.5 px-4 text-xs font-bold disabled:opacity-50" onClick={() => {
+                if (!dadosCepForaVitoria) return;
+                setRespostasUsuario(prev => ({ ...prev, cep: dadosCepForaVitoria.cep, rua: dadosCepForaVitoria.logradouro, bairro: dadosCepForaVitoria.bairro, municipio: dadosCepForaVitoria.localidade, uf: dadosCepForaVitoria.uf, mora_vitoria: 'nao', trabalha_vitoria: 'sim' }));
+                setEnderecoValido(true);
+                setAguardandoConfirmacaoCepForaVitoria(false);
+                addUserMessage('Sim, trabalho em Vitória');
+                setEtapaAtual(roteiro.findIndex(q => q.chave === 'numero'));
+              }}>Sim, trabalho em Vitória</button>}
+              {!semVinculoVitoria && <button type="button" disabled={isTyping} className="border border-white/20 text-white rounded-xl py-2.5 px-4 text-xs font-bold disabled:opacity-50" onClick={async () => {
+                setSemVinculoVitoria(true);
+                setRespostasUsuario(prev => ({ ...prev, mora_vitoria: 'nao', trabalha_vitoria: 'nao' }));
+                addUserMessage('Não trabalho em Vitória');
+                await addBotMessage('🐢 Obrigada pelo seu interesse! Neste momento, os cursos do Qualifica Vix atendem pessoas que <strong>moram ou trabalham em Vitória</strong>. Como você não possui esse vínculo, não podemos continuar com a pré-inscrição.<br/><br/>Se o CEP foi digitado por engano, escolha <strong>Corrigir o CEP</strong>. Você pode continuar conhecendo os cursos pela página inicial.', 600);
+              }}>Não trabalho em Vitória</button>}
               <button
                 type="button"
+                disabled={isTyping}
                 onClick={async () => {
                   setAguardandoConfirmacaoCepForaVitoria(false);
+                  setSemVinculoVitoria(false);
                   setDadosCepForaVitoria(null);
                   setEnderecoValido(null);
                   setInputValue('');
-                  setRespostasUsuario((prev) => ({ ...prev, cep: '', rua: '', bairro: '', municipio: '', uf: '' }));
+                  setRespostasUsuario((prev) => ({ ...prev, cep: '', rua: '', bairro: '', municipio: '', uf: '', mora_vitoria: '', trabalha_vitoria: '' }));
                   addUserMessage('Corrigir o CEP');
-                  await addBotMessage('Por favor, digite seu CEP correto de Vitória (29000-000 a 29099-999).', 600);
+                  await addBotMessage('Tudo bem! Digite novamente o CEP do seu endereço de residência.', 600);
                 }}
-                className="bg-accent text-white hover:bg-accent/90 font-bold text-xs py-2.5 px-5 rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
+                className="bg-accent text-white hover:bg-accent/90 font-bold text-xs py-2.5 px-5 rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
               >
                 Corrigir o CEP
               </button>
@@ -1334,7 +1228,7 @@ export default function PreInscricao() {
           {/* CARD OBRIGATÓRIO DE TERMOS E LGPD (Requisitos 7 e 8) */}
           {roteiro[etapaAtual]?.chave === 'confirmacao_final' && !dadosSalvosExito && (
             <div className="bg-slate-900 border border-white/15 rounded-2xl p-5 mb-2 flex flex-col gap-4 text-left shadow-xl">
-              
+
               {/* TERMO DE CIÊNCIA E VALIDAÇÃO DE MATRÍCULA (Item 7) */}
               <div className="bg-slate-950/80 p-4 rounded-xl border border-white/10">
                 <h4 className="font-bold text-accent text-xs uppercase tracking-wider mb-2 flex items-center gap-1.5">
@@ -1422,19 +1316,19 @@ export default function PreInscricao() {
               <div className="flex justify-end gap-3 pt-2">
                 <button
                   type="button"
-                  disabled={!aceitouTermosCompromisso || !aceitouAvisoLgpd}
+                  disabled={!aceitouTermosCompromisso || !aceitouAvisoLgpd || isTyping}
                   onClick={() => prosseguirEtapa('sim', 'Sim, quero finalizar!')}
                   className="w-full sm:w-auto px-8 py-3.5 bg-accent hover:bg-accent/90 disabled:opacity-40 disabled:cursor-not-allowed text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all cursor-pointer"
                 >
-                  Finalizar Pré-Inscrição
+                  {profileOnly ? 'Salvar atualização da ficha' : 'Finalizar Pré-Inscrição'}
                 </button>
               </div>
             </div>
           )}
-          
+
           {/* Options mode (Buttons) */}
-          {roteiro[etapaAtual]?.tipo === 'botoes' && !aguardandoConfirmacaoFoto && !aguardandoEscolhaCpf && !aguardandoObjetivo2 && !dadosSalvosExito && (
-            <div className="flex flex-wrap gap-2 justify-end">
+          {roteiro[etapaAtual]?.tipo === 'botoes' && roteiro[etapaAtual]?.chave !== 'confirmacao_final' && !aguardandoEscolhaCpf && !isOtpModalOpen && !aguardandoConfirmacaoCepForaVitoria && !aguardandoObjetivo2 && !dadosSalvosExito && (
+            <div className="registration-options flex flex-wrap gap-2 justify-end">
               {roteiro[etapaAtual].opcoes?.map((opt) => (
                 <button
                   key={opt.valor}
@@ -1447,9 +1341,10 @@ export default function PreInscricao() {
             </div>
           )}
 
+          {aguardandoEscolhaCpf && sessionToken && <button type="button" className="text-accent text-xs underline" onClick={() => { setProfileOnly(true); setAguardandoEscolhaCpf(false); setEtapaAtual(roteiro.findIndex(q => q.chave === 'cep')); }}>Apenas atualizar minha ficha, sem inscrição neste curso</button>}
           {/* CPF Prompt (Auto fill options) */}
           {aguardandoEscolhaCpf && !dadosSalvosExito && (
-            <div className="flex flex-wrap gap-2 justify-end">
+            <div className="registration-options flex flex-wrap gap-2 justify-end">
               <button
                 onClick={() => prosseguirEtapa('auto', 'Auto-preencher')}
                 className="bg-accent text-white hover:bg-accent/90 font-bold text-xs py-2.5 px-5 rounded-xl shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer"
@@ -1460,14 +1355,14 @@ export default function PreInscricao() {
                 onClick={() => prosseguirEtapa('editar', 'Quero mudar algo')}
                 className="bg-slate-900 border border-white/20 text-white/80 hover:bg-white/10 font-semibold text-xs py-2.5 px-4 rounded-xl shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer"
               >
-                Digitar do zero
+                Revisar e atualizar dados
               </button>
             </div>
           )}
 
           {/* Double objective picker confirm buttons */}
           {aguardandoObjetivo2 && !dadosSalvosExito && (
-            <div className="flex flex-wrap gap-2 justify-end">
+            <div className="registration-options flex flex-wrap gap-2 justify-end">
               {roteiro.find(x => x.chave === 'objetivo')?.opcoes
                 ?.filter(o => o.valor !== objetivo1)
                 ?.map((opt) => (
@@ -1489,65 +1384,19 @@ export default function PreInscricao() {
             </div>
           )}
 
-          {/* Document Upload Interface */}
-          {roteiro[etapaAtual]?.tipo === 'arquivo' && !aguardandoConfirmacaoFoto && !dadosSalvosExito && (
-            <div className="flex flex-col gap-2">
-              <p className="text-white/70 text-xs leading-relaxed">
-                Tamanho máximo de imagem: 15MB. Aceitamos JPG, PNG ou PDF.
-              </p>
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                accept="image/*,application/pdf"
-                className="hidden"
-              />
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="bg-gradient-to-r from-coral to-accent text-white font-bold py-3 px-6 rounded-xl flex items-center justify-center gap-2 hover:opacity-95 transition-all shadow-lg hover:-translate-y-0.5 select-none text-xs uppercase tracking-wider cursor-pointer"
-              >
-                <Upload className="w-4 h-4" /> Anexar {obterConfigDocumento().nome}
-              </button>
-            </div>
-          )}
-
-          {/* Photo Confirmation Controls */}
-          {aguardandoConfirmacaoFoto && !dadosSalvosExito && (
-            <div className="flex flex-col gap-2">
-              {documentoPendente && (
-                <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white/90 text-xs flex items-center justify-between mb-1">
-                  <span className="truncate max-w-[80%] font-mono">{documentoPendente.nome}</span>
-                  <FileText className="w-4 h-4 text-accent" />
-                </div>
-              )}
-              <div className="flex gap-2 justify-end">
-                <button
-                  onClick={() => prosseguirEtapa('confirmar_foto', 'Usar esta foto')}
-                  className="bg-success text-white hover:bg-success/95 font-bold text-xs py-2.5 px-4 rounded-xl flex items-center gap-1.5 transition-all shadow-md shadow-success/10 cursor-pointer"
-                >
-                  <Check className="w-4 h-4" /> Usar este arquivo
-                </button>
-                <button
-                  onClick={() => prosseguirEtapa('trocar_foto', 'Trocar foto')}
-                  className="bg-slate-900 border border-white/20 text-white/80 hover:bg-white/10 font-semibold text-xs py-2.5 px-4 rounded-xl flex items-center gap-1.5 transition-all shadow-md cursor-pointer"
-                >
-                  <X className="w-4 h-4" /> Trocar
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* Text Input Layout */}
-          {roteiro[etapaAtual]?.tipo === 'texto' && !aguardandoConfirmacaoFoto && !aguardandoEscolhaCpf && !aguardandoObjetivo2 && !dadosSalvosExito && (
+          {roteiro[etapaAtual]?.tipo === 'texto' && !aguardandoEscolhaCpf && !isOtpModalOpen && !aguardandoConfirmacaoCepForaVitoria && !aguardandoObjetivo2 && !dadosSalvosExito && (
             <form onSubmit={handleTextSubmit} className="flex gap-3 items-center">
               <input
                 type={roteiro[etapaAtual].chave === 'email' || roteiro[etapaAtual].chave === 'confirmacao_email' ? 'email' : 'text'}
+                aria-label={roteiro[etapaAtual].chave === 'cep' ? 'CEP de residência' : roteiro[etapaAtual].chave === 'cpf' ? 'CPF' : 'Sua resposta'}
+                inputMode={['cpf', 'cep', 'numero', 'data_nascimento'].includes(roteiro[etapaAtual].chave) ? 'numeric' : roteiro[etapaAtual].chave.startsWith('telefone') ? 'tel' : roteiro[etapaAtual].chave.includes('email') ? 'email' : 'text'}
                 value={inputValue}
                 onChange={handleInputChange}
-                disabled={enderecoValido === false}
+                disabled={enderecoValido === false || isTyping}
                 placeholder={
-                  roteiro[etapaAtual].chave === 'cpf' 
-                    ? '000.000.000-00' 
+                  roteiro[etapaAtual].chave === 'cpf'
+                    ? '000.000.000-00'
                     : roteiro[etapaAtual].chave === 'telefone' || roteiro[etapaAtual].chave === 'telefone_alternativo'
                     ? '(27) 99999-9999'
                     : roteiro[etapaAtual].chave === 'cep'
@@ -1556,8 +1405,8 @@ export default function PreInscricao() {
                     ? 'DD/MM/AAAA'
                     : 'Digite sua resposta...'
                 }
-                autoFocus
-                className="flex-1 bg-white/5 border border-white/10 rounded-full py-3 px-5 text-sm text-white focus:outline-none focus:border-accent focus:bg-slate-900/60 focus:ring-4 focus:ring-accent/10 placeholder-white/30 transition-all font-sans disabled:opacity-50"
+                autoFocus={!smallScreen}
+                className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-full py-3 px-4 sm:px-5 text-base sm:text-sm text-white focus:outline-none focus:border-accent focus:bg-slate-900/60 focus:ring-4 focus:ring-accent/10 placeholder-white/30 transition-all font-sans disabled:opacity-50"
               />
               {roteiro[etapaAtual].chave === 'telefone_alternativo' && (
                 <button
@@ -1571,7 +1420,7 @@ export default function PreInscricao() {
               <button
                 type="submit"
                 aria-label="Enviar resposta"
-                disabled={enderecoValido === false}
+                disabled={enderecoValido === false || isTyping}
                 className="bg-gradient-to-r from-coral to-accent text-white p-3 rounded-full hover:scale-105 transition-all flex items-center justify-center cursor-pointer shadow-lg shadow-accent/15 disabled:opacity-50"
               >
                 <Send className="w-4 h-4" />
@@ -1581,7 +1430,7 @@ export default function PreInscricao() {
 
         </footer>
       </div>
- 
+
       {/* VLibras Accessibility Integration */}
       <VLibrasWidget />
 
@@ -1591,14 +1440,15 @@ export default function PreInscricao() {
           cpf={respostasUsuario.cpf || ''}
           maskedIdentity={maskedIdentity}
           isOpen={isOtpModalOpen}
-          onClose={() => setIsOtpModalOpen(false)}
+          onClose={() => { setIsOtpModalOpen(false); setEtapaAtual(1); }}
           onVerified={async (authenticatedProfile, token) => {
             setIsOtpModalOpen(false);
             setSessionToken(token);
+            if (authenticatedProfile.data?.mascote_preferido) saveMascotPreference(authenticatedProfile.data.mascote_preferido);
 
             if (authenticatedProfile && authenticatedProfile.data) {
               setDadosSalvos(authenticatedProfile.data);
-              setHistoricoCpf(authenticatedProfile.historico || []);
+              setInscricoesAtivas((authenticatedProfile.historico || []).filter((h: any) => !['concluido', 'cancelado', 'evadido'].includes(h.situacao_final)).length);
               aplicarDadosAutopreenchimento(authenticatedProfile.data);
 
               let histText = '';
@@ -1615,8 +1465,7 @@ export default function PreInscricao() {
                 800
               );
 
-              const indexCep = roteiro.findIndex((x) => x.chave === 'cep');
-              setEtapaAtual(indexCep !== -1 ? indexCep : 1);
+              setAguardandoEscolhaCpf(true);
             }
           }}
           onStartFromScratch={async () => {
@@ -1660,10 +1509,8 @@ function VLibrasWidget() {
     };
     document.body.appendChild(script);
 
-    return () => {
-      script.remove();
-      wrapper.remove();
-    };
+    // Keep one accessibility widget for the portal, including route changes.
+    // Reinitializing the SDK leaves duplicate floating controls in the page.
   }, []);
 
   return null;

@@ -351,6 +351,7 @@ function exibirFichaCompleta(aluno, historico) {
         <div class="detalhe-item"><span>CEP</span><strong>${checar(aluno.cep)}</strong></div>
         <div class="detalhe-item"><span>Rua, Nº</span><strong>${checar(aluno.rua)}, Nº ${checar(aluno.numero)}</strong></div>
         <div class="detalhe-item"><span>Bairro / Município</span><strong>${checar(aluno.bairro)} - ${checar(aluno.municipio)}</strong></div>
+        <div class="detalhe-item"><span>Trabalha em Vitória (declaração para validação)</span><strong>${aluno.trabalha_vitoria === 'sim' ? 'Sim' : aluno.trabalha_vitoria === 'nao' ? 'Não' : 'Não informado'}</strong></div>
         
         <div class="detalhe-secao"><i class="bi bi-person-exclamation" aria-hidden="true"></i> Condições Especiais</div>
         <div class="detalhe-item"><span>Possui Deficiência / Nec. Especial?</span><strong>${simNao(aluno.possui_necessidade_especial)}</strong></div>
@@ -543,12 +544,12 @@ function imprimirFichaAluno(aluno, historico) {
         historicoTbody = `<tr><td colspan="6" style="text-align:center;">Nenhuma outra inscrição registrada.</td></tr>`;
     }
 
-    printWindow.document.write(\`
+    printWindow.document.write(`
         <!DOCTYPE html>
         <html lang="pt-BR">
         <head>
             <meta charset="UTF-8">
-            <title>Ficha do Aluno — \${aluno.nome}</title>
+            <title>Ficha do Aluno — ${checar(aluno.nome)}</title>
             <style>
                 body {
                     font-family: Arial, sans-serif;
@@ -611,44 +612,44 @@ function imprimirFichaAluno(aluno, historico) {
             <div class="header-print">
                 <h1>Ficha de Cadastro do Aluno</h1>
                 <p>Prefeitura Municipal de Vitória — Qualifica Vix</p>
-                <p>Data de Emissão: \${new Date().toLocaleString('pt-BR')}</p>
+                <p>Data de Emissão: ${new Date().toLocaleString('pt-BR')}</p>
             </div>
 
             <h2>Dados de Identificação</h2>
             <div class="grid">
-                <div><strong>Nome Completo:</strong> \${checar(aluno.nome)}</div>
-                <div><strong>CPF:</strong> \${checar(formatarCpf(aluno.cpf))}</div>
-                <div><strong>RG:</strong> \${checar(aluno.rg)}</div>
-                <div><strong>Data de Nascimento:</strong> \${formatarData(aluno.data_nascimento)}</div>
-                <div><strong>Gênero:</strong> \${checar(aluno.genero)}</div>
-                <div><strong>Raça/Cor (IBGE):</strong> \${checar(aluno.raca_cor)}</div>
-                <div><strong>Escolaridade:</strong> \${checar(aluno.escolaridade)}</div>
-                <div><strong>Autoriza LGPD:</strong> \${checar(aluno.autoriza_lgpd)}</div>
+                <div><strong>Nome Completo:</strong> ${checar(aluno.nome)}</div>
+                <div><strong>CPF:</strong> ${checar(formatarCpf(aluno.cpf))}</div>
+                <div><strong>RG:</strong> ${checar(aluno.rg)}</div>
+                <div><strong>Data de Nascimento:</strong> ${formatarData(aluno.data_nascimento)}</div>
+                <div><strong>Gênero:</strong> ${checar(aluno.genero)}</div>
+                <div><strong>Raça/Cor (IBGE):</strong> ${checar(aluno.raca_cor)}</div>
+                <div><strong>Escolaridade:</strong> ${checar(aluno.escolaridade)}</div>
+                <div><strong>Autoriza LGPD:</strong> ${checar(aluno.autoriza_lgpd)}</div>
             </div>
 
             <h2>Contatos e Endereço</h2>
             <div class="grid">
-                <div><strong>Celular/WhatsApp:</strong> \${checar(aluno.telefone)}</div>
-                <div><strong>Telefone Alternativo:</strong> \${checar(aluno.telefone_alternativo)}</div>
-                <div><strong>E-mail:</strong> \${checar(aluno.email)}</div>
-                <div><strong>CEP:</strong> \${checar(aluno.cep)}</div>
-                <div><strong>Rua:</strong> \${checar(aluno.rua)}, Nº \${checar(aluno.numero)}</div>
-                <div><strong>Bairro:</strong> \${checar(aluno.bairro)}</div>
-                <div><strong>Município:</strong> \${checar(aluno.municipio)}</div>
+                <div><strong>Celular/WhatsApp:</strong> ${checar(aluno.telefone)}</div>
+                <div><strong>Telefone Alternativo:</strong> ${checar(aluno.telefone_alternativo)}</div>
+                <div><strong>E-mail:</strong> ${checar(aluno.email)}</div>
+                <div><strong>CEP:</strong> ${checar(aluno.cep)}</div>
+                <div><strong>Rua:</strong> ${checar(aluno.rua)}, Nº ${checar(aluno.numero)}</div>
+                <div><strong>Bairro:</strong> ${checar(aluno.bairro)}</div>
+                <div><strong>Município:</strong> ${checar(aluno.municipio)}</div>
             </div>
 
             <h2>Condições Especiais</h2>
             <div class="grid">
-                <div><strong>Possui Deficiência / Nec. Especial?:</strong> \${checar(aluno.possui_necessidade_especial)}</div>
-                <div><strong>Tipo de Deficiência:</strong> \${checar(aluno.tipo_necessidade_especial)}</div>
-                <div style="grid-column: 1 / -1;"><strong>Adaptações Necessárias:</strong> \${checar(aluno.deficiencia_adaptacoes)}</div>
-                <div style="grid-column: 1 / -1;"><strong>Recursos Assistivos:</strong> \${checar(aluno.deficiencia_recursos)}</div>
+                <div><strong>Possui Deficiência / Nec. Especial?:</strong> ${checar(aluno.possui_necessidade_especial)}</div>
+                <div><strong>Tipo de Deficiência:</strong> ${checar(aluno.tipo_necessidade_especial)}</div>
+                <div style="grid-column: 1 / -1;"><strong>Adaptações Necessárias:</strong> ${checar(aluno.deficiencia_adaptacoes)}</div>
+                <div style="grid-column: 1 / -1;"><strong>Recursos Assistivos:</strong> ${checar(aluno.deficiencia_recursos)}</div>
             </div>
 
-            \${responsavelHtml}
+            ${responsavelHtml}
 
             <h2>Objetivo no Curso</h2>
-            <p style="font-size: 13px;"><strong>Objetivo:</strong> \${checar(aluno.objetivo)}</p>
+            <p style="font-size: 13px;"><strong>Objetivo:</strong> ${checar(aluno.objetivo)}</p>
 
             <h2>Histórico de Inscrições</h2>
             <table>
@@ -663,7 +664,7 @@ function imprimirFichaAluno(aluno, historico) {
                     </tr>
                 </thead>
                 <tbody>
-                    \${historicoTbody}
+                    ${historicoTbody}
                 </tbody>
             </table>
 
@@ -674,9 +675,8 @@ function imprimirFichaAluno(aluno, historico) {
             </script>
         </body>
         </html>
-    \`);
+    `);
     printWindow.document.close();
-}etalhes').style.display = 'flex';
 }
 
 function fecharModalDetalhes() {

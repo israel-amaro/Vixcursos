@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { MapPin, Clock, Calendar, CheckCircle2, AlertTriangle, XCircle, ArrowLeft, GraduationCap, Briefcase } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 interface CourseDetails {
   id: number;
@@ -178,7 +177,7 @@ export default function Detalhes() {
     <div className="min-h-screen flex flex-col justify-between bg-bg-light">
       <Header />
 
-      <main className="flex-grow pt-28 pb-16 px-6 md:px-12 max-w-7xl mx-auto w-full flex flex-col gap-8">
+      <main className="flex-grow pt-24 sm:pt-28 pb-16 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto w-full flex flex-col gap-8">
         
         {/* Back Link */}
         <div className="flex items-center justify-start mt-2">
@@ -191,7 +190,7 @@ export default function Detalhes() {
         </div>
 
         {/* Hero Details Block */}
-        <section className="bg-white rounded-3xl p-8 md:p-12 shadow-sm border border-slate-100 grid grid-cols-1 lg:grid-cols-12 gap-8 relative overflow-hidden">
+        <section className="bg-white rounded-3xl p-5 sm:p-8 md:p-12 shadow-sm border border-slate-100 grid grid-cols-1 lg:grid-cols-12 gap-8 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full filter blur-3xl pointer-events-none" />
 
           {/* Left Block: Course Details & Text */}

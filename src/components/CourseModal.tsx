@@ -21,6 +21,7 @@ export interface CourseModalData {
   local: string;
   descricao?: string;
   ementa?: string;
+  mascote_id?: string;
   competencias?: string;
   pre_requisitos?: string;
   carga_horaria?: number;
@@ -84,15 +85,14 @@ export default function CourseModal({ course, isOpen, onClose, triggerRef }: Cou
   if (!isOpen || !course) return null;
 
   const isEsgotado = course.status === 'esgotado' || course.vagas_disponiveis <= 0;
-  const ementaTexto = course.ementa || course.competencias || "Fundamentos técnicos, teoria aplicada, normas de segurança e práticas orientadas à atuação profissional.";
+  const ementaTexto = course.ementa || course.competencias || "Ementa ainda não informada pela instituição.";
   const requisitosTexto = course.pre_requisitos || "Nenhum pré-requisito adicional informado";
 
   return (
     <AnimatePresence>
       <div 
-        className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-black/75 backdrop-blur-sm overflow-y-auto"
+        data-lenis-prevent className="responsive-overlay fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-black/75 backdrop-blur-sm overflow-y-auto"
         onClick={onClose}
-        aria-hidden="true"
       >
         <motion.div
           ref={modalRef}
@@ -103,11 +103,11 @@ export default function CourseModal({ course, isOpen, onClose, triggerRef }: Cou
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ duration: 0.25, ease: 'easeOut' }}
-          className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl relative border border-slate-200 overflow-hidden text-left my-auto"
+          className="responsive-dialog bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl relative border border-slate-200 overflow-hidden text-left my-auto"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="p-6 border-b border-slate-100 bg-slate-900 text-white flex items-start justify-between relative">
+          <div className="p-4 sm:p-6 shrink-0 border-b border-slate-100 bg-slate-900 text-white flex items-start justify-between relative">
             <div>
               <span className="inline-block px-3 py-1 bg-accent/20 border border-accent/40 text-accent rounded-full text-[10px] font-extrabold uppercase tracking-wider mb-2">
                 {course.categoria} • {course.modalidade}
@@ -127,7 +127,7 @@ export default function CourseModal({ course, isOpen, onClose, triggerRef }: Cou
           </div>
 
           {/* Content Body (Scrollable) */}
-          <div className="p-6 overflow-y-auto space-y-6 text-slate-700 text-sm leading-relaxed">
+          <div data-lenis-prevent className="p-4 sm:p-6 min-h-0 overflow-y-auto overscroll-contain space-y-6 text-slate-700 text-sm leading-relaxed">
             
             {/* Quick Metrics Badges */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -230,7 +230,7 @@ export default function CourseModal({ course, isOpen, onClose, triggerRef }: Cou
           </div>
 
           {/* Footer Actions */}
-          <div className="p-4 sm:p-6 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="p-4 sm:p-6 shrink-0 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-3">
             <button
               onClick={() => {
                 onClose();

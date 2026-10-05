@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { HelpCircle, X, Check, ArrowRight, RefreshCw } from 'lucide-react';
+import { useState } from 'react';
+import { HelpCircle, X, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface CourseQuizModalProps {
@@ -11,7 +11,7 @@ interface CourseQuizModalProps {
 export default function CourseQuizModal({ isOpen, onClose, onSelectCategory }: CourseQuizModalProps) {
   const [step, setStep] = useState<number>(1);
   const [objective, setObjective] = useState<string>('');
-  const [areaInterest, setAreaInterest] = useState<string>('');
+  const [, setAreaInterest] = useState<string>('');
 
   const objectives = [
     { id: 'emprego', title: 'Conseguir um Emprego (CLT)', desc: 'Profissões com vagas abertas e contratação rápida no mercado.', icon: '💼' },
@@ -50,17 +50,17 @@ export default function CourseQuizModal({ isOpen, onClose, onSelectCategory }: C
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/65 backdrop-blur-sm">
+      <div data-lenis-prevent className="responsive-overlay fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/65 backdrop-blur-sm">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="bg-white rounded-3xl max-w-xl w-full p-6 md:p-8 shadow-2xl relative border border-slate-100 overflow-hidden text-left"
+          role="dialog" aria-modal="true" aria-label="Assistente de escolha de curso" className="responsive-dialog bg-white rounded-3xl max-w-xl w-full p-5 sm:p-6 md:p-8 shadow-2xl relative border border-slate-100 overflow-y-auto overscroll-contain text-left"
         >
           {/* Top header bar */}
           <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-accent/15 text-accent flex items-center justify-center font-bold">
+              <div className="w-10 h-10 shrink-0 rounded-2xl bg-accent/15 text-accent flex items-center justify-center font-bold">
                 <HelpCircle className="w-5 h-5 text-accent" />
               </div>
               <div>
@@ -74,6 +74,7 @@ export default function CourseQuizModal({ isOpen, onClose, onSelectCategory }: C
             </div>
             <button
               onClick={onClose}
+              aria-label="Fechar quiz"
               className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />

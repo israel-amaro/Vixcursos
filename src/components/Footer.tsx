@@ -1,4 +1,3 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, Clock, MessageSquareHeart } from 'lucide-react';
 
@@ -8,33 +7,33 @@ interface FooterProps {
 
 export default function Footer({ onOpenSurvey }: FooterProps) {
   const handleNavClick = (sectionId: string) => {
-    const el = document.getElementById(sectionId);
+    const el = document.getElementById(sectionId === 'categorias-section' ? 'filtro-categoria' : sectionId);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
   return (
-    <footer className="w-full bg-slate-900 text-white/80 py-16 px-6 md:px-12 border-t border-white/5 relative z-20">
+    <footer className="w-full bg-slate-900 text-white/80 py-12 sm:py-16 px-4 sm:px-6 md:px-12 border-t border-white/5 relative z-20">
       <div className="max-w-7xl mx-auto">
-        
+
         {/* Main Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-          
+
           {/* Column 1: Identity */}
           <div className="flex flex-col items-start">
             <div className="flex select-none mb-2">
-              <img 
-                src="/imagem/VIxcursos.png" 
-                alt="Qualifica Vix" 
+              <img
+                src="/imagem/qualifica-vix.svg"
+                alt="Qualifica Vix"
                 className="h-10 w-auto object-contain"
               />
             </div>
-            
+
             <p className="text-sm text-white/40 mt-4 max-w-xs leading-relaxed">
               Plataforma oficial de cursos profissionalizantes gratuitos da Prefeitura Municipal de Vitória, Espírito Santo.
             </p>
-            
+
             {/* Pesquisa de Satisfação Banner Trigger */}
             {onOpenSurvey && (
               <button
@@ -118,23 +117,23 @@ export default function Footer({ onOpenSurvey }: FooterProps) {
             <h4 className="text-xs font-bold tracking-[0.2em] uppercase text-white/30 mb-6">
               Contato
             </h4>
-            
+
             <div className="flex flex-col gap-4 text-sm text-white/50">
               <div className="flex items-start gap-3">
                 <Phone className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
                 <span>(27) 3135-1000</span>
               </div>
-              
+
               <div className="flex items-start gap-3">
                 <Mail className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
                 <span className="break-all">vixcursos@vitoria.es.gov.br</span>
               </div>
-              
+
               <div className="flex items-start gap-3">
                 <MapPin className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
                 <span>Vitória, Espírito Santo — Brasil</span>
               </div>
-              
+
               <div className="flex items-start gap-3">
                 <Clock className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
                 <span>Atendimento: Seg a Sex, das 8h às 17h</span>
@@ -152,7 +151,7 @@ export default function Footer({ onOpenSurvey }: FooterProps) {
           <span className="text-[10px] text-white/20 tracking-wider font-mono">
             © 2026 Qualifica Vix — Prefeitura Municipal de Vitória. Todos os direitos reservados.
           </span>
-          <div className="flex items-center gap-3 justify-center md:justify-end select-none">
+          <div className="flex flex-col sm:flex-row items-center gap-3 justify-center md:justify-end select-none">
             <span className="text-[10px] text-white/20 tracking-wider font-mono">
               Desenvolvido para a comunidade capixaba 💙
             </span>

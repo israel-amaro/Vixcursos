@@ -9,8 +9,10 @@ const twilio = require("twilio");
 const XLSX = require("xlsx");
 const crypto = require("crypto");
 const { LOCAL_PUBLIC_CURSOS, createLocalDb } = require("./local-db");
-require("dotenv").config();
-require("dotenv").config({ path: ".env.local", override: true });
+const { createFirebaseDb } = require('./firebase-db');
+const { createCitizenRouter } = require('./citizen-service');
+const { createStateAdminRouter } = require('./state-admin-router');
+require("dotenv").config({ path: ['.env.local', '.env'] });
 
 const otpStore = new Map(); // cpf -> { hash, expiresAt, tentativas }
 const sessionStore = new Map(); // token -> { cpf, expiresAt }
@@ -112,8 +114,8 @@ const EMAIL_CONFIGURADO = Boolean(EMAIL_USER && EMAIL_PASS && EMAIL_FROM);
 
 const ADMIN_COOKIE_NAME = "porto_admin_token";
 const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET || "porto-admin-secret-change-me";
-const ADMIN_USERNAME = "admin@vixcursos.com";
-const ADMIN_PASSWORD = "admin123";
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin@qualificavix.com";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
 const SERVER_PORT = Number(process.env.PORT) || 3000;
 
 function lerCookie(req, nome) {
@@ -255,7 +257,10 @@ async function createApp() {
     let pgPool = null;
     let db;
 
-    if (DB_DISABLED) {
+    if (process.env.DB_PROVIDER === 'firebase') {
+        db = await createFirebaseDb();
+        console.log('[db] Firebase Realtime Database conectado.');
+    } else if (DB_DISABLED) {
         console.log("[db] Banco externo desconectado. Usando dados locais em memoria carregados do banco.sql.");
         db = createLocalDb();
     } else {
@@ -310,6 +315,7 @@ async function createApp() {
             connection.release();
             console.log("[db] Conexao PostgreSQL liberada de volta para a pool");
 
+            await garantirColuna("cursos", "mascote_id", "VARCHAR(40) NULL");
             await garantirColuna("pre_inscricoes", "cpf", "VARCHAR(14) NULL");
             await garantirColuna("pre_inscricoes", "rg", "VARCHAR(20) NULL");
             await garantirColuna("pre_inscricoes", "mora_vitoria", "VARCHAR(3) NULL");
@@ -405,11 +411,11 @@ async function createApp() {
             const [faqCount] = await db.query(`SELECT COUNT(*) AS total FROM faq`);
             if (faqCount[0].total === 0) {
                 const defaultFaqs = [
-                    { q: "Quem pode se inscrever?", a: "Os cursos do VixCursos sÃ£o destinados exclusivamente a moradores de VitÃ³ria - ES que atendam aos prÃ©-requisitos de idade e escolaridade do curso pretendido." },
+                    { q: "Quem pode se inscrever?", a: "Os cursos do Qualifica Vix sÃ£o destinados exclusivamente a moradores de VitÃ³ria - ES que atendam aos prÃ©-requisitos de idade e escolaridade do curso pretendido." },
                     { q: "Como funciona a confirmaÃ§Ã£o de matrÃ­cula?", a: "ApÃ³s a prÃ©-inscriÃ§Ã£o online, o aluno titular recebe uma notificaÃ§Ã£o por e-mail/SMS com prazo de 24h ou 48h para confirmar sua matrÃ­cula. Caso nÃ£o confirme, a vaga Ã© liberada para o prÃ³ximo suplente." },
                     { q: "O que acontece se eu for suplente?", a: "Caso as vagas imediatas estejam preenchidas, vocÃª entrarÃ¡ na fila de suplÃªncia automÃ¡tica. Se um candidato titular desistir ou nÃ£o confirmar a matrÃ­cula no prazo, o prÃ³ximo suplente da fila Ã© convocado por e-mail/SMS." },
                     { q: "Qual o limite de cursos por semestre?", a: "Cada cidadÃ£o pode se inscrever em atÃ© 4 cursos por semestre. A partir da 3Âª inscriÃ§Ã£o simultÃ¢nea, a inscriÃ§Ã£o entra automaticamente como suplente para dar oportunidade a outros moradores." },
-                    { q: "Os cursos sÃ£o realmente gratuitos?", a: "Sim, todos os cursos oferecidos pelo portal VixCursos sÃ£o 100% gratuitos e contam com fornecimento de vale-transporte." },
+                    { q: "Os cursos sÃ£o realmente gratuitos?", a: "Sim, todos os cursos oferecidos pelo portal Qualifica Vix sÃ£o 100% gratuitos e contam com fornecimento de vale-transporte." },
                     { q: "Menores de 18 anos podem se inscrever?", a: "Sim, desde que atendam a idade mÃ­nima do curso. No momento da inscriÃ§Ã£o, deverÃ£o ser informados os dados do responsÃ¡vel legal, que deverÃ¡ autorizar a participaÃ§Ã£o." }
                 ];
                 for (let i = 0; i < defaultFaqs.length; i++) {
@@ -471,9 +477,9 @@ async function createApp() {
         }
     }
 
-    if (DB_DISABLED) {
+    if (db.provider === 'firebase' || DB_DISABLED) {
         bancoDisponivelNaInicializacao = true;
-        console.log("[db] Inicializacao local concluida. Nenhuma conexao externa sera aberta.");
+        console.log(`[db] Provedor ${db.provider || 'local'} pronto.`);
     } else {
         void inicializarBanco();
     }
@@ -500,6 +506,34 @@ async function createApp() {
 
     let mailer = criarTransporterEmail(EMAIL_PORT, EMAIL_SECURE);
     let emailDisponivel = false;
+
+    app.get('/api/cep/:cep', async (req, res) => {
+        if (!/^\d{8}$/.test(req.params.cep)) return res.status(400).json({ error: 'CEP inválido.' });
+        try {
+            const response = await fetch(`https://viacep.com.br/ws/${req.params.cep}/json/`, { signal: AbortSignal.timeout(8000) });
+            if (!response.ok) throw new Error('ViaCEP indisponível');
+            res.json(await response.json());
+        } catch { res.status(503).json({ error: 'Consulta de endereço temporariamente indisponível.' }); }
+    });
+
+    if (db.readState && db.mutate) {
+        app.get('/api/configuracoes-public', async (_req, res) => {
+            try { const s = await db.readState(); res.json({ limite_inscricoes_semestre: s.configuracoes[0]?.limite_inscricoes_semestre || 4 }); }
+            catch { res.status(503).json({ error: 'Configuração indisponível.' }); }
+        });
+        app.use(createStateAdminRouter(db, exigirAuthAdmin));
+        app.use(createCitizenRouter(db, {
+            sendCode: async (email, code) => {
+                if (!EMAIL_CONFIGURADO) throw new Error('SMTP não configurado.');
+                await mailer.sendMail({ from: EMAIL_FROM, to: email, subject: 'Seu código de acesso — Qualifica Vix', text: `Seu código de acesso ao Qualifica Vix é ${code}. Ele expira em 5 minutos. Se você não solicitou, ignore esta mensagem.` });
+            },
+            notifyEnrollment: async ({ enrollment }) => {
+                if (!EMAIL_CONFIGURADO) return { email: 'nao_configurado' };
+                await mailer.sendMail({ from: EMAIL_FROM, to: enrollment.email, subject: 'Pré-inscrição recebida — Qualifica Vix', text: `Sua pré-inscrição foi recebida. Protocolo QV-${String(enrollment.id).padStart(6, '0')}. A matrícula será confirmada somente após a instituição entrar em contato e validar as informações.` });
+                return { email: 'enviado' };
+            },
+        }));
+    }
 
     async function inicializarEmail() {
         if (!EMAIL_CONFIGURADO) {
@@ -1369,7 +1403,7 @@ async function createApp() {
             
             res.json(rows);
         } catch (err) {
-            if (eErroTimeoutBanco(err)) {
+            if (db.provider !== 'firebase' && eErroTimeoutBanco(err)) {
                 console.warn(`[db] Falha na conexao do banco ao buscar filtro ${req.params.tipo}, servindo fallback estático.`);
                 if (req.params.tipo === 'categoria') {
                     return res.json([
@@ -1432,6 +1466,7 @@ async function createApp() {
                     COALESCE(c.acessos_contador, 0) AS acessos_contador,
                     c.descricao,
                     c.ementa,
+                    c.mascote_id,
                     c.competencias,
                     c.pre_requisitos,
                     c.carga_horaria,
@@ -1465,6 +1500,7 @@ async function createApp() {
                     c.acessos_contador,
                     c.descricao,
                     c.ementa,
+                    c.mascote_id,
                     c.competencias,
                     c.pre_requisitos,
                     c.carga_horaria,
@@ -1484,7 +1520,7 @@ async function createApp() {
             
             res.json(cursosFormatados);
         } catch (err) {
-            if (eErroTimeoutBanco(err)) {
+            if (db.provider !== 'firebase' && eErroTimeoutBanco(err)) {
                 console.warn("[db] Falha na conexao do banco ao buscar cursos pÃºblicos, servindo fallback estÃ¡tico.");
                 return res.json(FALLBACK_CURSOS);
             }
@@ -1518,6 +1554,7 @@ async function createApp() {
                     COALESCE(c.acessos_contador, 0) AS acessos_contador,
                     c.descricao,
                     c.ementa,
+                    c.mascote_id,
                     c.competencias,
                     c.pre_requisitos,
                     c.carga_horaria,
@@ -1551,6 +1588,7 @@ async function createApp() {
                     c.acessos_contador,
                     c.descricao,
                     c.ementa,
+                    c.mascote_id,
                     c.competencias,
                     c.pre_requisitos,
                     c.carga_horaria,
@@ -1574,7 +1612,7 @@ async function createApp() {
 
             res.json(curso);
         } catch (err) {
-            if (eErroTimeoutBanco(err)) {
+            if (db.provider !== 'firebase' && eErroTimeoutBanco(err)) {
                 console.warn("[db] Falha na conexao do banco ao buscar detalhes do curso, servindo fallback estÃ¡tico.");
                 const fallbackCurso = FALLBACK_CURSOS.find(c => c.id === Number(id));
                 if (fallbackCurso) {
@@ -1621,7 +1659,7 @@ async function createApp() {
                 status: resultado.status
             });
         } catch (err) {
-            if (eErroTimeoutBanco(err)) {
+            if (db.provider !== 'firebase' && eErroTimeoutBanco(err)) {
                 console.warn("[db] Falha na conexao do banco ao buscar vagas do curso, servindo fallback estático.");
                 const fallbackCurso = FALLBACK_CURSOS.find(c => c.id === Number(req.params.id));
                 if (fallbackCurso) {
@@ -1659,6 +1697,7 @@ async function createApp() {
                     COALESCE(fl.local, 'Vitória') AS local, 
                     c.descricao,
                     c.ementa,
+                    c.mascote_id,
                     c.competencias,
                     c.pre_requisitos,
                     c.carga_horaria,
@@ -1689,7 +1728,7 @@ async function createApp() {
             const { 
                 curso, vagas, idade_min, idade_max, local, modalidade, 
                 data_inicio, data_termino, horario_inicio, horario_termino, categoria_id,
-                descricao, ementa, competencias, pre_requisitos, carga_horaria
+                descricao, ementa, competencias, pre_requisitos, carga_horaria, mascote_id
             } = req.body;
 
             if (!curso) return res.status(400).json({ error: "Campo 'curso' é obrigatório." });
@@ -1697,15 +1736,15 @@ async function createApp() {
             // 1. Grava o curso (Tratamento contra erro de "undefined")
             const [result] = await db.query(`
                 INSERT INTO cursos 
-                (curso_id, vagas, idade_min, idade_max, local_id, modalidade_id, data_inicio, data_termino, horario_inicio, horario_termino, categoria_id, descricao, ementa, competencias, pre_requisitos, carga_horaria)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (curso_id, vagas, idade_min, idade_max, local_id, modalidade_id, data_inicio, data_termino, horario_inicio, horario_termino, categoria_id, descricao, ementa, competencias, pre_requisitos, carga_horaria, mascote_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 RETURNING id
             `, [
                 curso, vagas || 0, idade_min || null, idade_max || null, 
                 local || null, modalidade || null, data_inicio || null, 
                 data_termino || null, horario_inicio || null, horario_termino || null, 
                 categoria_id || null, descricao || null, ementa || null, competencias || null,
-                pre_requisitos || null, carga_horaria ? parseInt(carga_horaria) : null
+                pre_requisitos || null, carga_horaria ? parseInt(carga_horaria) : null, mascote_id || null
             ]);
 
             // 2. Procura os nomes reais para o e-mail (usando LEFT JOIN para evitar crash)
@@ -1753,7 +1792,7 @@ async function createApp() {
     // ============================================================
     // ESGOTAR CURSO
     // ============================================================
-    app.put("/cursos/esgotar/:id", async (req, res) => {
+    app.put("/cursos/esgotar/:id", exigirAuthAdmin, async (req, res) => {
         try {
             const id = parseInt(req.params.id);
             if (isNaN(id)) return res.status(400).json({ erro: "ID inválido" });
@@ -1765,7 +1804,7 @@ async function createApp() {
                 curso.vagas = 0;
                 return res.json({ sucesso: true, mensagem: "Curso esgotado com sucesso" });
             } else {
-                const result = await pool.query(
+                const result = await pgPool.query(
                     "UPDATE cursos SET status = 'esgotado', vagas = 0 WHERE id = $1 RETURNING *",
                     [id]
                 );
@@ -1814,9 +1853,10 @@ async function createApp() {
                 return res.status(400).json({ error: "Preencha todos os campos obrigatórios: Nome, E-mail, Telefone, CPF e RG." });
             }
 
-            const ehMoradorVitoria = String(municipio || "").trim().toLowerCase() === "vitoria" || String(municipio || "").trim().toLowerCase() === "vitória";
+            const cidade = String(municipio || "").trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+            const ehMoradorVitoria = cidade === 'vitoria' && String(req.body.uf || '').toUpperCase() === 'ES';
 
-            if (!ehMoradorVitoria) {
+            if (!ehMoradorVitoria && req.body.trabalha_vitoria !== 'sim') {
                 return res.status(400).json({ error: "Os cursos do Qualifica Vix são exclusivos para quem mora ou trabalha no município de Vitória." });
             }
 
@@ -2688,7 +2728,7 @@ async function createApp() {
 
             res.json({ vagasHoje, vagas2026 });
         } catch (err) {
-            if (eErroTimeoutBanco(err)) {
+            if (db.provider !== 'firebase' && eErroTimeoutBanco(err)) {
                 console.warn("[db] Falha na conexao do banco ao carregar estatÃ­sticas, servindo fallback estÃ¡tico.");
                 return res.json({ vagasHoje: 108, vagas2026: 677 });
             }
@@ -2839,7 +2879,7 @@ async function createApp() {
     }
 
     // Executa a cada 60s
-    setInterval(processarExpiracoesMatriculas, 60000);
+    if (!db.provider) setInterval(processarExpiracoesMatriculas, 60000).unref();
 
     // ============================================================
     // CONFIGURAÃ‡Ã•ES DO SISTEMA (ADMIN)

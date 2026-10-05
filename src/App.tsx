@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Home from './pages/Home';
@@ -17,7 +17,15 @@ function ScrollToTop() {
 }
 
 function SmoothScroll() {
+  const [enabled, setEnabled] = useState(() => window.matchMedia('(min-width: 1024px) and (pointer: fine) and (prefers-reduced-motion: no-preference)').matches);
   useEffect(() => {
+    const media = window.matchMedia('(min-width: 1024px) and (pointer: fine) and (prefers-reduced-motion: no-preference)');
+    const update = () => setEnabled(media.matches);
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
+  useEffect(() => {
+    if (!enabled) return;
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -40,8 +48,28 @@ function SmoothScroll() {
       cancelAnimationFrame(frameId);
       lenis.destroy();
     };
-  }, []);
+  }, [enabled]);
 
+  return null;
+}
+
+function ViewportSize() {
+  useEffect(() => {
+    const update = () => {
+      const viewport = window.visualViewport;
+      document.documentElement.style.setProperty('--app-viewport-height', `${viewport?.height ?? window.innerHeight}px`);
+      document.documentElement.style.setProperty('--app-viewport-top', `${viewport?.offsetTop ?? 0}px`);
+    };
+    update();
+    window.addEventListener('resize', update);
+    window.visualViewport?.addEventListener('resize', update);
+    window.visualViewport?.addEventListener('scroll', update);
+    return () => {
+      window.removeEventListener('resize', update);
+      window.visualViewport?.removeEventListener('resize', update);
+      window.visualViewport?.removeEventListener('scroll', update);
+    };
+  }, []);
   return null;
 }
 
@@ -49,6 +77,13 @@ function FloatingHomeButton() {
   const navigate = useNavigate();
   const location = useLocation();
   const isHome = location.pathname === '/';
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const update = () => setShow(window.scrollY > 500);
+    update();
+    window.addEventListener('scroll', update, { passive: true });
+    return () => window.removeEventListener('scroll', update);
+  }, []);
 
   const handleClick = () => {
     if (isHome) {
@@ -58,6 +93,7 @@ function FloatingHomeButton() {
     }
   };
 
+  if (isHome && !show) return null;
   return (
     <motion.button
       initial={{ opacity: 0, scale: 0.8 }}
@@ -66,7 +102,7 @@ function FloatingHomeButton() {
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
       onClick={handleClick}
-      className="fixed bottom-6 right-6 z-[998] p-4 rounded-full bg-black/35 backdrop-blur-md text-white border border-white/10 hover:bg-accent hover:border-accent/40 shadow-[0_8px_32px_rgba(0,0,0,0.3)] transition-all flex items-center justify-center cursor-pointer group"
+      className="floating-home fixed z-[998] p-3 sm:p-4 rounded-full bg-slate-900/85 sm:bg-black/35 backdrop-blur-md text-white border border-white/10 hover:bg-accent hover:border-accent/40 shadow-[0_8px_32px_rgba(0,0,0,0.3)] transition-all flex items-center justify-center cursor-pointer group"
       title={isHome ? 'Voltar ao topo' : 'Voltar à tela principal'}
       aria-label={isHome ? 'Voltar ao topo' : 'Voltar à tela principal'}
     >
@@ -101,6 +137,13 @@ function FloatingHomeButton() {
   );
 }
 
+function FloatingAssistants() {
+  const { pathname } = useLocation();
+  // The registration page already has its own assistant and back navigation.
+  if (pathname.startsWith('/pre-inscricao/')) return null;
+  return <><VitorugaChat /><FloatingHomeButton /></>;
+}
+
 function LegacyCourseRedirect({ type }: { type: 'detalhes' | 'pre-inscricao' }) {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
@@ -117,6 +160,7 @@ export default function App() {
   return (
     <Router>
       <ScrollToTop />
+      <ViewportSize />
       <SmoothScroll />
       <div className="min-h-screen bg-bg-light text-text-dark font-sans selection:bg-accent selection:text-white antialiased">
         <Routes>
@@ -138,8 +182,7 @@ export default function App() {
           <Route path="/vocacional.html" element={<Navigate to="/" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-        <VitorugaChat />
-        <FloatingHomeButton />
+        <FloatingAssistants />
       </div>
     </Router>
   );

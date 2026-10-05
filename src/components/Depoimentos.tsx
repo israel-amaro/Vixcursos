@@ -1,4 +1,3 @@
-import React from 'react';
 import { Star, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -36,7 +35,7 @@ export default function Depoimentos() {
   ];
 
   return (
-    <section className="w-full bg-white py-20 px-6 md:px-12 border-t border-slate-100">
+    <section className="w-full bg-white py-12 sm:py-20 px-4 sm:px-6 md:px-12 border-t border-slate-100">
       <div className="max-w-7xl mx-auto">
         
         {/* Cabecalho */}
@@ -62,7 +61,7 @@ export default function Depoimentos() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-10%' }}
               transition={{ duration: 0.7, delay: index * 0.15, ease: 'easeOut' }}
-              className="bg-slate-50/50 p-8 rounded-2xl border border-slate-100 hover:shadow-lg hover:border-slate-200 transition-all duration-300 flex flex-col justify-between"
+              className="bg-slate-50/50 p-5 sm:p-8 rounded-2xl border border-slate-100 hover:shadow-lg hover:border-slate-200 transition-all duration-300 flex flex-col justify-between"
             >
               <div>
                 {/* 5 Estrelas */}

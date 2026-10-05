@@ -1,6 +1,7 @@
+import { getMascot } from '../lib/mascots';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, BookX, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, XCircle, Clock, Calendar, BookmarkPlus, TrendingUp, DollarSign, Tag, Info, BookOpen } from 'lucide-react';
+import { MapPin, BookX, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, XCircle, Clock, Calendar, BookmarkPlus, TrendingUp, DollarSign, Tag, BookOpen } from 'lucide-react';
 import { FilterState } from './FiltroBusca';
 import CourseModal, { CourseModalData } from './CourseModal';
 
@@ -44,7 +45,7 @@ const getSalaryExpectation = (categoria: string): string => {
   return 'R$ 2.000 — R$ 3.800/mês (mercado regional ES)';
 };
 
-const getIdealForTags = (categoria: string, nome: string): string[] => {
+const getIdealForTags = (_categoria: string, nome: string): string[] => {
   const nm = (nome || '').toLowerCase();
   if (nm.includes('barbeiro') || nm.includes('confeitaria') || nm.includes('costura')) {
     return ['Quem deseja empreender', 'Complementar renda', 'Primeiro emprego'];
@@ -73,6 +74,7 @@ interface Course {
   local: string;
   descricao?: string;
   ementa?: string;
+  mascote_id?: string;
   competencias?: string;
   pre_requisitos?: string;
   carga_horaria?: number;
@@ -149,7 +151,7 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
     if (filters.idade) {
       const ageNum = parseInt(filters.idade.replace('+', '')) || 14;
       result = result.filter(c => {
-        const minAge = parseInt(c.idade_min) || 14;
+        const minAge = parseInt(String(c.idade_min)) || 14;
         return ageNum >= minAge || minAge <= ageNum;
       });
     }
@@ -232,15 +234,15 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
   };
 
   return (
-    <section id="cursos-list-section" className="w-full bg-slate-50 py-14 px-6 md:px-12 border-t border-slate-200">
+    <section id="cursos-list-section" className="w-full bg-slate-50 py-8 sm:py-14 px-4 sm:px-6 md:px-12 border-t border-slate-200">
       <div className="max-w-7xl mx-auto">
         
         {/* TAB CONTROLS: Todos, Mais Procurados, Novas Inscrições */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
-          <div className="flex items-center gap-2 bg-slate-200/80 p-1.5 rounded-2xl w-full sm:w-auto">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 mb-6 sm:mb-8">
+          <div className="grid grid-cols-3 gap-1 bg-slate-200/80 p-1 rounded-2xl w-full lg:w-auto">
             <button
               onClick={() => setActiveTab('todos')}
-              className={`flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+              className={`min-w-0 px-2 sm:px-4 py-3 rounded-xl text-[11px] sm:text-xs font-extrabold transition-all cursor-pointer ${
                 activeTab === 'todos'
                   ? 'bg-white text-slate-800 shadow-md'
                   : 'text-slate-600 hover:text-slate-900'
@@ -251,7 +253,7 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
 
             <button
               onClick={() => setActiveTab('mais_procurados')}
-              className={`flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`min-w-0 px-2 sm:px-4 py-3 rounded-xl text-[11px] sm:text-xs font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 activeTab === 'mais_procurados'
                   ? 'bg-accent text-white shadow-md'
                   : 'text-slate-600 hover:text-slate-900'
@@ -263,7 +265,7 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
 
             <button
               onClick={() => setActiveTab('novos')}
-              className={`flex-1 sm:flex-none px-5 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`min-w-0 px-2 sm:px-4 py-3 rounded-xl text-[11px] sm:text-xs font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 activeTab === 'novos'
                   ? 'bg-emerald-600 text-white shadow-md'
                   : 'text-slate-600 hover:text-slate-900'
@@ -275,7 +277,7 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
           </div>
 
           {/* Ordenação */}
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <div className="flex items-center gap-2 w-full lg:w-auto justify-between lg:justify-end">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
               Ordenar:
             </span>
@@ -283,7 +285,7 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
               id="ordenacao"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="text-xs border border-slate-300 rounded-xl px-3.5 py-2 bg-white text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
+              aria-label="Ordenar cursos" className="min-w-0 text-sm sm:text-xs border border-slate-300 rounded-xl px-3.5 py-3 sm:py-2 bg-white text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
             >
               <option value="recentes">Mais Recentes</option>
               <option value="vagas">Mais Vagas</option>
@@ -321,7 +323,7 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
 
         {/* Cards Grid */}
         {filteredCourses.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8">
             {currentCourses.map((course) => {
               const status = getStatusConfig(course.vagas_disponiveis, course.status);
               const isEsgotado = course.status === 'esgotado' || course.vagas_disponiveis <= 0;
@@ -346,6 +348,7 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
                     
+                  <img src={getMascot(course.mascote_id, course.categoria).imagem} alt={getMascot(course.mascote_id, course.categoria).nome} className="absolute right-2 bottom-8 h-32 w-32 object-contain drop-shadow-xl transition-transform group-hover:scale-110" />
                     {/* Status & Ribbon Badges */}
                     <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
                       <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] shadow-md font-extrabold ${status.class}`}>
@@ -368,7 +371,7 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
                   </div>
 
                   {/* Card Main Body */}
-                  <div className="p-6 flex-1 flex flex-col justify-between">
+                  <div className="p-5 sm:p-6 min-w-0 flex-1 flex flex-col justify-between">
                     <div>
                       {/* Course Title */}
                       <h4 className="text-lg font-display font-extrabold text-slate-900 leading-snug line-clamp-2 mb-2 min-h-[3.25rem]">
@@ -382,7 +385,7 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
                       </div>
 
                       {/* Resumo curto + Mercado e Média Salarial */}
-                      <p className="text-slate-600 text-xs leading-relaxed line-clamp-2 mb-3">
+                      <p className="text-slate-600 text-sm sm:text-xs leading-relaxed line-clamp-2 mb-3">
                         {course.descricao || "Capacitação profissional presencial gratuita com foco prático e certificação para o mercado de Vitória."}
                       </p>
 
@@ -406,7 +409,7 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
                       </div>
 
                       {/* Pre-requisites display */}
-                      <p className="text-[11px] font-semibold text-slate-500 mb-2">
+                      <p className="text-sm sm:text-[11px] leading-relaxed font-semibold text-slate-500 mb-2">
                         <strong>Pré-requisitos:</strong> {course.pre_requisitos || "Nenhum pré-requisito adicional informado"}
                       </p>
 
@@ -418,7 +421,7 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
                         </div>
                         <div className="flex items-center gap-2">
                           <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                          <span className="truncate">Local: {course.local}</span>
+                          <span className="min-w-0 break-words">Local: {course.local}</span>
                         </div>
                       </div>
                     </div>
@@ -438,7 +441,7 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
                           setSelectedCourseForModal(course);
                           setIsModalOpen(true);
                         }}
-                        className="w-full py-2.5 rounded-xl border border-slate-300 hover:border-accent/40 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                        className="w-full min-h-11 py-3 rounded-xl border border-slate-300 hover:border-accent/40 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                       >
                         <BookOpen className="w-3.5 h-3.5 text-accent" />
                         Ver ementa e mais informações

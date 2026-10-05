@@ -1,0 +1,10 @@
+[
+  { "id": "vitoruga", "nome": "Vitoruga", "profissao": "Seu companheiro de estudos", "imagem": "/imagem/Vitoruga.png" },
+  { "id": "chef", "nome": "Vitoruga Chef", "profissao": "Gastronomia", "imagem": "/imagem/Vitoruga_chef.png" },
+  { "id": "tecnologia", "nome": "Vitoruga Tech", "profissao": "Tecnologia", "imagem": "/imagem/Vitoruga_coder.png" },
+  { "id": "construcao", "nome": "Vitoruga Construtor", "profissao": "Construção e manutenção", "imagem": "/imagem/Vitoruga_worker.png" },
+  { "id": "beleza", "nome": "Vitoruga Beleza", "profissao": "Beleza e estética", "imagem": "/imagem/Vitoruga_beauty.png" },
+  { "id": "saude", "nome": "Vitoruga Saúde", "profissao": "Enfermagem e saúde", "imagem": "/imagem/mascotes/vitoruga-saude.png" },
+  { "id": "moda", "nome": "Vitoruga Moda", "profissao": "Costura e moda", "imagem": "/imagem/mascotes/vitoruga-moda.png" },
+  { "id": "gestao", "nome": "Vitoruga Gestão", "profissao": "Administração e negócios", "imagem": "/imagem/mascotes/vitoruga-gestao.png" }
+]

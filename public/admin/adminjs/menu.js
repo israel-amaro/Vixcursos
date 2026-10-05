@@ -253,6 +253,7 @@
         e.preventDefault();
 
         const dados = {
+            mascote_id: document.getElementById('mascote_id').value || null,
             curso: document.getElementById("curso").value, // Pegando do ID "curso"
             vagas: document.getElementById("vagas").value,
             idade_min: document.getElementById("idade_min").value,
@@ -315,3 +316,20 @@
     carregarFiltros();
     carregarCursosAdmin();
     carregarStats();
+document.addEventListener('DOMContentLoaded', async () => {
+    const select = document.getElementById('mascote_id');
+    if (!select) return;
+    try {
+        const response = await fetch('/mascotes.json');
+        const mascots = await response.json();
+        for (const mascot of mascots) {
+            const option = document.createElement('option');
+            option.value = mascot.id;
+            option.textContent = `${mascot.nome} — ${mascot.profissao}`;
+            select.appendChild(option);
+        }
+        select.addEventListener('change', () => {
+            document.getElementById('mascotePreview').src = mascots.find(m => m.id === select.value)?.imagem || '/imagem/Vitoruga.png';
+        });
+    } catch (error) { console.error('Não foi possível carregar os mascotes.', error); }
+});

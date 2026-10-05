@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, CheckCircle2, MessageSquare, Star, Send } from 'lucide-react';
+import { useState } from 'react';
+import { X, CheckCircle2, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SatisfactionSurveyProps {
@@ -109,12 +109,12 @@ export default function SatisfactionSurvey({ isOpen, onClose }: SatisfactionSurv
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      <div data-lenis-prevent className="responsive-overlay fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          className="bg-white rounded-3xl max-w-lg w-full p-6 md:p-8 shadow-2xl relative border border-slate-100 overflow-hidden text-left"
+          role="dialog" aria-modal="true" aria-label="Pesquisa de satisfação" className="responsive-dialog bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 md:p-8 shadow-2xl relative border border-slate-100 overflow-y-auto overscroll-contain text-left"
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
@@ -133,6 +133,7 @@ export default function SatisfactionSurvey({ isOpen, onClose }: SatisfactionSurv
             </div>
             <button
               onClick={onClose}
+              aria-label="Fechar pesquisa"
               className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />

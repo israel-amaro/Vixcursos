@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Hero from '../components/Hero';
 import FiltroBusca, { FilterState } from '../components/FiltroBusca';
@@ -8,6 +7,7 @@ import Depoimentos from '../components/Depoimentos';
 import Footer from '../components/Footer';
 import CourseQuizModal from '../components/CourseQuizModal';
 import SatisfactionSurvey from '../components/SatisfactionSurvey';
+import { useLocation } from 'react-router-dom';
 
 export default function Home() {
   const location = useLocation();
@@ -24,22 +24,18 @@ export default function Home() {
 
   const [isQuizOpen, setIsQuizOpen] = useState(false);
   const [isSurveyOpen, setIsSurveyOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
   const [showIntro, setShowIntro] = useState(() => {
+    if (window.matchMedia('(max-width: 639px), (prefers-reduced-motion: reduce)').matches) return false;
     return !(sessionStorage.getItem('qualificavix-intro-shown') || sessionStorage.getItem('vixcursos-intro-shown'));
   });
 
   const [contentRevealed, setContentRevealed] = useState(() => {
+    if (window.matchMedia('(max-width: 639px), (prefers-reduced-motion: reduce)').matches) return true;
     return !!(sessionStorage.getItem('qualificavix-intro-shown') || sessionStorage.getItem('vixcursos-intro-shown'));
   });
 
-  useEffect(() => {
-    setIsMobile(window.innerWidth < 768);
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+
 
   useEffect(() => {
     if (showIntro) {
@@ -61,6 +57,11 @@ export default function Home() {
       };
     }
   }, [showIntro]);
+
+  useEffect(() => {
+    const section = location.state?.scrollTo;
+    if (section && contentRevealed) document.getElementById(section === 'categorias-section' ? 'filtro-categoria' : section)?.scrollIntoView({ behavior: 'smooth' });
+  }, [location.key, contentRevealed]);
 
   const handleClearFilters = () => {
     setFilters({
@@ -104,7 +105,7 @@ export default function Home() {
                 transition={{ duration: 0.65, delay: 0.55 }}
               >
                 <img
-                  src="/imagem/VIxcursos.png"
+                  src="/imagem/qualifica-vix.svg"
                   alt="Qualifica Vix"
                   className="h-12 sm:h-16 md:h-20 w-auto object-contain select-none"
                 />
@@ -137,10 +138,10 @@ export default function Home() {
       {/* Main Page Layout */}
       <motion.main
         className={showIntro ? 'h-screen overflow-hidden' : ''}
-        initial={{ filter: 'blur(20px)', opacity: 0 }}
+        initial={{ opacity: contentRevealed ? 1 : 0 }}
         animate={contentRevealed
-          ? { filter: 'blur(0px)', opacity: 1 }
-          : { filter: 'blur(20px)', opacity: 0 }
+          ? { opacity: 1 }
+          : { opacity: 0 }
         }
         transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
       >

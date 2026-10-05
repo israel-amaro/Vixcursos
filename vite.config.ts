@@ -11,6 +11,10 @@ export default defineConfig({
       '/public': 'http://localhost:3000',
       '/chat': 'http://localhost:3000',
       '/inscricao': 'http://localhost:3000',
+      '/admin': 'http://localhost:3000',
+      '/cursos': 'http://localhost:3000',
+      '/inscritos': 'http://localhost:3000',
+      '/certificado': 'http://localhost:3000',
     },
   },
 });

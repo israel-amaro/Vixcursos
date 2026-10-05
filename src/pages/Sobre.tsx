@@ -1,8 +1,7 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import { BookOpen, Award, CheckCircle, MapPin, Truck, ChevronRight } from 'lucide-react';
+import { CheckCircle, Truck } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function Sobre() {
@@ -48,7 +47,7 @@ export default function Sobre() {
 
       <Header />
 
-      <main className="flex-grow pt-28 pb-16 px-6 md:px-12 max-w-7xl mx-auto w-full flex flex-col gap-16 relative z-10" style={{ isolation: 'isolate' }}>
+      <main className="flex-grow pt-24 sm:pt-28 pb-16 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto w-full flex flex-col gap-16 relative z-10" style={{ isolation: 'isolate' }}>
         
         {/* Hero Section */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center mt-4">
