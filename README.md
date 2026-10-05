@@ -10,7 +10,7 @@ Configuração do Firebase, recuperação do cadastro e mascotes: [guia da atual
 
 O projeto é composto por:
 * **Frontend**: Aplicação React 19 + TypeScript + Vite + TailwindCSS v4 + Framer Motion.
-* **Backend**: Node.js + Express com Firebase Realtime Database, acesso privado via Admin SDK, autenticação JWT administrativa e recuperação de cadastro por código enviado via SMTP. PostgreSQL permanece como alternativa; o modo local usa dados de demonstração em memória.
+* **Backend**: Node.js + Express com Firebase Realtime Database, acesso privado via Admin SDK, autenticação administrativa com Firebase Authentication e recuperação de cadastro por código enviado via SMTP. O modo local é apenas uma demonstração fora de produção.
 * **Painel Administrativo**: Interface HTML/JS estática servida em `/admin` para gestão de vagas, inscritos, FAQs e relatórios.
 
 ---
@@ -28,7 +28,7 @@ O projeto é composto por:
 │   ├── admin/                        # Painel administrativo estático (/admin)
 │   └── imagem/                       # Logotipos, mascot Vitoruga e imagens institucionais
 ├── server/
-│   ├── local-db.js                   # Banco de dados em memória para dev offline (DB_DISABLED=true)
+│   ├── local-db.js                   # Banco de dados em memória para dev offline (DB_PROVIDER=local)
 │   └── server.js                     # Servidor Express, APIs REST e autenticação
 ├── src/
 │   ├── components/                   # Componentes React ativos e reutilizáveis

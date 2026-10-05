@@ -20,11 +20,15 @@ test('Vercel: raiz admin leva ao login e APIs não caem no fallback React', () =
 
 test('Admin: raiz redireciona, login autoriza painel e listas permanecem privadas', async () => {
     Object.assign(process.env, {
-        DB_PROVIDER: 'local', DB_DISABLED: 'true', EMAIL_USER: '', EMAIL_PASS: '', EMAIL_FROM: '',
-        ADMIN_USERNAME: 'admin@example.invalid', ADMIN_PASSWORD: 'test-only-password', ADMIN_JWT_SECRET: 'test-only-jwt-secret',
+        DB_PROVIDER: 'local', EMAIL_USER: '', EMAIL_PASS: '', EMAIL_FROM: '',
     });
     const createApp = require('../server/server');
-    const app = await createApp();
+    const identity = { uid: 'test-admin', email: 'admin@example.invalid', auth_time: Math.floor(Date.now() / 1000) };
+    const app = await createApp({ adminAuth: { allowedUids: ['test-admin'], getAuth: () => ({
+        verifyIdToken: async (token, revoked) => { assert.equal(token, 'firebase-id-token'); assert.equal(revoked, true); return identity; },
+        createSessionCookie: async () => 'firebase-session-cookie',
+        verifySessionCookie: async (cookie, revoked) => { assert.equal(cookie, 'firebase-session-cookie'); assert.equal(revoked, true); return identity; },
+    }) } });
     const server = app.listen(0, '127.0.0.1');
     await once(server, 'listening');
     const base = `http://127.0.0.1:${server.address().port}`;
@@ -39,7 +43,9 @@ test('Admin: raiz redireciona, login autoriza painel e listas permanecem privada
         assert.equal(loginPage.status, 200);
         assert.match(await loginPage.text(), /Login Admin/);
         for (const path of ['/cursos', '/inscritos/1', '/api/interessados']) assert.equal((await get(path)).status, 401, path);
-        const login = await fetch(base + '/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: process.env.ADMIN_USERNAME, password: process.env.ADMIN_PASSWORD }) });
+        const legacy = await fetch(base + '/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username: 'admin', password: 'old-password' }) });
+        assert.equal(legacy.status, 400);
+        const login = await fetch(base + '/api/admin/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken: 'firebase-id-token' }) });
         assert.equal(login.status, 200);
         const cookie = login.headers.get('set-cookie').split(';')[0];
         const root = await get('/admin', cookie);
@@ -50,6 +56,7 @@ test('Admin: raiz redireciona, login autoriza painel e listas permanecem privada
             if (!path.startsWith('/admin/')) assert.match(res.headers.get('content-type'), /application\/json/, path);
         }
     } finally {
+        server.closeAllConnections();
         await new Promise(resolve => server.close(resolve));
     }
 });

@@ -5,9 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Admin | Qualifica Vix</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    
-    <!-- Load mock API interceptor first to work offline/client-only -->
-    <script src="/mock-api.js"></script>
 
     <style>
         :root {
@@ -24,16 +21,18 @@
         }
 
         * { box-sizing: border-box; }
-        html, body { height: 100%; margin: 0; }
+        html, body { min-height: 100%; margin: 0; }
         body {
             font-family: Inter, "Segoe UI", system-ui, sans-serif;
             color: var(--text);
             background:
                 linear-gradient(135deg, rgba(3, 7, 18, 0.88), rgba(7, 17, 31, 0.85), rgba(15, 23, 42, 0.9)),
-                url("../imagem/terceira_ponte.png") center bottom / cover no-repeat fixed;
+                url("/imagem/terceira_ponte.png") center bottom / cover no-repeat fixed;
             display: grid;
             place-items: center;
-            overflow: hidden;
+            overflow-x: clip;
+            min-height: 100dvh;
+            padding: 24px 16px;
             position: relative;
         }
 
@@ -124,7 +123,7 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             background: var(--input-bg);
             color: var(--text);
-            font-size: 0.95rem;
+            font-size: 16px;
             outline: none;
             transition: all 0.25s;
         }
@@ -202,6 +201,13 @@
             0% { transform: translate(0, 0) scale(1); }
             100% { transform: translate(30px, -30px) scale(1.08); }
         }
+        @media (max-width: 480px) {
+            .glass-card { padding: 28px 20px; }
+            .logo-container { gap: 10px; }
+            .logo-divider { flex-shrink: 0; }
+            .orb { display: none; }
+        }
+        .login-help { color: var(--muted); font-size: 13px; line-height: 1.5; text-align: center; }
     </style>
 </head>
 <body>
@@ -215,17 +221,18 @@
             <img src="/imagem/prefeitura.png" alt="Prefeitura de Vitória" class="logo-img">
         </div>
 
+        <p class="login-help">Acesso administrativo com sua conta do Firebase Authentication.</p>
         <form id="loginForm" autocomplete="off">
             <div class="input-group">
                 <div class="input-wrapper">
-                    <input id="username" name="username" type="text" placeholder="Usuário" required autofocus>
+                    <input id="username" name="username" type="email" placeholder="E-mail do administrador" autocomplete="username" aria-label="E-mail do administrador" required>
                     <i class="bi bi-person"></i>
                 </div>
             </div>
 
             <div class="input-group">
                 <div class="input-wrapper">
-                    <input id="password" name="password" type="password" placeholder="Senha" required>
+                    <input id="password" name="password" type="password" placeholder="Senha" autocomplete="current-password" aria-label="Senha" required>
                     <i class="bi bi-lock"></i>
                 </div>
             </div>
@@ -238,66 +245,6 @@
         <div class="status" id="statusMsg" aria-live="polite"></div>
     </main>
 
-    <script>
-        const form = document.getElementById('loginForm');
-        const statusMsg = document.getElementById('statusMsg');
-        const submitBtn = document.getElementById('submitBtn');
-        const usernameInput = document.getElementById('username');
-        const passwordInput = document.getElementById('password');
-
-        function setStatus(message, type = '') {
-            statusMsg.textContent = message;
-            statusMsg.className = `status ${type}`.trim();
-        }
-
-        async function verificarSessao() {
-            try {
-                const res = await fetch('/api/admin/me');
-                if (res.ok) {
-                    window.location.href = 'menu.html';
-                }
-            } catch (error) {
-                console.error('Falha ao verificar sessão:', error);
-            }
-        }
-
-        form.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            submitBtn.disabled = true;
-            setStatus('Validando acesso...', 'info');
-
-            try {
-                const res = await fetch('/api/admin/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        username: usernameInput.value.trim(),
-                        password: passwordInput.value
-                    })
-                });
-
-                const data = await res.json();
-
-                if (!res.ok) {
-                    setStatus(data.error || 'Credenciais inválidas.', 'error');
-                    submitBtn.disabled = false;
-                    passwordInput.value = '';
-                    passwordInput.focus();
-                    return;
-                }
-
-                setStatus('Acesso liberado. Redirecionando...', 'success');
-                setTimeout(() => {
-                    window.location.href = 'menu.html';
-                }, 400);
-            } catch (error) {
-                console.error(error);
-                setStatus('Falha na comunicação com o servidor.', 'error');
-                submitBtn.disabled = false;
-            }
-        });
-
-        verificarSessao();
-    </script>
+    <script type="module" src="/src/admin/login.ts"></script>
 </body>
 </html>

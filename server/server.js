@@ -1,15 +1,14 @@
 const express = require("express");
 const fs = require("fs");
-const { Pool } = require("pg");
 const cors = require("cors");
 const path = require("path");
 const nodemailer = require("nodemailer");
-const jwt = require("jsonwebtoken");
 const twilio = require("twilio");
 const XLSX = require("xlsx");
 const crypto = require("crypto");
 const { LOCAL_PUBLIC_CURSOS, createLocalDb } = require("./local-db");
-const { createFirebaseDb } = require('./firebase-db');
+const { createLazyFirebaseDb } = require('./firebase-db');
+const { createAdminAuth } = require('./admin-auth');
 const { createCitizenRouter } = require('./citizen-service');
 const { createStateAdminRouter } = require('./state-admin-router');
 require("dotenv").config({ path: ['.env.local', '.env'] });
@@ -41,455 +40,57 @@ function mascararTelefone(tel) {
     return `(${ddd}) 9****-${fim}`;
 }
 
-const app = express();
-app.use(cors());
-app.use(express.json({ limit: "15mb" }));
-app.use(express.urlencoded({ extended: true, limit: "15mb" }));
-
-const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID || "";
-const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN || "";
-const TWILIO_FROM_NUMBER = process.env.TWILIO_FROM_NUMBER || "";
-const TWILIO_CONTENT_SID = process.env.TWILIO_CONTENT_SID || "";
-const TWILIO_CONTENT_VARIABLES = process.env.TWILIO_CONTENT_VARIABLES || "";
-const TWILIO_TO_NUMBER = process.env.TWILIO_TO_NUMBER || "";
-const TWILIO_CHANNEL = process.env.TWILIO_CHANNEL || "sms";
-const WHATSAPP_PROVIDER = String(process.env.WHATSAPP_PROVIDER || "twilio").toLowerCase();
-const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || "";
-const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || "";
-const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE || "";
-const limparEnv = (valor) => String(valor || "").trim().replace(/^['\"]|['\"]$/g, "");
-const EMAIL_HOST = limparEnv(process.env.EMAIL_HOST) || "smtp.gmail.com";
-const EMAIL_PORT = Number(process.env.EMAIL_PORT || 465);
-const EMAIL_SECURE = String(process.env.EMAIL_SECURE || "true").toLowerCase() === "true";
-const EMAIL_FALLBACK_PORT = Number(process.env.EMAIL_FALLBACK_PORT || 587);
-const EMAIL_FALLBACK_SECURE = String(process.env.EMAIL_FALLBACK_SECURE || "false").toLowerCase() === "true";
-const EMAIL_CONNECT_TIMEOUT = Number(process.env.EMAIL_CONNECT_TIMEOUT || 12000);
-const EMAIL_SOCKET_TIMEOUT = Number(process.env.EMAIL_SOCKET_TIMEOUT || 15000);
-const EMAIL_USER = limparEnv(process.env.EMAIL_USER);
-const EMAIL_PASS = limparEnv(process.env.EMAIL_PASS);
-const EMAIL_FROM = limparEnv(process.env.EMAIL_FROM) || (EMAIL_USER ? `"Qualifica Vix" <${EMAIL_USER}>` : "");
-const IS_VERCEL = Boolean(process.env.VERCEL);
-const IS_PRODUCTION = process.env.NODE_ENV === "production" || IS_VERCEL;
-const DB_DISABLED = String(process.env.DB_DISABLED || "true").toLowerCase() !== "false";
-const SUPABASE_DB_HOST = limparEnv(process.env.SUPABASE_DB_HOST || process.env.POSTGRES_HOST);
-const SUPABASE_DB_USER = limparEnv(process.env.SUPABASE_DB_USER || process.env.POSTGRES_USER);
-const SUPABASE_DB_PASSWORD = limparEnv(process.env.SUPABASE_DB_PASSWORD || process.env.POSTGRES_PASSWORD);
-const SUPABASE_DB_NAME = limparEnv(process.env.SUPABASE_DB_NAME || process.env.POSTGRES_DATABASE) || "postgres";
-const SUPABASE_DB_PORT = Number(process.env.SUPABASE_DB_PORT || process.env.POSTGRES_PORT || 5432);
-const DATABASE_URL_RAW =
-    process.env.SUPABASE_POOLER_URL ||
-    process.env.SUPABASE_POOLER_DATABASE_URL ||
-    process.env.DATABASE_URL ||
-    process.env.SUPABASE_DB_URL ||
-    process.env.SUPABASE_DATABASE_URL ||
-    process.env.POSTGRES_URL_NON_POOLING ||
-    process.env.POSTGRES_PRISMA_URL ||
-    process.env.POSTGRES_URL ||
-    "";
-const ajustarUrlPgCompat = (valor) => {
-    if (!valor) return "";
-    try {
-        const url = new URL(valor);
-        url.searchParams.set("sslmode", "require");
-        url.searchParams.set("uselibpqcompat", "true");
-        return url.toString();
-    } catch {
-        return valor;
-    }
-};
-const DATABASE_URL_FROM_PARTS = SUPABASE_DB_HOST && SUPABASE_DB_USER
-    ? `postgresql://${encodeURIComponent(SUPABASE_DB_USER)}:${encodeURIComponent(SUPABASE_DB_PASSWORD)}@${SUPABASE_DB_HOST}:${SUPABASE_DB_PORT}/${SUPABASE_DB_NAME}`
-    : "";
-const DATABASE_URL = ajustarUrlPgCompat(DATABASE_URL_RAW) || DATABASE_URL_FROM_PARTS;
-const DB_SSL_ENABLED = String(process.env.DB_SSL_ENABLED || "true").toLowerCase() !== "false";
-const DB_SSL_REJECT_UNAUTHORIZED = String(process.env.DB_SSL_REJECT_UNAUTHORIZED || "false").toLowerCase() === "true";
-const DB_CONNECT_TIMEOUT = Number(process.env.DB_CONNECT_TIMEOUT || 6000);
-const DB_QUERY_TIMEOUT = Number(process.env.DB_QUERY_TIMEOUT || 7000);
-const DB_CONNECTION_LIMIT = Number(process.env.DB_CONNECTION_LIMIT || (IS_PRODUCTION ? 1 : 10));
-const DB_IDLE_TIMEOUT = Number(process.env.DB_IDLE_TIMEOUT || (IS_PRODUCTION ? 10000 : 30000));
-const DB_HOST_REF = `${SUPABASE_DB_HOST} ${DATABASE_URL}`.toLowerCase();
-const DB_IS_SUPABASE = DB_HOST_REF.includes("supabase.co") || DB_HOST_REF.includes("supabase.com");
-const DB_IS_POOLER = DB_HOST_REF.includes("pooler.supabase.com") || DB_HOST_REF.includes(":6543");
-const EMAIL_CONFIGURADO = Boolean(EMAIL_USER && EMAIL_PASS && EMAIL_FROM);
-
-const ADMIN_COOKIE_NAME = "porto_admin_token";
-const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET || "porto-admin-secret-change-me";
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin@qualificavix.com";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
 const SERVER_PORT = Number(process.env.PORT) || 3000;
-
-function lerCookie(req, nome) {
-    const cookieHeader = req.headers.cookie || "";
-    const cookies = cookieHeader.split(";").reduce((acc, item) => {
-        const [chave, ...resto] = item.trim().split("=");
-        if (!chave) return acc;
-        acc[chave] = resto.join("=");
-        return acc;
-    }, {});
-
-    return cookies[nome] || null;
-}
-
-function criarCookieAdmin(token) {
-    const partes = [
-        `${ADMIN_COOKIE_NAME}=${token}`,
-        "HttpOnly",
-        "Path=/",
-        "SameSite=Lax",
-        "Max-Age=28800"
-    ];
-
-    if (process.env.NODE_ENV === "production") {
-        partes.push("Secure");
-    }
-
-    return partes.join("; ");
-}
-
-function limparCookieAdmin() {
-    const partes = [
-        `${ADMIN_COOKIE_NAME}=`,
-        "HttpOnly",
-        "Path=/",
-        "SameSite=Lax",
-        "Max-Age=0"
-    ];
-
-    if (process.env.NODE_ENV === "production") {
-        partes.push("Secure");
-    }
-
-    return partes.join("; ");
-}
-
-function eErroTimeoutBanco(erro) {
-    const code = erro && erro.code;
-    const message = String(erro?.message || "").toLowerCase();
-    return Boolean(
-        code && [
-            "ETIMEDOUT",
-            "PROTOCOL_SEQUENCE_TIMEOUT",
-            "ECONNREFUSED",
-            "ENOTFOUND",
-            "EHOSTUNREACH",
-            "PROTOCOL_ENQUEUE_AFTER_FATAL_ERROR",
-            "57P01",
-            "57P02",
-            "57P03"
-        ].includes(code)
-    ) || Boolean(
-        message.includes("connection terminated due to connection timeout") ||
-        message.includes("connection timeout") ||
-        message.includes("timeout exceeded when trying to connect") ||
-        message.includes("timeout expired") ||
-        message.includes("connect timeout") ||
-        message.includes("connection terminated unexpectedly")
-    );
-}
-
-function converterPlaceholdersSql(sql) {
-    let indice = 0;
-    return String(sql || "").replace(/\?/g, () => `$${++indice}`);
-}
-
-function responderErroBanco(res, erro, mensagem) {
-    if (eErroTimeoutBanco(erro)) {
-        console.error("[db] erro de conexao/timeout:", erro?.code || "sem_code", erro?.message || erro);
-        return res.status(503).json({ error: "Banco de dados indisponivel" });
-    }
-
-    console.error(mensagem, erro);
-    return res.status(500).json({ error: mensagem.replace(/^Erro na rota\s*/, "").replace(/:$/, "") || "Erro interno" });
-}
-
-function verificarTokenAdmin(req) {
-    const token = lerCookie(req, ADMIN_COOKIE_NAME);
-    if (!token) return null;
-
-    try {
-        return jwt.verify(token, ADMIN_JWT_SECRET);
-    } catch {
-        return null;
-    }
-}
-
-function exigirAuthAdmin(req, res, next) {
-    const payload = verificarTokenAdmin(req);
-    if (payload) {
-        req.admin = payload;
-        return next();
-    }
-
-    if (req.accepts("html")) {
-        return res.redirect("/admin/login.html");
-    }
-
-    return res.status(401).json({ error: "Nao autorizado" });
-}
-
-app.use((req, res, next) => {
-    if (!req.path.startsWith("/admin")) {
-        return next();
-    }
-
-    if (req.path === "/admin/login.html") {
-        return next();
-    }
-
-    const payload = verificarTokenAdmin(req);
-    if (req.path === '/admin' || req.path === '/admin/') {
-        return res.redirect(payload ? '/admin/menu.html' : '/admin/login.html');
-    }
-    if (payload) {
-        req.admin = payload;
-        return next();
-    }
-
-    return res.redirect("/admin/login.html");
-});
-
 let baseUrl = process.env.PUBLIC_BASE_URL || `http://localhost:${SERVER_PORT}`;
 
-// Servir frontend
-app.use(express.static(path.join(__dirname, "..", "dist")));
+async function createApp(options = {}) {
+    const app = express();
+    app.use(cors());
+    app.use(express.json({ limit: "15mb" }));
+    app.use(express.urlencoded({ extended: true, limit: "15mb" }));
 
-async function createApp() {
-    // ======================================
-    // BANCO LOCAL / POSTGRESQL
-    // ======================================
-    let pgPool = null;
-    let db;
+    const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID || "";
+    const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN || "";
+    const TWILIO_FROM_NUMBER = process.env.TWILIO_FROM_NUMBER || "";
+    const TWILIO_CONTENT_SID = process.env.TWILIO_CONTENT_SID || "";
+    const TWILIO_CONTENT_VARIABLES = process.env.TWILIO_CONTENT_VARIABLES || "";
+    const TWILIO_TO_NUMBER = process.env.TWILIO_TO_NUMBER || "";
+    const TWILIO_CHANNEL = process.env.TWILIO_CHANNEL || "sms";
+    const WHATSAPP_PROVIDER = String(process.env.WHATSAPP_PROVIDER || "twilio").toLowerCase();
+    const EVOLUTION_API_URL = process.env.EVOLUTION_API_URL || "";
+    const EVOLUTION_API_KEY = process.env.EVOLUTION_API_KEY || "";
+    const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE || "";
+    const limparEnv = (valor) => String(valor || "").trim().replace(/^['\"]|['\"]$/g, "");
+    const EMAIL_HOST = limparEnv(process.env.EMAIL_HOST) || "smtp.gmail.com";
+    const EMAIL_PORT = Number(process.env.EMAIL_PORT || 465);
+    const EMAIL_SECURE = String(process.env.EMAIL_SECURE || "true").toLowerCase() === "true";
+    const EMAIL_FALLBACK_PORT = Number(process.env.EMAIL_FALLBACK_PORT || 587);
+    const EMAIL_FALLBACK_SECURE = String(process.env.EMAIL_FALLBACK_SECURE || "false").toLowerCase() === "true";
+    const EMAIL_CONNECT_TIMEOUT = Number(process.env.EMAIL_CONNECT_TIMEOUT || 12000);
+    const EMAIL_SOCKET_TIMEOUT = Number(process.env.EMAIL_SOCKET_TIMEOUT || 15000);
+    const EMAIL_USER = limparEnv(process.env.EMAIL_USER);
+    const EMAIL_PASS = limparEnv(process.env.EMAIL_PASS);
+    const EMAIL_FROM = limparEnv(process.env.EMAIL_FROM) || (EMAIL_USER ? `"Qualifica Vix" <${EMAIL_USER}>` : "");
+    const IS_VERCEL = Boolean(process.env.VERCEL);
+    const IS_PRODUCTION = process.env.NODE_ENV === "production" || IS_VERCEL;
+    const DB_PROVIDER = process.env.DB_PROVIDER === 'local' && !IS_PRODUCTION ? 'local' : 'firebase';
+    const EMAIL_CONFIGURADO = Boolean(EMAIL_USER && EMAIL_PASS && EMAIL_FROM);
 
-    if (process.env.DB_PROVIDER === 'firebase') {
-        db = await createFirebaseDb();
-        console.log('[db] Firebase Realtime Database conectado.');
-    } else if (DB_DISABLED) {
-        console.log("[db] Banco externo desconectado. Usando dados locais em memoria carregados do banco.sql.");
-        db = createLocalDb();
-    } else {
-        console.log("[db] Iniciando configuracao da pool PostgreSQL");
-        console.log("[db] Connection limit:", DB_CONNECTION_LIMIT);
-        console.log("[db] connectTimeout:", DB_CONNECT_TIMEOUT);
-        console.log("[db] queryTimeout:", DB_QUERY_TIMEOUT);
-        console.log("[db] idleTimeout:", DB_IDLE_TIMEOUT);
-        console.log("[db] SSL habilitado:", DB_SSL_ENABLED);
-        console.log("[db] SSL rejectUnauthorized:", DB_SSL_REJECT_UNAUTHORIZED);
-        console.log("[db] Host Supabase detectado:", DB_IS_SUPABASE);
-        console.log("[db] Pooler Supabase detectado:", DB_IS_POOLER);
-        console.log("[db] Database URL configurada:", Boolean(DATABASE_URL));
-        if (IS_PRODUCTION && DB_IS_SUPABASE && !DB_IS_POOLER) {
-            console.warn("[db] Ambiente serverless detectado com conexao direta ao Supabase. Use o Transaction Pooler na porta 6543.");
-        }
+    const adminAuth = createAdminAuth(options.adminAuth);
+    const exigirAuthAdmin = adminAuth.requireAuth;
+    app.use(adminAuth.router);
+    app.use(adminAuth.protectPages);
 
-        pgPool = new Pool({
-            connectionString: DATABASE_URL || undefined,
-            max: DB_CONNECTION_LIMIT,
-            connectionTimeoutMillis: DB_CONNECT_TIMEOUT,
-            idleTimeoutMillis: DB_IDLE_TIMEOUT,
-            allowExitOnIdle: true,
-            statement_timeout: DB_QUERY_TIMEOUT,
-            ssl: DB_SSL_ENABLED
-                ? { rejectUnauthorized: DB_IS_SUPABASE ? false : DB_SSL_REJECT_UNAUTHORIZED }
-                : false
-        });
-
-        db = {
-            query: async (sql, values) => {
-                const text = typeof sql === "string" ? converterPlaceholdersSql(sql) : sql;
-                const result = await pgPool.query(text, values);
-                return [result.rows, result.fields];
-            },
-            getConnection: async () => {
-                const client = await pgPool.connect();
-                return {
-                    release: () => client.release()
-                };
-            }
-        };
+    function responderErroBanco(res, erro, mensagem) {
+        console.error('[db]', erro.code || 'indisponível');
+        return res.status(erro.status || 503).json({ error: 'Não foi possível acessar os dados no Firebase. Verifique a configuração do servidor.' });
     }
 
-    let bancoDisponivelNaInicializacao = false;
+    // Servir frontend
+    app.use(express.static(path.join(__dirname, "..", "dist")));
 
-    async function inicializarBanco() {
-        try {
-            console.log("[db] Pool PostgreSQL criada, validando conexao...");
-            const connection = await db.getConnection();
-            console.log("[db] Conexao PostgreSQL validada com sucesso");
-            connection.release();
-            console.log("[db] Conexao PostgreSQL liberada de volta para a pool");
+    const db = options.db || (DB_PROVIDER === 'local' ? createLocalDb() : createLazyFirebaseDb());
 
-            await garantirColuna("cursos", "mascote_id", "VARCHAR(40) NULL");
-            await garantirColuna("pre_inscricoes", "cpf", "VARCHAR(14) NULL");
-            await garantirColuna("pre_inscricoes", "rg", "VARCHAR(20) NULL");
-            await garantirColuna("pre_inscricoes", "mora_vitoria", "VARCHAR(3) NULL");
-            await garantirColuna("pre_inscricoes", "escolaridade", "VARCHAR(80) NULL");
-            await garantirColuna("pre_inscricoes", "cep", "VARCHAR(12) NULL");
-            await garantirColuna("pre_inscricoes", "numero", "VARCHAR(20) NULL");
-            await garantirColuna("pre_inscricoes", "rua", "VARCHAR(150) NULL");
-            await garantirColuna("pre_inscricoes", "bairro", "VARCHAR(120) NULL");
-            await garantirColuna("pre_inscricoes", "municipio", "VARCHAR(120) NULL");
-            await garantirColuna("pre_inscricoes", "possui_necessidade_especial", "VARCHAR(3) NULL");
-            await garantirColuna("pre_inscricoes", "tipo_necessidade_especial", "VARCHAR(120) NULL");
-            await garantirColuna("pre_inscricoes", "cpf_documento", "TEXT NULL");
-            await garantirColuna("pre_inscricoes", "rg_documento", "TEXT NULL");
-            await garantirColuna("pre_inscricoes", "documento_confirmacao", "TEXT NULL");
-            await garantirColuna("pre_inscricoes", "matricula_confirmada", "SMALLINT NOT NULL DEFAULT 0");
-            await garantirColuna("pre_inscricoes", "matricula_confirmada_em", "TIMESTAMP NULL");
-            await garantirColuna("interessados", "enviado_em", "TIMESTAMP NULL");
-            await garantirIndice("pre_inscricoes", "idx_pre_inscricoes_cpf", "cpf");
-            await garantirIndiceUnico("pre_inscricoes", "uk_pre_inscricoes_curso_cpf", "curso_id, cpf");
-
-            // ==========================================
-            // MIGRATIONS - NOVOS CAMPOS E CONFIGURAÃ‡Ã•ES
-            // ==========================================
-            await db.query(`
-                CREATE TABLE IF NOT EXISTS configuracoes (
-                    id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-                    limite_inscricoes_semestre INT DEFAULT 4,
-                    prazo_confirmacao_horas INT DEFAULT 48
-                )
-            `);
-            const [configRows] = await db.query(`SELECT COUNT(*) AS total FROM configuracoes`);
-            if (configRows[0].total === 0) {
-                await db.query(`INSERT INTO configuracoes (limite_inscricoes_semestre, prazo_confirmacao_horas) VALUES (4, 48)`);
-            }
-
-            // pre_inscricoes columns
-            await garantirColuna("pre_inscricoes", "status_inscricao", "VARCHAR(20) DEFAULT 'titular'");
-            await garantirColuna("pre_inscricoes", "objetivo", "VARCHAR(200) NULL");
-            await garantirColuna("pre_inscricoes", "autoriza_lgpd", "VARCHAR(3) DEFAULT 'sim'");
-            await garantirColuna("pre_inscricoes", "data_nascimento", "DATE NULL");
-            await garantirColuna("pre_inscricoes", "genero", "VARCHAR(30) NULL");
-            await garantirColuna("pre_inscricoes", "raca_cor", "VARCHAR(30) NULL");
-            await garantirColuna("pre_inscricoes", "telefone_alternativo", "VARCHAR(20) NULL");
-            await garantirColuna("pre_inscricoes", "responsavel_nome", "VARCHAR(120) NULL");
-            await garantirColuna("pre_inscricoes", "responsavel_cpf", "VARCHAR(14) NULL");
-            await garantirColuna("pre_inscricoes", "responsavel_parentesco", "VARCHAR(50) NULL");
-            await garantirColuna("pre_inscricoes", "responsavel_telefone", "VARCHAR(20) NULL");
-            await garantirColuna("pre_inscricoes", "responsavel_email", "VARCHAR(120) NULL");
-            await garantirColuna("pre_inscricoes", "responsavel_autorizacao", "VARCHAR(3) NULL");
-            await garantirColuna("pre_inscricoes", "deficiencia_adaptacoes", "TEXT NULL");
-            await garantirColuna("pre_inscricoes", "deficiencia_recursos", "TEXT NULL");
-            await garantirColuna("pre_inscricoes", "nota_satisfacao_instrutor", "INT NULL");
-            await garantirColuna("pre_inscricoes", "nota_satisfacao_estrutura", "INT NULL");
-            await garantirColuna("pre_inscricoes", "nota_satisfacao_material", "INT NULL");
-            await garantirColuna("pre_inscricoes", "nota_satisfacao_geral", "INT NULL");
-            await garantirColuna("pre_inscricoes", "comentario_satisfacao", "TEXT NULL");
-            await garantirColuna("pre_inscricoes", "emprego_pos_curso", "VARCHAR(15) NULL");
-            await garantirColuna("pre_inscricoes", "contribuicao_profissional", "INT NULL");
-            await garantirColuna("pre_inscricoes", "recomendaria", "VARCHAR(3) NULL");
-            await garantirColuna("pre_inscricoes", "beneficio_principal", "TEXT NULL");
-            await garantirColuna("pre_inscricoes", "pesquisa_satisfacao_respondida", "SMALLINT DEFAULT 0");
-            await garantirColuna("pre_inscricoes", "questionario_conclusao_respondido", "SMALLINT DEFAULT 0");
-            await garantirColuna("pre_inscricoes", "convocado_em", "TIMESTAMP NULL");
-            await garantirColuna("pre_inscricoes", "vaga_expira_em", "TIMESTAMP NULL");
-
-            // cursos columns
-            await garantirColuna("cursos", "descricao", "TEXT NULL");
-            await garantirColuna("cursos", "video_url", "VARCHAR(255) NULL");
-            await garantirColuna("cursos", "faixa_salarial", "VARCHAR(100) NULL");
-            await garantirColuna("cursos", "areas_atuacao", "TEXT NULL");
-            await garantirColuna("cursos", "competencias", "TEXT NULL");
-            await garantirColuna("cursos", "pre_requisitos", "TEXT NULL");
-            await garantirColuna("cursos", "nivel_empregabilidade", "VARCHAR(50) NULL");
-            await garantirColuna("cursos", "data_publicacao", "TIMESTAMP NULL");
-            await garantirColuna("cursos", "data_abertura_inscricao", "TIMESTAMP NULL");
-            await garantirColuna("cursos", "data_encerramento_inscricao", "TIMESTAMP NULL");
-            await garantirColuna("cursos", "acessos_contador", "INT DEFAULT 0");
-
-            // filtro_modalidade column (categoria_id)
-            await garantirColuna("filtro_modalidade", "categoria_id", "INT NULL");
-
-            await garantirColuna("pre_inscricoes", "situacao_final", "VARCHAR(30) DEFAULT 'inscrito'");
-
-            // FAQ Table
-            await db.query(`
-                CREATE TABLE IF NOT EXISTS faq (
-                    id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-                    pergunta TEXT NOT NULL,
-                    resposta TEXT NOT NULL,
-                    ordem INT DEFAULT 0
-                )
-            `);
-            const [faqCount] = await db.query(`SELECT COUNT(*) AS total FROM faq`);
-            if (faqCount[0].total === 0) {
-                const defaultFaqs = [
-                    { q: "Quem pode se inscrever?", a: "Os cursos do Qualifica Vix sÃ£o destinados exclusivamente a moradores de VitÃ³ria - ES que atendam aos prÃ©-requisitos de idade e escolaridade do curso pretendido." },
-                    { q: "Como funciona a confirmaÃ§Ã£o de matrÃ­cula?", a: "ApÃ³s a prÃ©-inscriÃ§Ã£o online, o aluno titular recebe uma notificaÃ§Ã£o por e-mail/SMS com prazo de 24h ou 48h para confirmar sua matrÃ­cula. Caso nÃ£o confirme, a vaga Ã© liberada para o prÃ³ximo suplente." },
-                    { q: "O que acontece se eu for suplente?", a: "Caso as vagas imediatas estejam preenchidas, vocÃª entrarÃ¡ na fila de suplÃªncia automÃ¡tica. Se um candidato titular desistir ou nÃ£o confirmar a matrÃ­cula no prazo, o prÃ³ximo suplente da fila Ã© convocado por e-mail/SMS." },
-                    { q: "Qual o limite de cursos por semestre?", a: "Cada cidadÃ£o pode se inscrever em atÃ© 4 cursos por semestre. A partir da 3Âª inscriÃ§Ã£o simultÃ¢nea, a inscriÃ§Ã£o entra automaticamente como suplente para dar oportunidade a outros moradores." },
-                    { q: "Os cursos sÃ£o realmente gratuitos?", a: "Sim, todos os cursos oferecidos pelo portal Qualifica Vix sÃ£o 100% gratuitos e contam com fornecimento de vale-transporte." },
-                    { q: "Menores de 18 anos podem se inscrever?", a: "Sim, desde que atendam a idade mÃ­nima do curso. No momento da inscriÃ§Ã£o, deverÃ£o ser informados os dados do responsÃ¡vel legal, que deverÃ¡ autorizar a participaÃ§Ã£o." }
-                ];
-                for (let i = 0; i < defaultFaqs.length; i++) {
-                    await db.query(`INSERT INTO faq (pergunta, resposta, ordem) VALUES (?, ?, ?)`, [defaultFaqs[i].q, defaultFaqs[i].a, i]);
-                }
-            }
-
-            // SugestÃµes Table
-            await db.query(`
-                CREATE TABLE IF NOT EXISTS sugestoes_cursos (
-                    id INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-                    cpf VARCHAR(14) NOT NULL,
-                    areas_interesse TEXT,
-                    sugestao_texto TEXT,
-                    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                )
-            `);
-
-            // Garantir que categorias existam
-            const cats = ['Beleza', 'ConfecÃ§Ã£o', 'Gastronomia', 'Humanas', 'VeÃ­culos'];
-            for (const cat of cats) {
-                const [exists] = await db.query("SELECT id FROM filtro_categoria WHERE categoria = ?", [cat]);
-                if (exists.length === 0) {
-                    await db.query("INSERT INTO filtro_categoria (categoria) VALUES (?)", [cat]);
-                }
-            }
-
-            // Associar modalidades Ã s categorias
-            const assoc = [
-                { cat: 'Beleza', mods: ['Barbeiro', 'Cuidador de Idoso'] },
-                { cat: 'ConfecÃ§Ã£o', mods: ['ConfecÃ§Ã£o Moda Praia', 'TÃ©cnicas de Costura e Acabamento'] },
-                { cat: 'Gastronomia', mods: ['Drinks para o VerÃ£o', 'TÃ©cnicas de Confeitaria BÃ¡sica'] }
-            ];
-
-            for (const item of assoc) {
-                const [catRow] = await db.query("SELECT id FROM filtro_categoria WHERE categoria = ?", [item.cat]);
-                if (catRow.length > 0) {
-                    const catId = catRow[0].id;
-                    for (const m of item.mods) {
-                        const [existsMod] = await db.query("SELECT id FROM filtro_modalidade WHERE modalidade = ?", [m]);
-                        if (existsMod.length === 0) {
-                            await db.query("INSERT INTO filtro_modalidade (modalidade, categoria_id) VALUES (?, ?)", [m, catId]);
-                        } else {
-                            await db.query("UPDATE filtro_modalidade SET categoria_id = ? WHERE modalidade = ?", [catId, m]);
-                        }
-                    }
-                }
-            }
-
-            bancoDisponivelNaInicializacao = true;
-            console.log("[db] Inicializacao do banco concluida com sucesso");
-        } catch (erro) {
-            bancoDisponivelNaInicializacao = false;
-            console.warn("[db] Banco indisponivel na inicializacao. O servidor vai subir mesmo assim.");
-            console.warn("[db] message:", erro?.message || erro);
-            console.warn("[db] code:", erro?.code || "sem_code");
-            console.warn("[db] errno:", erro?.errno || "sem_errno");
-            console.warn("[db] sqlState:", erro?.sqlState || "sem_sqlState");
-        }
-    }
-
-    if (db.provider === 'firebase' || DB_DISABLED) {
-        bancoDisponivelNaInicializacao = true;
-        console.log(`[db] Provedor ${db.provider || 'local'} pronto.`);
-    } else {
-        void inicializarBanco();
-    }
-
-    // ======================================
-    // EMAIL
-    // ======================================
     function criarTransporterEmail(port, secure) {
         return nodemailer.createTransport({
             host: EMAIL_HOST,
@@ -573,71 +174,6 @@ async function createApp() {
     }
 
     void inicializarEmail();
-
-    async function garantirColuna(tabela, coluna, definicao) {
-        const [colunas] = await db.query(
-            `SELECT COUNT(*) AS total
-             FROM INFORMATION_SCHEMA.COLUMNS
-             WHERE TABLE_SCHEMA = current_schema()
-               AND TABLE_NAME = ?
-               AND COLUMN_NAME = ?`,
-            [tabela, coluna]
-        );
-
-        if (colunas[0].total === 0) {
-            await db.query(`ALTER TABLE ${tabela} ADD COLUMN ${coluna} ${definicao}`);
-        }
-    }
-
-    async function garantirIndice(tabela, indice, colunas) {
-        const [indices] = await db.query(
-            `SELECT COUNT(*) AS total
-                         FROM pg_indexes
-                         WHERE schemaname = current_schema()
-                             AND tablename = ?
-                             AND indexname = ?`,
-            [tabela, indice]
-        );
-
-        if (indices[0].total === 0) {
-            await db.query(`CREATE INDEX ${indice} ON ${tabela} (${colunas})`);
-        }
-    }
-
-    async function garantirIndiceUnico(tabela, indice, colunas) {
-        const [indices] = await db.query(
-            `SELECT COUNT(*) AS total
-                         FROM pg_indexes
-                         WHERE schemaname = current_schema()
-                             AND tablename = ?
-                             AND indexname = ?`,
-            [tabela, indice]
-        );
-
-        if (indices[0].total === 0) {
-            try {
-                await db.query(`CREATE UNIQUE INDEX ${indice} ON ${tabela} (${colunas})`);
-            } catch (err) {
-                if (err && (err.code === "23505" || err.code === "ER_DUP_ENTRY")) {
-                    const [duplicados] = await db.query(
-                        `SELECT curso_id, cpf, COUNT(*) AS total
-                         FROM pre_inscricoes
-                         GROUP BY curso_id, cpf
-                         HAVING COUNT(*) > 1
-                         ORDER BY total DESC`
-                    );
-
-                    console.warn(
-                        `[db] Nao foi possivel criar o indice unico ${indice} por registros duplicados existentes (${duplicados.length} combinacoes). ` +
-                        "A aplicacao vai continuar rodando e bloqueando novas duplicidades pela validacao da API."
-                    );
-                    return;
-                }
-
-                throw err;
-            }
-        }
-    }
 
     function normalizarCpf(valor) {
         return String(valor || "").replace(/\D/g, "").slice(0, 11);
@@ -1215,33 +751,6 @@ async function createApp() {
         });
     }
 
-    app.post("/api/admin/login", (req, res) => {
-        const username = String(req.body.username || "").trim();
-        const password = String(req.body.password || "").trim();
-
-        if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
-            return res.status(401).json({ error: "Credenciais invalidas" });
-        }
-
-        const token = jwt.sign({ username: ADMIN_USERNAME }, ADMIN_JWT_SECRET, { expiresIn: "8h" });
-        res.setHeader("Set-Cookie", criarCookieAdmin(token));
-        return res.json({ ok: true });
-    });
-
-    app.post("/api/admin/logout", (req, res) => {
-        res.setHeader("Set-Cookie", limparCookieAdmin());
-        return res.json({ ok: true });
-    });
-
-    app.get("/api/admin/me", (req, res) => {
-        const payload = verificarTokenAdmin(req);
-        if (!payload) {
-            return res.status(401).json({ authenticated: false });
-        }
-
-        return res.json({ authenticated: true, username: payload.username || ADMIN_USERNAME });
-    });
-
     const tabelas = {
         curso: "filtro_curso", 
         idade: "filtro_idade",
@@ -1402,41 +911,11 @@ async function createApp() {
                 const [result] = await db.query(`SELECT * FROM ${tabela} ORDER BY id ASC`);
                 rows = result;
             }
-            
-            
+
+
             res.json(rows);
         } catch (err) {
-            if (db.provider !== 'firebase' && eErroTimeoutBanco(err)) {
-                console.warn(`[db] Falha na conexao do banco ao buscar filtro ${req.params.tipo}, servindo fallback estático.`);
-                if (req.params.tipo === 'categoria') {
-                    return res.json([
-                        { id: 1, categoria: "Beleza" },
-                        { id: 2, categoria: "Moda" },
-                        { id: 3, categoria: "Gastronomia" },
-                        { id: 4, categoria: "Humanas" },
-                        { id: 5, categoria: "Veículos" }
-                    ]);
-                }
-                if (req.params.tipo === 'local') {
-                    return res.json([
-                        { id: 1, local: "Bento Ferreira" },
-                        { id: 2, local: "Centro" },
-                        { id: 3, local: "Jardim da Penha" },
-                        { id: 4, local: "Jardim Camburi" },
-                        { id: 5, local: "MaruÃ­pe" },
-                        { id: 6, local: "SÃ£o Pedro" },
-                        { id: 7, local: "Goiabeiras" },
-                        { id: 8, local: "Praia do Canto" }
-                    ]);
-                }
-                if (req.params.tipo === 'modalidade') {
-                    return res.json([
-                        { id: 1, modalidade: "Presencial" },
-                        { id: 2, modalidade: "HÃ­brido" },
-                        { id: 3, modalidade: "Online" }
-                    ]);
-                }
-            }
+
             return responderErroBanco(res, err, "Erro ao buscar filtro");
         }
     });
@@ -1511,7 +990,7 @@ async function createApp() {
                 ORDER BY c.id DESC
             `;
             const [rows] = await db.query(querySql);
-            
+
             const cursosFormatados = rows.map(curso => {
                 const vagasDisponiveis = Number(curso.vagas_disponiveis);
                 return {
@@ -1520,13 +999,10 @@ async function createApp() {
                     disponivel: vagasDisponiveis > 0
                 };
             });
-            
+
             res.json(cursosFormatados);
         } catch (err) {
-            if (db.provider !== 'firebase' && eErroTimeoutBanco(err)) {
-                console.warn("[db] Falha na conexao do banco ao buscar cursos pÃºblicos, servindo fallback estÃ¡tico.");
-                return res.json(FALLBACK_CURSOS);
-            }
+
             return responderErroBanco(res, err, "Erro na rota /api/cursos-public:");
         }
     });
@@ -1598,30 +1074,24 @@ async function createApp() {
                     c.criado_em
             `;
             const [rows] = await db.query(querySql, [id]);
-            
+
             if (rows.length === 0) {
                 return res.status(404).json({ error: "Curso nÃ£o encontrado" });
             }
-            
+
             const vagasDisponiveis = Number(rows[0].vagas_disponiveis);
             const curso = {
                 ...rows[0],
                 vagas: vagasDisponiveis,
                 disponivel: vagasDisponiveis > 0
             };
-            
+
             // Registrar buscas e cliques dos usuÃ¡rios no catÃ¡logo
             await db.query("UPDATE cursos SET acessos_contador = COALESCE(acessos_contador, 0) + 1 WHERE id = ?", [id]);
 
             res.json(curso);
         } catch (err) {
-            if (db.provider !== 'firebase' && eErroTimeoutBanco(err)) {
-                console.warn("[db] Falha na conexao do banco ao buscar detalhes do curso, servindo fallback estÃ¡tico.");
-                const fallbackCurso = FALLBACK_CURSOS.find(c => c.id === Number(id));
-                if (fallbackCurso) {
-                    return res.json(fallbackCurso);
-                }
-            }
+
             return responderErroBanco(res, err, "Erro na rota /api/cursos-public/:id:");
         }
     });
@@ -1634,7 +1104,7 @@ async function createApp() {
     app.get("/api/cursos-public/:id/vagas", async (req, res) => {
         try {
             const { id } = req.params;
-            
+
             const [rows] = await db.query(`
                 SELECT 
                     c.vagas AS vagas_totais,
@@ -1646,14 +1116,14 @@ async function createApp() {
                 WHERE c.id = ?
                 GROUP BY c.id
             `, [id]);
-            
+
             if (rows.length === 0) {
                 return res.status(404).json({ error: "Curso não encontrado" });
             }
-            
+
             const resultado = rows[0];
             const disponivel = resultado.vagas_disponiveis > 0 && resultado.status !== 'esgotado';
-            
+
             res.json({
                 disponivel,
                 vagas_disponiveis: resultado.vagas_disponiveis,
@@ -1662,19 +1132,7 @@ async function createApp() {
                 status: resultado.status
             });
         } catch (err) {
-            if (db.provider !== 'firebase' && eErroTimeoutBanco(err)) {
-                console.warn("[db] Falha na conexao do banco ao buscar vagas do curso, servindo fallback estático.");
-                const fallbackCurso = FALLBACK_CURSOS.find(c => c.id === Number(req.params.id));
-                if (fallbackCurso) {
-                    return res.json({
-                        disponivel: fallbackCurso.vagas_disponiveis > 0,
-                        vagas_disponiveis: fallbackCurso.vagas_disponiveis,
-                        vagas_totais: fallbackCurso.vagas_totais,
-                        inscritos: fallbackCurso.inscritos,
-                        status: fallbackCurso.status
-                    });
-                }
-            }
+
             return responderErroBanco(res, err, "Erro ao verificar vagas do curso:");
         }
     });
@@ -1795,30 +1253,6 @@ async function createApp() {
     // ============================================================
     // ESGOTAR CURSO
     // ============================================================
-    app.put("/cursos/esgotar/:id", exigirAuthAdmin, async (req, res) => {
-        try {
-            const id = parseInt(req.params.id);
-            if (isNaN(id)) return res.status(400).json({ erro: "ID inválido" });
-
-            if (useLocalDb) {
-                const curso = localDb.cursos.find(c => c.id === id);
-                if (!curso) return res.status(404).json({ erro: "Curso não encontrado" });
-                curso.status = "esgotado";
-                curso.vagas = 0;
-                return res.json({ sucesso: true, mensagem: "Curso esgotado com sucesso" });
-            } else {
-                const result = await pgPool.query(
-                    "UPDATE cursos SET status = 'esgotado', vagas = 0 WHERE id = $1 RETURNING *",
-                    [id]
-                );
-                if (result.rows.length === 0) return res.status(404).json({ erro: "Curso não encontrado" });
-                return res.json({ sucesso: true, mensagem: "Curso esgotado com sucesso" });
-            }
-        } catch (err) {
-            return responderErroBanco(res, err, "Erro ao esgotar curso:");
-        }
-    });
-
     // ============================================================
     // PRE-INSCRICAO
     // ============================================================
@@ -1838,7 +1272,7 @@ async function createApp() {
 
             const cpfLimpo = normalizarCpf(cpf);
             const rgNormalizado = normalizarRg(rg);
-            
+
             const possuiNecessidadeEspecial = String(possui_necessidade_especial || "nao").toLowerCase() === "sim" ? "sim" : "nao";
             const tipoNecessidadeEspecial = possuiNecessidadeEspecial === "sim" ? String(tipo_necessidade_especial || "").trim().slice(0, 120) : null;
             const possuiDeficiencia = possuiNecessidadeEspecial === "sim" ? "sim" : "não";
@@ -2518,7 +1952,7 @@ async function createApp() {
 
             // 1. Descobrir de qual curso é essa inscrição
             const [inscricao] = await db.query(`SELECT curso_id FROM pre_inscricoes WHERE id = ?`, [idInscricao]);
-            
+
             if (!inscricao.length) {
                 return res.status(404).json({ error: "Inscrição não encontrada no sistema." });
             }
@@ -2548,7 +1982,7 @@ async function createApp() {
     // ============================================================
     // ROTAS DO QUIZ VOCACIONAL (INTERESSADOS/LEADS)
     // ============================================================
-    
+
     // Salvar o aluno que fez o quiz
     app.post('/api/interessados', async (req, res) => {
         try {
@@ -2568,7 +2002,7 @@ async function createApp() {
                 perfil_curso: perfil,
                 status: 'aguardando'
             });
-            
+
             res.json({ message: "Interesse salvo com sucesso!" });
         } catch (err) {
             console.error("Erro ao salvar lead:", err);
@@ -2731,10 +2165,7 @@ async function createApp() {
 
             res.json({ vagasHoje, vagas2026 });
         } catch (err) {
-            if (db.provider !== 'firebase' && eErroTimeoutBanco(err)) {
-                console.warn("[db] Falha na conexao do banco ao carregar estatÃ­sticas, servindo fallback estÃ¡tico.");
-                return res.json({ vagasHoje: 108, vagas2026: 677 });
-            }
+
             return responderErroBanco(res, err, "Erro ao carregar estatÃ­sticas:");
         }
     });
@@ -2790,7 +2221,7 @@ async function createApp() {
                     FROM pre_inscricoes
                     WHERE cpf = ? AND situacao_final = 'concluido'
                 `, [s.cpf]);
-                
+
                 const jaConcluiu = conclusoes[0].total > 0;
                 suplentesOrdenados.push({
                     ...s,
@@ -2919,7 +2350,7 @@ async function createApp() {
             const [alunoRows] = await db.query(`
                 SELECT * FROM usuarios WHERE cpf = ? LIMIT 1
             `, [cpfLimpo]);
-            
+
             let aluno = null;
             if (alunoRows.length > 0) {
                 aluno = alunoRows[0];
@@ -2945,7 +2376,7 @@ async function createApp() {
                 WHERE pi.cpf = ?
                 ORDER BY pi.criado_em DESC
             `, [cpfLimpo]);
-            
+
             res.json({ aluno, historico: historicoRows });
         } catch (err) {
             return responderErroBanco(res, err, "Erro ao carregar ficha do aluno");
@@ -2985,7 +2416,7 @@ async function createApp() {
             // Promote waitlist if a titular went inactive
             const wasActive = !['cancelado', 'desistencia', 'nao_concluido', 'desistente', 'nao_compareceu'].includes(oldStatus);
             const isNowInactive = ['cancelado', 'desistencia', 'nao_concluido', 'desistente', 'nao_compareceu'].includes(status);
-            
+
             if (oldClassif === 'titular' && wasActive && isNowInactive) {
                 const [configRows] = await db.query(`SELECT prazo_confirmacao_horas FROM configuracoes LIMIT 1`);
                 const prazoHoras = configRows.length > 0 ? configRows[0].prazo_confirmacao_horas : 48;
@@ -3226,11 +2657,11 @@ async function createApp() {
                     <div class="certificate-container">
                         <div class="header">Certificado de ConclusÃ£o</div>
                         <div class="subheader">Prefeitura de VitÃ³ria â€” Qualifica Vix</div>
-                        
+
                         <p class="body-text">
                             Certificamos que <span class="highlight">${aluno.nome}</span> concluiu com Ãªxito o curso de qualificaÃ§Ã£o profissional em <span class="highlight">${aluno.curso_nome}</span>, ministrado no polo <span class="highlight">${aluno.local_nome}</span>, no perÃ­odo de ${aluno.data_inicio_formatada} a ${aluno.data_termino_formatada}, com carga horÃ¡ria de <span class="highlight">40 horas</span>.
                         </p>
-                        
+
                         <div class="footer">
                             <div class="signature-block">
                                 <div class="signature-title">Secretaria de AssistÃªncia Social</div>
@@ -3242,7 +2673,7 @@ async function createApp() {
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="actions">
                         <button onclick="window.print()" class="btn">ðŸ–¨ï¸ Imprimir / Salvar PDF</button>
                         <a href="/" class="btn" style="background:#475569; margin-left:10px;">Voltar ao Site</a>

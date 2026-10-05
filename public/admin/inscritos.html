@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Alunos Inscritos | Qualifica Vix Admin</title>
-    <script src="/mock-api.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="css_adm/admin.css">
     <style>
@@ -42,6 +41,7 @@
         .detalhe-item strong { color: #f8fafc; font-size: .9rem; }
         .detalhe-secao  { grid-column: 1 / -1; color: #f9c852; border-bottom: 1px solid #334155; padding-bottom: 5px; margin-top: 12px; font-size: 1rem; font-weight: 700; }
     </style>
+    <script src="/admin/adminjs/session.js" defer></script>
 </head>
 <body>
 
@@ -64,7 +64,7 @@
         <div class="nav-section">Configuração</div>
         <a href="faq.html" class="nav-link"><span class="ni"><i class="bi bi-question-circle-fill" aria-hidden="true"></i></span> Gerenciar FAQ</a>
         <div class="sidebar-sep"></div>
-        <a href="../pages/index.html" class="nav-link"><span class="ni"><i class="bi bi-globe-americas" aria-hidden="true"></i></span> Ver Site</a>
+        <a href="/" class="nav-link"><span class="ni"><i class="bi bi-globe-americas" aria-hidden="true"></i></span> Ver Site</a>
     </div>
 </nav>
 

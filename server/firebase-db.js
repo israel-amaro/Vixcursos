@@ -1,4 +1,4 @@
-const { initializeApp, applicationDefault, cert, getApps } = require('firebase-admin/app');
+const { getFirebaseAdminApp, withTimeout } = require('./firebase-admin');
 const { getDatabase } = require('firebase-admin/database');
 const { createLocalDb, createLocalState } = require('./local-db');
 
@@ -16,17 +16,13 @@ async function createFirebaseDb(options = {}) {
     if (!emulator && !serviceAccount && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
         throw new Error('Firebase requer GOOGLE_APPLICATION_CREDENTIALS (caminho local) ou FIREBASE_SERVICE_ACCOUNT_JSON (somente no servidor).');
     }
-    const firebase = getApps().find(a => a.name === 'qualifica-vix-server') || initializeApp({
-        projectId: process.env.FIREBASE_PROJECT_ID || 'vixcursos',
-        databaseURL: process.env.FIREBASE_DATABASE_URL || 'https://vixcursos-default-rtdb.firebaseio.com',
-        ...(emulator ? {} : { credential: serviceAccount ? cert(JSON.parse(serviceAccount)) : applicationDefault() }),
-    }, 'qualifica-vix-server');
+    const firebase = getFirebaseAdminApp();
     const ref = getDatabase(firebase).ref(options.dataPath || 'qualificaVix/data');
     // Fail on unavailable credentials/database; never silently write citizen data to memory.
-    await ref.get();
+    await withTimeout(ref.get());
     return {
         provider: 'firebase',
-        readState: async () => normalizeState((await ref.get()).val()),
+        readState: async () => normalizeState((await withTimeout(ref.get())).val()),
         mutate: async (operation) => {
             await ref.once('value');
             let result;
@@ -49,9 +45,27 @@ async function createFirebaseDb(options = {}) {
                 }, undefined, false);
                 return result;
             }
-            return createLocalDb(normalizeState((await ref.get()).val()), { strict: true }).query(sql, values);
+            return createLocalDb(normalizeState((await withTimeout(ref.get())).val()), { strict: true }).query(sql, values);
         },
         getConnection: async () => ({ release() {} }),
     };
 }
-module.exports = { createFirebaseDb, normalizeState };
+function createLazyFirebaseDb() {
+    let connection;
+    const getConnection = () => connection ||= createFirebaseDb().catch(error => {
+        connection = undefined;
+        throw Object.assign(error, { status: 503 });
+    });
+    const invoke = async (method, args) => {
+        try { return await (await getConnection())[method](...args); }
+        catch (error) { throw Object.assign(error, { status: 503 }); }
+    };
+    return {
+        provider: 'firebase',
+        readState: (...args) => invoke('readState', args),
+        mutate: (...args) => invoke('mutate', args),
+        query: (...args) => invoke('query', args),
+        getConnection: (...args) => invoke('getConnection', args),
+    };
+}
+module.exports = { createFirebaseDb, createLazyFirebaseDb, normalizeState };

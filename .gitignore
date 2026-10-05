@@ -29,6 +29,7 @@ id_rsa.pub
 .azure/
 .gcp/
 firebase-service-account*.json
+*firebase-adminsdk*.json
 *service-account*.json
 *credentials*.json
 

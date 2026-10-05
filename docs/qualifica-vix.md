@@ -12,7 +12,7 @@ O projeto está na branch `codex/qualifica-vix`. A configuração local fica em 
 
 `DB_PROVIDER=firebase` utiliza Realtime Database com Admin SDK. `DB_PROVIDER=local` oferece os cinco cursos de demonstração do repositório em memória. Para uma prévia local independente, use `$env:DB_PROVIDER='local'; $env:PORT='3100'; npm start`. O modo local perde seus cadastros quando o servidor é reiniciado.
 
-O Firebase foi conectado e suas regras de acesso direto foram bloqueadas. O catálogo real está vazio: publique os cursos pelo painel `/admin/menu.html`. Os dados de demonstração não são importados automaticamente. O usuário e a senha administrativos locais estão nos campos `ADMIN_USERNAME` e `ADMIN_PASSWORD` de `.env.local`; o segredo JWT foi gerado localmente.
+O Firebase foi conectado e suas regras de acesso direto foram bloqueadas. O catálogo real está vazio: publique os cursos pelo painel `/admin/menu.html`. Os dados de demonstração não são importados automaticamente. O painel usa Firebase Authentication com e-mail e senha. O UID autorizado está em `server/admin-access.json`; não existe senha administrativa local.
 
 ## Recuperação da ficha
 
@@ -36,7 +36,7 @@ O formulário consulta o CEP de residência. Para endereços fora de Vitória/ES
 
 ## Persistência e acesso
 
-Na Vercel, `/admin` e `/admin/` redirecionam ao login, que encaminha sessões já autenticadas ao dashboard. As páginas HTML, CSS e JavaScript do painel são servidas como arquivos estáticos; os dados administrativos exigem autenticação nas APIs. As rotas `/api`, `/public`, `/cursos`, `/inscritos`, `/inscricao`, `/chat` e `/certificado` passam pela função Express antes do fallback React. As credenciais administrativas e do Firebase precisam ser configuradas também nas variáveis de ambiente da Vercel; o `.env.local` pertence somente ao computador local.
+Na Vercel, `/admin` e `/admin/` redirecionam ao login, que encaminha sessões já autenticadas ao dashboard. As páginas HTML, CSS e JavaScript do painel são servidas como arquivos estáticos; os dados administrativos exigem autenticação nas APIs. As rotas `/api`, `/public`, `/cursos`, `/inscritos`, `/inscricao`, `/chat` e `/certificado` passam pela função Express antes do fallback React. A conta de serviço do Firebase precisa ser configurada também nas variáveis de ambiente da Vercel; o `.env.local` pertence somente ao computador local.
 
 O backend grava cursos, fichas, inscrições, consentimentos, preferências, FAQs e interessados sob `qualificaVix/data`. Cadastro, atualização da ficha e reserva de vaga são transações, evitando titularidade acima da capacidade e alteração de fichas sem autenticação. As regras em `firebase/database.rules.json` negam leitura e gravação direta pelo cliente; as APIs públicas retornam somente o catálogo e informações permitidas.
 
@@ -55,3 +55,14 @@ Conferência no navegador em larguras efetivas de 320, 390, 430, 768, 1024 e 103
 Build completo de TypeScript/Vite aprovado. Testes locais e testes com Firebase real aprovados, incluindo disputa pela última vaga, ausência de anexos, consentimento de imagem opcional, CPF existente, código incorreto, limite de reenvio, código de uso único, recuperação autenticada, atualização da ficha, nova inscrição, sessão expirada, curso com ementa/mascote e relatórios.
 
 A leitura sem autenticação do Firebase retornou HTTP 401 após a aplicação das regras. Testes reais foram executados em área isolada e removidos; nenhuma ficha de cidadão real foi criada.
+
+## Login administrativo com Firebase Authentication
+
+1. No console do projeto `vixcursos`, ative Authentication → Sign-in method → E-mail/Senha e crie o usuário administrativo.
+2. O UID `iGk2qpWxw6T1qv9PlOMuuEJnVk23` já está autorizado no servidor. Outros usuários precisam constar em `FIREBASE_ADMIN_UIDS` ou receber a claim `admin: true` via Admin SDK. Uma conta autenticada comum não acessa as fichas.
+3. Na Vercel, configure `FIREBASE_SERVICE_ACCOUNT_JSON` com o conteúdo da conta de serviço como segredo **somente do servidor**, `FIREBASE_PROJECT_ID=vixcursos` e `FIREBASE_DATABASE_URL=https://vixcursos-default-rtdb.firebaseio.com`. Não use prefixo `VITE_` para a conta de serviço. O caminho `GOOGLE_APPLICATION_CREDENTIALS` de um arquivo do computador não funciona na Vercel.
+4. Faça novo deploy após alterar as variáveis. Acesse `/admin` e entre com o e-mail e a senha desse usuário Firebase.
+
+O frontend usa o SDK Firebase instalado e passa um ID token ao servidor. O Admin SDK verifica o token, a autorização e o acesso recente, e cria uma sessão de oito horas em cookie HttpOnly, SameSite e Secure em produção. Sessões expiradas, revogadas ou de contas desativadas não dão acesso. A senha não é enviada ao backend do portal nem fica salva no navegador. O login tem tempo limite e permite tentar novamente quando há falha.
+
+O backend conecta o Realtime Database apenas quando precisa dos dados; a consulta de sessão não depende dessa conexão. Produção sempre usa Firebase, inclusive se existirem variáveis antigas de banco externo. `DB_PROVIDER=local` é permitido somente para demonstração fora de produção. A integração anterior com banco externo e o script de mock foram removidos.

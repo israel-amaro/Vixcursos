@@ -92,7 +92,9 @@ test('Firebase: transações e persistência real em área isolada', { skip: pro
         await exercise(db);
     } finally {
         const { getDatabase } = require('firebase-admin/database');
-        const { getApp } = require('firebase-admin/app');
-        await getDatabase(getApp('qualifica-vix-server')).ref(testPath).remove();
+        const { getApp, deleteApp } = require('firebase-admin/app');
+        const app = getApp('qualifica-vix-server');
+        try { await getDatabase(app).ref(testPath).remove(); }
+        finally { await deleteApp(app); }
     }
 });
