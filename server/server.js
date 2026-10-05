@@ -227,10 +227,6 @@ function exigirAuthAdmin(req, res, next) {
     return res.status(401).json({ error: "Nao autorizado" });
 }
 
-app.get(['/admin', '/admin/'], (req, res) => {
-    res.redirect(verificarTokenAdmin(req) ? '/admin/menu.html' : '/admin/login.html');
-});
-
 app.use((req, res, next) => {
     if (!req.path.startsWith("/admin")) {
         return next();
@@ -241,6 +237,9 @@ app.use((req, res, next) => {
     }
 
     const payload = verificarTokenAdmin(req);
+    if (req.path === '/admin' || req.path === '/admin/') {
+        return res.redirect(payload ? '/admin/menu.html' : '/admin/login.html');
+    }
     if (payload) {
         req.admin = payload;
         return next();

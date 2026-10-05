@@ -7,7 +7,7 @@
     { "source": "/admin/", "destination": "/admin/login.html", "permanent": false }
   ],
   "rewrites": [
-    { "source": "/api/:path*", "destination": "/api/index.js" },
+    { "source": "/api/(.*)", "destination": "/api/index.js" },
     { "source": "/public/:path*", "destination": "/api/index.js" },
     { "source": "/cursos/:path*", "destination": "/api/index.js" },
     { "source": "/inscritos/:path*", "destination": "/api/index.js" },
