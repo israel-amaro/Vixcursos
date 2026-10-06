@@ -117,9 +117,16 @@ function createStateAdminRouter(db, auth) {
         const cpf = req.params.cpf.replace(/\D/g, '');
         if (!validCpf(cpf)) fail(400, 'CPF inválido.');
         const s = await db.readState();
-        const aluno = s.usuarios.find(u => u.cpf === cpf);
-        if (!aluno) fail(404, 'Cadastro não encontrado.');
-        res.json({ aluno, historico: enriched(s).filter(i => i.cpf === cpf) });
+        const historico = enriched(s).filter(i => String(i.cpf).replace(/\D/g, '') === cpf)
+            .sort((a, b) => Date.parse(b.criado_em || '') - Date.parse(a.criado_em || ''));
+        const perfil = s.usuarios.find(u => String(u.cpf).replace(/\D/g, '') === cpf);
+        if (!perfil && !historico.length) fail(404, 'Cadastro não encontrado.');
+        // Keep the current profile and supplement it with consent/survey data
+        // from the most recent enrollment; also support older standalone records.
+        const aluno = { ...(historico[0] || {}), ...(perfil || {}) };
+        aluno.possui_necessidade_especial ??= aluno.possui_deficiencia;
+        aluno.tipo_necessidade_especial ??= aluno.tipo_deficiencia;
+        res.json({ aluno, historico });
     }));
     router.put('/api/inscricoes/:id/confirmar', auth, wrap(async (req, res) => {
         await db.mutate(s => {

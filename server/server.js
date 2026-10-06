@@ -2347,8 +2347,10 @@ async function createApp(options = {}) {
     // FICHA COMPLETA DO ALUNO (ADMIN)
     // ============================================================
     app.get("/api/admin/aluno/completo/:cpf", exigirAuthAdmin, async (req, res) => {
+        res.set('Cache-Control', 'no-store');
         try {
             const cpfLimpo = normalizarCpf(req.params.cpf);
+            if (!/^\d{11}$/.test(cpfLimpo)) return res.status(400).json({ error: 'Informe um CPF com 11 dígitos.' });
             const [alunoRows] = await db.query(`
                 SELECT * FROM usuarios WHERE cpf = ? LIMIT 1
             `, [cpfLimpo]);
@@ -2356,9 +2358,6 @@ async function createApp(options = {}) {
             let aluno = null;
             if (alunoRows.length > 0) {
                 aluno = alunoRows[0];
-                // Map custom fields to match pre_inscricoes attributes expected by frontend
-                aluno.possui_necessidade_especial = aluno.possui_deficiencia;
-                aluno.tipo_necessidade_especial = aluno.tipo_deficiencia;
             } else {
                 const [fbAluno] = await db.query(`
                     SELECT * FROM pre_inscricoes WHERE cpf = ? ORDER BY criado_em DESC LIMIT 1
@@ -2370,7 +2369,7 @@ async function createApp(options = {}) {
             }
 
             const [historicoRows] = await db.query(`
-                SELECT pi.*, COALESCE(fc.curso, 'Curso') AS curso_nome, COALESCE(fl.local, 'A definir') AS local_nome
+                SELECT pi.*, COALESCE(c.nome, fc.curso, 'Curso') AS curso_nome, COALESCE(fl.local, 'A definir') AS local_nome
                 FROM pre_inscricoes pi
                 LEFT JOIN cursos c ON c.id = pi.curso_id
                 LEFT JOIN filtro_curso fc ON fc.id = c.curso_id
@@ -2379,6 +2378,11 @@ async function createApp(options = {}) {
                 ORDER BY pi.criado_em DESC
             `, [cpfLimpo]);
 
+            // The current profile contains contact data; the latest enrollment also
+            // contains consent and questionnaire fields absent from that profile.
+            aluno = { ...(historicoRows[0] || {}), ...aluno };
+            aluno.possui_necessidade_especial ??= aluno.possui_deficiencia;
+            aluno.tipo_necessidade_especial ??= aluno.tipo_deficiencia;
             res.json({ aluno, historico: historicoRows });
         } catch (err) {
             return responderErroBanco(res, err, "Erro ao carregar ficha do aluno");

@@ -348,7 +348,7 @@ function createLocalDb(initialState, options = {}) {
         .sort((a, b) => new Date(b.criado_em) - new Date(a.criado_em))
         .map((item) => ({
             ...clone(item),
-            curso_nome: cursoNome(state.cursos.find((curso) => curso.id === Number(item.curso_id))?.curso_id),
+            curso_nome: state.cursos.find((curso) => Number(curso.id) === Number(item.curso_id))?.nome || cursoNome(state.cursos.find((curso) => Number(curso.id) === Number(item.curso_id))?.curso_id),
             local_nome: localNome(state.cursos.find((curso) => curso.id === Number(item.curso_id))?.local_id)
         }));
 

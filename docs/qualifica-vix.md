@@ -81,6 +81,12 @@ O frontend usa o SDK Firebase instalado e passa um ID token ao servidor. O Admin
 
 O backend conecta o Realtime Database apenas quando precisa dos dados; a consulta de sessão não depende dessa conexão. Produção sempre usa Firebase, inclusive se existirem variáveis antigas de banco externo. `DB_PROVIDER=local` é permitido somente para demonstração fora de produção. A integração anterior com banco externo e o script de mock foram removidos.
 
+## Ficha administrativa e ações dos inscritos
+
+Em Alunos Inscritos, o botão “Ver ficha” abre diretamente o cadastro completo. O menu dos três pontinhos flutua fora da tabela, adapta a posição à tela e oferece ficha, WhatsApp e exclusão, com navegação por teclado e fechamento por Escape. A ficha organiza identificação, contatos, necessidades, responsável legal, objetivos, consentimentos e histórico; cabeçalho e botões ficam visíveis durante a rolagem. No celular, os dados usam uma coluna. Impressão/PDF inclui o mesmo conteúdo completo da tela.
+
+A API privada combina o perfil atual com os consentimentos e pesquisas da inscrição mais recente, ordena o histórico por data e também aceita registros antigos que só existem nas inscrições. A leitura não altera o cadastro. A ausência de anexos de RG/CPF não impede abrir a ficha. Foram conferidos abertura pelo botão e pelo menu, retorno de foco, rolagem até o histórico e encaixe em 391 × 844 px, usando dados fictícios; testes da ficha passaram no banco local e no Firebase real em área isolada.
+
 ## Identidade visual e abertura
 
 A logo fornecida está em `public/imagem/logo.png`, compartilhada pelo portal, login e páginas administrativas, pesquisas e certificado. A interface combina branco com superfícies em azul acinzentado claro, azul nos textos e ações e roxo e verde nos detalhes, seguindo a marca. A logo da Prefeitura usa a versão com nome preto e fundo transparente, sem cápsula azul. Formulários, chat, tabelas, gráficos e modais acompanham a mesma paleta.

@@ -106,7 +106,7 @@ async function lerJsonOuLancar(res) {
 }
 
 function escapeHtml(valor) {
-    return String(valor || '')
+    return String(valor ?? '')
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
@@ -114,26 +114,53 @@ function escapeHtml(valor) {
         .replace(/'/g, '&#039;');
 }
 
+let menuAcoesAtivo = null;
+function fecharAcoesMenu(restaurarFoco = false) {
+    if (!menuAcoesAtivo) return;
+    const { dropdown, origem, botao } = menuAcoesAtivo;
+    dropdown.classList.remove('open');
+    origem.appendChild(dropdown);
+    botao.setAttribute('aria-expanded', 'false');
+    menuAcoesAtivo = null;
+    if (restaurarFoco) botao.focus();
+}
 function toggleAcoesMenu(event) {
     event.stopPropagation();
-    const menu = event.target.closest('.acoes-menu');
-    const dropdown = menu.querySelector('.acoes-dropdown');
-    
-    // Fecha todos os outros menus abertos
-    document.querySelectorAll('.acoes-dropdown.open').forEach(d => {
-        if (d !== dropdown) {
-            d.classList.remove('open');
-        }
-    });
-    
-    dropdown.classList.toggle('open');
+    const botao = event.currentTarget;
+    const eraAberto = menuAcoesAtivo?.botao === botao;
+    fecharAcoesMenu();
+    if (eraAberto) return;
+    const origem = botao.closest('.acoes-menu');
+    const dropdown = origem.querySelector('.acoes-dropdown');
+    // Render outside the scrollable table so no ancestor can clip the actions.
+    document.body.appendChild(dropdown);
+    dropdown.classList.add('open');
+    menuAcoesAtivo = { dropdown, origem, botao };
+    botao.setAttribute('aria-expanded', 'true');
+    const anchor = botao.getBoundingClientRect();
+    const rect = dropdown.getBoundingClientRect();
+    dropdown.style.left = `${Math.max(12, Math.min(anchor.right - rect.width, innerWidth - rect.width - 12))}px`;
+    const below = anchor.bottom + 8;
+    dropdown.style.top = `${Math.max(12, below + rect.height <= innerHeight - 12 ? below : anchor.top - rect.height - 8)}px`;
+    dropdown.querySelector('button, a:not([aria-disabled="true"])')?.focus();
 }
-
-// Fecha menu ao clicar fora
-document.addEventListener('click', () => {
-    document.querySelectorAll('.acoes-dropdown.open').forEach(d => {
-        d.classList.remove('open');
-    });
+document.addEventListener('click', () => fecharAcoesMenu());
+window.addEventListener('resize', () => fecharAcoesMenu());
+document.addEventListener('scroll', event => {
+    if (menuAcoesAtivo && !menuAcoesAtivo.dropdown.contains(event.target)) fecharAcoesMenu();
+}, true);
+document.addEventListener('keydown', event => {
+    if (!menuAcoesAtivo) return;
+    if (event.key === 'Escape' || event.key === 'Tab') {
+        fecharAcoesMenu(true);
+        if (event.key === 'Escape') event.preventDefault();
+    } else if (['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
+        event.preventDefault();
+        const items = [...menuAcoesAtivo.dropdown.querySelectorAll('button, a:not([aria-disabled="true"])')];
+        const index = items.indexOf(document.activeElement);
+        const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1 : (index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+        items[next]?.focus();
+    }
 });
 
 function formatarCpf(cpf) {
@@ -193,6 +220,7 @@ async function carregarCursos() {
    2. FUNÇÃO PARA BUSCAR E DESENHAR OS ALUNOS (TELA 2)
 ========================================================= */
 async function abrirListaAlunos(idCurso) {
+    fecharAcoesMenu();
     cursoAbertoAtual = cursosGlobais.find(c => c.id === idCurso);
     const btnPdf = document.getElementById('btnGerarPdfInscritos');
     const btnExcel = document.getElementById('btnExportarExcel');
@@ -256,13 +284,14 @@ async function abrirListaAlunos(idCurso) {
                         <td>${badgeNecessidade}</td>
                         <td>
                             <div class="acoes-container">
+                                <button class="btn-ficha" onclick="abrirFichaAluno(${aluno.id})" aria-label="Ver ficha de ${escapeHtml(aluno.nome)}"><i class="bi bi-file-earmark-text" aria-hidden="true"></i> Ver ficha</button>
                                 ${selectStatus}
                                 <div class="acoes-menu">
-                                    <button class="acoes-toggle" onclick="toggleAcoesMenu(event)" title="Mais ações"><i class="bi bi-three-dots-vertical" aria-hidden="true"></i></button>
-                                    <div class="acoes-dropdown" data-aluno-id="${aluno.id}">
-                                        <button onclick="abrirFichaAluno(${aluno.id})" title="Ver detalhes completos"><i class="bi bi-file-earmark-text" aria-hidden="true"></i> Ficha</button>
-                                        <a href="${linkWhats}" target="_blank" ${foneLimpo ? '' : 'style="pointer-events:none;opacity:.55;"'} title="Abrir WhatsApp"><i class="bi bi-whatsapp" aria-hidden="true"></i> WhatsApp</a>
-                                        <button onclick="excluirAluno(${aluno.id}, '${nomeEscapadoJs}')" title="Remover e liberar vaga"><i class="bi bi-trash" aria-hidden="true"></i> Excluir</button>
+                                    <button class="acoes-toggle" onclick="toggleAcoesMenu(event)" aria-label="Mais ações para ${escapeHtml(aluno.nome)}" aria-haspopup="menu" aria-expanded="false"><i class="bi bi-three-dots-vertical" aria-hidden="true"></i></button>
+                                    <div class="acoes-dropdown" data-aluno-id="${aluno.id}" role="menu" aria-label="Ações do aluno">
+                                        <button role="menuitem" onclick="abrirFichaAluno(${aluno.id})"><i class="bi bi-file-earmark-text" aria-hidden="true"></i> Ver ficha completa</button>
+                                        <a role="menuitem" href="${linkWhats}" target="_blank" rel="noopener noreferrer" ${foneLimpo ? '' : 'aria-disabled="true" tabindex="-1" style="pointer-events:none;opacity:.55;"'}><i class="bi bi-whatsapp" aria-hidden="true"></i> Conversar no WhatsApp</a>
+                                        <button role="menuitem" class="acao-excluir" onclick="excluirAluno(${aluno.id}, '${nomeEscapadoJs}')"><i class="bi bi-trash" aria-hidden="true"></i> Excluir inscrição</button>
                                     </div>
                                 </div>
                             </div>
@@ -282,19 +311,46 @@ async function abrirListaAlunos(idCurso) {
 ========================================================= */
 let alunoFichaAtiva = null;
 let historicoFichaAtiva = null;
+let focoAntesFicha = null;
+let requisicaoFicha = 0;
+
+function mostrarModalFicha() {
+    const modal = document.getElementById('modalDetalhes');
+    if (modal.style.display !== 'flex') focoAntesFicha = menuAcoesAtivo?.botao || document.activeElement;
+    fecharAcoesMenu();
+    modal.style.display = 'flex';
+    document.body.classList.add('ficha-aberta');
+    modal.querySelector('.close-modal').focus();
+}
+
+async function carregarFichaCpf(cpf) {
+    const sequencia = ++requisicaoFicha;
+    alunoFichaAtiva = null;
+    historicoFichaAtiva = [];
+    document.getElementById('btnImprimirFicha').disabled = true;
+    document.getElementById('resumoFicha').textContent = 'Buscando cadastro e histórico de inscrições…';
+    document.getElementById('conteudoDetalhes').innerHTML = '<p class="ficha-mensagem" role="status">Carregando ficha completa…</p>';
+    mostrarModalFicha();
+    try {
+        const res = await fetch(`/api/admin/aluno/completo/${encodeURIComponent(cpf)}`, { cache: 'no-store' });
+        const data = await lerJsonOuLancar(res);
+        if (sequencia !== requisicaoFicha) return;
+        if (!data.aluno || typeof data.aluno !== 'object') throw new Error('ficha-invalida');
+        exibirFichaCompleta(data.aluno, Array.isArray(data.historico) ? data.historico : []);
+    } catch (err) {
+        if (sequencia !== requisicaoFicha || err.message === 'sessao-expirada') return;
+        document.getElementById('resumoFicha').textContent = 'Não foi possível abrir este cadastro.';
+        const area = document.getElementById('conteudoDetalhes');
+        area.innerHTML = '<div class="ficha-mensagem" role="alert"><p></p><button class="btn btn-primary" type="button">Tentar novamente</button></div>';
+        area.querySelector('p').textContent = err.message === 'http-404' ? 'Nenhum cadastro foi encontrado para este CPF. Confira o número informado.' : 'O carregamento da ficha falhou. Tente novamente em alguns instantes.';
+        area.querySelector('button').addEventListener('click', () => carregarFichaCpf(cpf));
+    }
+}
 
 async function abrirFichaAluno(idAluno) {
-    const a = alunosGlobais.find(x => x.id === idAluno);
+    const a = alunosGlobais.find(x => String(x.id) === String(idAluno));
     if (!a) return;
-    try {
-        const res = await fetch(`/api/admin/aluno/completo/${a.cpf}`);
-        const data = await lerJsonOuLancar(res);
-        exibirFichaCompleta(data.aluno, data.historico);
-    } catch (err) {
-        if (err.message !== 'sessao-expirada') {
-            mostrarPopup('Erro ao carregar detalhes completos do aluno.', 'error');
-        }
-    }
+    await carregarFichaCpf(a.cpf);
 }
 
 function exibirFichaCompleta(aluno, historico) {
@@ -304,15 +360,16 @@ function exibirFichaCompleta(aluno, historico) {
     const conteudo = document.getElementById('conteudoDetalhes');
     if (!conteudo) return;
 
-    const checar = (valor) => valor ? escapeHtml(valor) : '<em style="color:#64748b">Não inf.</em>';
-    const simNao = (valor) => String(valor || '').toLowerCase() === 'sim' 
-        ? '<span style="color:#10b981; font-weight:bold;">Sim</span>' 
-        : '<span style="color:#ef4444; font-weight:bold;">Não</span>';
+    const checar = (valor) => valor !== undefined && valor !== null && valor !== '' ? escapeHtml(valor) : '<em class="nao-informado">Não informado</em>';
+    const simNao = (valor) => valor === undefined || valor === null || valor === '' ? checar(null) : ['sim', 'true', '1'].includes(String(valor).toLowerCase()) ? 'Sim' : 'Não';
 
     const renderizarDocumento = (documento, label) => {
         if (!documento) {
-            return '<em style="color:#94a3b8; font-style:normal; font-weight:500;"><i class="bi bi-person-badge icon-inline"></i> Apresentação presencial exigida na matrícula</em>';
+            return '<em class="nao-informado">Sem arquivo anexado. A pré-inscrição não exige envio de imagens de documentos.</em>';
         }
+        const url = String(documento);
+        if (!/^(https?:\/\/|\/[^/]|data:(application\/pdf|image\/(png|jpeg|webp));base64,)/i.test(url)) return checar(null);
+        documento = escapeHtml(url);
         if (String(documento).startsWith('data:application/pdf') || String(documento).includes('.pdf')) {
             return `<a href="${documento}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:10px;padding:8px 12px;border-radius:6px;background:#f7f9fd;border:1px solid #dde5ef;color:#24365a;text-decoration:none;"><i class="bi bi-filetype-pdf" aria-hidden="true"></i> Abrir PDF do ${label} (Histórico)</a>`;
         }
@@ -321,7 +378,8 @@ function exibirFichaCompleta(aluno, historico) {
 
     let idadeTexto = 'Não informada';
     if (aluno.data_nascimento) {
-        const nasc = new Date(aluno.data_nascimento);
+        const partes = String(aluno.data_nascimento).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        const nasc = partes ? new Date(Number(partes[3]), Number(partes[2]) - 1, Number(partes[1])) : new Date(String(aluno.data_nascimento).slice(0, 10) + 'T12:00:00');
         if (!isNaN(nasc.getTime())) {
             const hoje = new Date();
             let idade = hoje.getFullYear() - nasc.getFullYear();
@@ -329,7 +387,7 @@ function exibirFichaCompleta(aluno, historico) {
             if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) {
                 idade--;
             }
-            idadeTexto = `${idade} anos (${formatarDataBr(aluno.data_nascimento).split(' ')[0]})`;
+            idadeTexto = `${nasc.toLocaleDateString('pt-BR')} · ${idade} anos`;
         }
     }
 
@@ -342,7 +400,6 @@ function exibirFichaCompleta(aluno, historico) {
         <div class="detalhe-item"><span>Gênero</span><strong>${checar(aluno.genero)}</strong></div>
         <div class="detalhe-item"><span>Raça/Cor (IBGE)</span><strong>${checar(aluno.raca_cor)}</strong></div>
         <div class="detalhe-item"><span>Escolaridade</span><strong>${checar(aluno.escolaridade)}</strong></div>
-        <div class="detalhe-item"><span>Autoriza nome em lista pública (LGPD)</span><strong>${simNao(aluno.autoriza_lgpd)}</strong></div>
         
         <div class="detalhe-secao"><i class="bi bi-telephone-fill" aria-hidden="true"></i> Contatos e Endereço</div>
         <div class="detalhe-item"><span>Celular Principal (WhatsApp)</span><strong>${checar(aluno.telefone)}</strong></div>
@@ -352,6 +409,7 @@ function exibirFichaCompleta(aluno, historico) {
         <div class="detalhe-item"><span>Rua, Nº</span><strong>${checar(aluno.rua)}, Nº ${checar(aluno.numero)}</strong></div>
         <div class="detalhe-item"><span>Bairro / Município</span><strong>${checar(aluno.bairro)} - ${checar(aluno.municipio)}</strong></div>
         <div class="detalhe-item"><span>Trabalha em Vitória (declaração para validação)</span><strong>${aluno.trabalha_vitoria === 'sim' ? 'Sim' : aluno.trabalha_vitoria === 'nao' ? 'Não' : 'Não informado'}</strong></div>
+        <div class="detalhe-item"><span>Estado</span><strong>${checar(aluno.uf)}</strong></div>
         
         <div class="detalhe-secao"><i class="bi bi-person-exclamation" aria-hidden="true"></i> Condições Especiais</div>
         <div class="detalhe-item"><span>Possui Deficiência / Nec. Especial?</span><strong>${simNao(aluno.possui_necessidade_especial)}</strong></div>
@@ -375,13 +433,19 @@ function exibirFichaCompleta(aluno, historico) {
     html += `
         <div class="detalhe-secao"><i class="bi bi-compass-fill" aria-hidden="true"></i> Objetivos no Curso</div>
         <div class="detalhe-item" style="grid-column: 1 / -1;"><span>Objetivo Declarado</span><strong>${checar(aluno.objetivo)}</strong></div>
+        <div class="detalhe-secao"><i class="bi bi-shield-check" aria-hidden="true"></i> Consentimentos da última pré-inscrição</div>
+        <div class="detalhe-item"><span>Autoriza nome em lista pública</span><strong>${simNao(aluno.autoriza_lgpd)}</strong></div>
+        <div class="detalhe-item"><span>Autoriza uso de imagem</span><strong>${simNao(aluno.autoriza_uso_imagem)}</strong></div>
+        <div class="detalhe-item"><span>Ciência das condições de matrícula</span><strong>${simNao(aluno.aceitou_termos_ciencia)}</strong></div>
+        <div class="detalhe-item"><span>Aceite do aviso de privacidade (LGPD)</span><strong>${simNao(aluno.aceitou_aviso_lgpd)}</strong></div>
+        <div class="detalhe-item"><span>Data do aceite</span><strong>${checar(aluno.timestamp_aceite_lgpd ? formatarDataBr(aluno.timestamp_aceite_lgpd) : null)}</strong></div>
     `;
 
     if (Number(aluno.questionario_conclusao_respondido) === 1) {
         html += `
             <div class="detalhe-secao"><i class="bi bi-chat-square-text-fill" aria-hidden="true"></i> Pesquisa de Conclusão / Empregabilidade</div>
             <div class="detalhe-item"><span>Conseguiu emprego na área?</span><strong>${checar(aluno.emprego_pos_curso)}</strong></div>
-            <div class="detalhe-item"><span>Contribuição profissional</span><strong>${aluno.contribuicao_profissional || '-'} / 5</strong></div>
+            <div class="detalhe-item"><span>Contribuição profissional</span><strong>${checar(aluno.contribuicao_profissional)} / 5</strong></div>
             <div class="detalhe-item"><span>Recomendaria o curso?</span><strong>${simNao(aluno.recomendaria)}</strong></div>
             <div class="detalhe-item" style="grid-column: 1 / -1;"><span>Principal benefício apontado</span><strong>${checar(aluno.beneficio_principal)}</strong></div>
         `;
@@ -390,10 +454,10 @@ function exibirFichaCompleta(aluno, historico) {
     if (Number(aluno.pesquisa_satisfacao_respondida) === 1) {
         html += `
             <div class="detalhe-secao"><i class="bi bi-star-fill" aria-hidden="true"></i> Pesquisa de Satisfação pós-curso</div>
-            <div class="detalhe-item"><span>Nota Instrutor</span><strong>${aluno.nota_satisfacao_instrutor || '-'} ★</strong></div>
-            <div class="detalhe-item"><span>Nota Estrutura/Local</span><strong>${aluno.nota_satisfacao_estrutura || '-'} ★</strong></div>
-            <div class="detalhe-item"><span>Nota Material Didático</span><strong>${aluno.nota_satisfacao_material || '-'} ★</strong></div>
-            <div class="detalhe-item"><span>Nota Geral (1-10)</span><strong>${aluno.nota_satisfacao_geral || '-'} / 10</strong></div>
+            <div class="detalhe-item"><span>Nota Instrutor</span><strong>${checar(aluno.nota_satisfacao_instrutor)} ★</strong></div>
+            <div class="detalhe-item"><span>Nota Estrutura/Local</span><strong>${checar(aluno.nota_satisfacao_estrutura)} ★</strong></div>
+            <div class="detalhe-item"><span>Nota Material Didático</span><strong>${checar(aluno.nota_satisfacao_material)} ★</strong></div>
+            <div class="detalhe-item"><span>Nota Geral (1-10)</span><strong>${checar(aluno.nota_satisfacao_geral)} / 10</strong></div>
             <div class="detalhe-item" style="grid-column: 1 / -1;"><span>Comentário Adicional</span><strong>${checar(aluno.comentario_satisfacao)}</strong></div>
         `;
     }
@@ -440,7 +504,7 @@ function exibirFichaCompleta(aluno, historico) {
                     <td><strong>${escapeHtml(h.curso_nome)}</strong></td>
                     <td>${escapeHtml(h.local_nome)}</td>
                     <td>${classBadge}</td>
-                    <td>${dataInscr}</td>
+                    <td>${escapeHtml(dataInscr)}</td>
                     <td>${statusMatricula}</td>
                     <td>${checar(h.situacao_final)}</td>
                     <td>${certLink}</td>
@@ -455,38 +519,29 @@ function exibirFichaCompleta(aluno, historico) {
         </div>
     `;
 
-    html += `
+    if (aluno.rg_documento || aluno.cpf_documento) html += `
         <div class="detalhe-secao"><i class="bi bi-images" aria-hidden="true"></i> Documentação Enviada</div>
-        <div class="detalhe-item" style="grid-column: 1 / -1;"><span>Documento de Identidade (RG)</span><strong>${rgDocumento}</strong></div>
-        <div class="detalhe-item" style="grid-column: 1 / -1;"><span>Comprovante de CPF</span><strong>${cpfDocumento}</strong></div>
+        <div class="detalhe-item" style="grid-column: 1 / -1;"><span>Documento de Identidade (RG)</span><strong>${renderizarDocumento(aluno.rg_documento, 'RG')}</strong></div>
+        <div class="detalhe-item" style="grid-column: 1 / -1;"><span>Comprovante de CPF</span><strong>${renderizarDocumento(aluno.cpf_documento, 'CPF')}</strong></div>
     `;
 
     conteudo.innerHTML = html;
-    document.getElementById('modalDetalhes').style.display = 'flex';
+    document.getElementById('resumoFicha').textContent = `${aluno.nome || 'Cadastro do cidadão'} · ${historico.length} inscrição(ões) registrada(s)`;
+    document.getElementById('btnImprimirFicha').disabled = false;
+    document.querySelector('.ficha-corpo').scrollTop = 0;
+    mostrarModalFicha();
 }
 
 async function buscarAlunoPorCpf() {
     const input = document.getElementById('buscaCpfInput');
     if (!input) return;
     const cpf = input.value.trim();
-    if (!cpf) {
-        mostrarPopup('Digite um CPF para buscar.', 'warning');
+    if (cpf.replace(/\D/g, '').length !== 11) {
+        mostrarPopup('Digite o CPF completo, com 11 dígitos.', 'warning');
         return;
     }
 
-    try {
-        const res = await fetch(`/api/admin/aluno/completo/${encodeURIComponent(cpf)}`);
-        if (res.status === 404) {
-            mostrarPopup('Aluno não encontrado com este CPF.', 'warning');
-            return;
-        }
-        const data = await lerJsonOuLancar(res);
-        exibirFichaCompleta(data.aluno, data.historico);
-    } catch (err) {
-        if (err.message !== 'sessao-expirada') {
-            mostrarPopup('Erro ao buscar ficha do aluno.', 'error');
-        }
-    }
+    await carregarFichaCpf(cpf);
 }
 
 function exportarExcelTurma() {
@@ -507,187 +562,61 @@ function imprimirFichaAluno(aluno, historico) {
         mostrarPopup('Por favor, autorize pop-ups para imprimir a ficha.', 'warning');
         return;
     }
-
-    const checar = (valor) => valor ? escapeHtml(valor) : 'Não informado';
-    const formatarData = (iso) => iso ? formatarDataBr(iso).split(' ')[0] : 'Não informado';
-
-    let responsavelHtml = '';
-    if (aluno.responsavel_nome) {
-        responsavelHtml = `
-            <h2>Dados do Responsável Legal (Menor de Idade)</h2>
-            <div class="grid">
-                <div><strong>Nome do Responsável:</strong> ${checar(aluno.responsavel_nome)}</div>
-                <div><strong>CPF do Responsável:</strong> ${checar(formatarCpf(aluno.responsavel_cpf))}</div>
-                <div><strong>Parentesco:</strong> ${checar(aluno.responsavel_parentesco)}</div>
-                <div><strong>Telefone do Responsável:</strong> ${checar(aluno.responsavel_telefone)}</div>
-                <div><strong>E-mail:</strong> ${checar(aluno.responsavel_email)}</div>
-                <div><strong>Autorização:</strong> ${checar(aluno.responsavel_autorizacao)}</div>
-            </div>
-        `;
-    }
-
-    let historicoTbody = '';
-    if (historico && historico.length > 0) {
-        historico.forEach(h => {
-            historicoTbody += `
-                <tr>
-                    <td>${escapeHtml(h.curso_nome)}</td>
-                    <td>${escapeHtml(h.local_nome)}</td>
-                    <td>${String(h.status_inscricao).toUpperCase()}</td>
-                    <td>${formatarData(h.criado_em)}</td>
-                    <td>${Number(h.matricula_confirmada) === 1 ? 'Matriculado' : 'Pendente'}</td>
-                    <td>${checar(h.situacao_final)}</td>
-                </tr>
-            `;
-        });
-    } else {
-        historicoTbody = `<tr><td colspan="6" style="text-align:center;">Nenhuma outra inscrição registrada.</td></tr>`;
-    }
-
-    printWindow.document.write(`
-        <!DOCTYPE html>
-        <html lang="pt-BR">
-        <head>
-            <meta charset="UTF-8">
-            <title>Ficha do Aluno — ${checar(aluno.nome)}</title>
-            <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    color: #333;
-                    margin: 40px;
-                    line-height: 1.5;
-                }
-                .header-print {
-                    text-align: center;
-                    border-bottom: 2px solid #000;
-                    padding-bottom: 20px;
-                    margin-bottom: 30px;
-                }
-                .header-print h1 {
-                    margin: 0;
-                    font-size: 24px;
-                    text-transform: uppercase;
-                }
-                .header-print p {
-                    margin: 5px 0 0;
-                    font-size: 14px;
-                    color: #666;
-                }
-                h2 {
-                    font-size: 16px;
-                    border-bottom: 1px solid #ccc;
-                    padding-bottom: 5px;
-                    margin-top: 30px;
-                    text-transform: uppercase;
-                }
-                .grid {
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 10px;
-                    font-size: 13px;
-                }
-                .grid div {
-                    padding: 4px 0;
-                }
-                table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin-top: 15px;
-                    font-size: 12px;
-                }
-                th, td {
-                    border: 1px solid #ddd;
-                    padding: 8px;
-                    text-align: left;
-                }
-                th {
-                    background-color: #f2f2f2;
-                }
-                @media print {
-                    body { margin: 20px; }
-                }
-            </style>
-        </head>
-        <body>
-            <div class="header-print">
-                <h1>Ficha de Cadastro do Aluno</h1>
-                <p>Prefeitura Municipal de Vitória — Qualifica Vix</p>
-                <p>Data de Emissão: ${new Date().toLocaleString('pt-BR')}</p>
-            </div>
-
-            <h2>Dados de Identificação</h2>
-            <div class="grid">
-                <div><strong>Nome Completo:</strong> ${checar(aluno.nome)}</div>
-                <div><strong>CPF:</strong> ${checar(formatarCpf(aluno.cpf))}</div>
-                <div><strong>RG:</strong> ${checar(aluno.rg)}</div>
-                <div><strong>Data de Nascimento:</strong> ${formatarData(aluno.data_nascimento)}</div>
-                <div><strong>Gênero:</strong> ${checar(aluno.genero)}</div>
-                <div><strong>Raça/Cor (IBGE):</strong> ${checar(aluno.raca_cor)}</div>
-                <div><strong>Escolaridade:</strong> ${checar(aluno.escolaridade)}</div>
-                <div><strong>Autoriza LGPD:</strong> ${checar(aluno.autoriza_lgpd)}</div>
-            </div>
-
-            <h2>Contatos e Endereço</h2>
-            <div class="grid">
-                <div><strong>Celular/WhatsApp:</strong> ${checar(aluno.telefone)}</div>
-                <div><strong>Telefone Alternativo:</strong> ${checar(aluno.telefone_alternativo)}</div>
-                <div><strong>E-mail:</strong> ${checar(aluno.email)}</div>
-                <div><strong>CEP:</strong> ${checar(aluno.cep)}</div>
-                <div><strong>Rua:</strong> ${checar(aluno.rua)}, Nº ${checar(aluno.numero)}</div>
-                <div><strong>Bairro:</strong> ${checar(aluno.bairro)}</div>
-                <div><strong>Município:</strong> ${checar(aluno.municipio)}</div>
-            </div>
-
-            <h2>Condições Especiais</h2>
-            <div class="grid">
-                <div><strong>Possui Deficiência / Nec. Especial?:</strong> ${checar(aluno.possui_necessidade_especial)}</div>
-                <div><strong>Tipo de Deficiência:</strong> ${checar(aluno.tipo_necessidade_especial)}</div>
-                <div style="grid-column: 1 / -1;"><strong>Adaptações Necessárias:</strong> ${checar(aluno.deficiencia_adaptacoes)}</div>
-                <div style="grid-column: 1 / -1;"><strong>Recursos Assistivos:</strong> ${checar(aluno.deficiencia_recursos)}</div>
-            </div>
-
-            ${responsavelHtml}
-
-            <h2>Objetivo no Curso</h2>
-            <p style="font-size: 13px;"><strong>Objetivo:</strong> ${checar(aluno.objetivo)}</p>
-
-            <h2>Histórico de Inscrições</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Curso</th>
-                        <th>Local</th>
-                        <th>Classificação</th>
-                        <th>Data Inscrição</th>
-                        <th>Status</th>
-                        <th>Situação Final</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${historicoTbody}
-                </tbody>
-            </table>
-
-            <script>
-                window.onload = function() {
-                    window.print();
-                };
-            </script>
-        </body>
-        </html>
-    `);
+    // Print the same complete record shown on screen, including consents and surveys.
+    const ficha = document.getElementById('conteudoDetalhes').innerHTML;
+    printWindow.document.write(`<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">
+        <title>Ficha do aluno — ${escapeHtml(aluno.nome)}</title>
+        <style>
+            body { font-family: Arial, sans-serif; color: #24365a; margin: 28px; line-height: 1.5; }
+            h1 { font-size: 22px; margin-bottom: 5px; }
+            header { border-bottom: 2px solid #24365a; padding-bottom: 14px; margin-bottom: 18px; }
+            header p { font-size: 12px; margin: 4px 0; }
+            .grid-detalhes { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 9px; }
+            .detalhe-secao { grid-column: 1 / -1; font-size: 16px; font-weight: bold; border-bottom: 1px solid #cbd5e1; margin-top: 16px; padding-bottom: 6px; break-after: avoid; }
+            .detalhe-item { padding: 9px; border: 1px solid #dde5ef; break-inside: avoid; min-width: 0; }
+            .detalhe-item span { display: block; font-size: 11px; color: #59677b; }
+            .detalhe-item strong { display: block; font-size: 12px; overflow-wrap: anywhere; white-space: pre-wrap; }
+            .nao-informado { font-style: normal; font-weight: normal; color: #6b788d; }
+            table { width: 100%; border-collapse: collapse; font-size: 10px; }
+            th, td { border: 1px solid #dde5ef; padding: 6px; text-align: left; }
+            thead { display: table-header-group; }
+            tr { break-inside: avoid; }
+            img { max-width: 100%; max-height: 220px; }
+            @page { size: A4; margin: 14mm; }
+            @media print { body { margin: 0; } }
+        </style></head><body>
+        <header><h1>Ficha completa do aluno</h1><p>Prefeitura de Vitória — Qualifica Vix</p><p>Emitida em ${new Date().toLocaleString('pt-BR')}</p></header>
+        <div class="grid-detalhes">${ficha}</div></body></html>`);
     printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
 }
 
 function fecharModalDetalhes() {
+    ++requisicaoFicha;
     document.getElementById('modalDetalhes').style.display = 'none';
+    document.body.classList.remove('ficha-aberta');
+    if (focoAntesFicha?.isConnected) focoAntesFicha.focus();
 }
+
+document.getElementById('modalDetalhes').addEventListener('click', event => {
+    if (event.target.id === 'modalDetalhes') fecharModalDetalhes();
+});
+document.getElementById('modalDetalhes').addEventListener('keydown', event => {
+    if (event.key === 'Escape') { event.preventDefault(); fecharModalDetalhes(); }
+    if (event.key !== 'Tab') return;
+    const items = [...event.currentTarget.querySelectorAll('button:not(:disabled), a[href], [tabindex="0"]')];
+    const first = items[0], last = items[items.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+});
 
 
 /* =========================================================
    4. VOLTAR PARA CURSOS E EXCLUIR
 ========================================================= */
 function voltarParaCursos() {
+    fecharAcoesMenu();
     const btnPdf = document.getElementById('btnGerarPdfInscritos');
     if (btnPdf) btnPdf.style.display = 'none';
 
