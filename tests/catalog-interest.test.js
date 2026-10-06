@@ -4,8 +4,7 @@ const { once } = require('node:events');
 const { createLocalDb, createLocalState } = require('../server/local-db');
 const { importExistingCourses } = require('../server/catalog-import');
 
-test('Catálogo único: importação sem duplicação, edição no admin, banner público e interessados privados', async () => {
-    const db = createLocalDb(createLocalState(false));
+async function exercise(db) {
     assert.deepEqual(await importExistingCourses(db), { imported: 5, existing: 0 });
     assert.deepEqual(await importExistingCourses(db), { imported: 0, existing: 5 });
     const createApp = require('../server/server');
@@ -51,4 +50,22 @@ test('Catálogo único: importação sem duplicação, edição no admin, banner
         assert.equal((await request('/api/cursos-public/3')).status, 404);
         assert.equal((await request('/cursos', null, true)).data.length, 5);
     } finally { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); }
+}
+
+test('Catálogo único: importação sem duplicação, edição no admin, banner público e interessados privados', async () => {
+    await exercise(createLocalDb(createLocalState(false)));
+});
+
+test('Firebase real: catálogo e interessados integrados em área isolada', { skip: process.env.TEST_FIREBASE !== 'true' }, async () => {
+    require('dotenv').config({ path: '.env.local', quiet: true });
+    const { createLazyFirebaseDb } = require('../server/firebase-db');
+    const testPath = `qualificaVix/testing/${require('crypto').randomUUID()}`;
+    try { await exercise(createLazyFirebaseDb({ dataPath: testPath })); }
+    finally {
+        const { getDatabase } = require('firebase-admin/database');
+        const { getApp, deleteApp } = require('firebase-admin/app');
+        const app = getApp('qualifica-vix-server');
+        try { await getDatabase(app).ref(testPath).remove(); }
+        finally { await deleteApp(app); }
+    }
 });

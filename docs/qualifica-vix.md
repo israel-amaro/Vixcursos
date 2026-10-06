@@ -48,6 +48,8 @@ O backend grava cursos, fichas, inscrições, consentimentos, preferências, FAQ
 
 O painel tem rotas nativas para cursos, fichas, inscrições, configurações, indicadores, relatórios e exportação Excel. As demais consultas herdadas têm uma camada de compatibilidade explícita; consultas sem implementação falham, em vez de apresentar um resultado vazio como se fosse real. As transações atuais operam sobre o conjunto do portal, adequado ao início do projeto; para um grande volume de inscrições, convém particionar as reservas por turma e os perfis por cidadão.
 
+Cada gravação mantém o valor carregado do Firebase disponível durante a transação e libera o observador ao terminar. Isso evita tratar um curso existente como ausente quando o cache está vazio. Os erros de validação preservam seus códigos HTTP; falhas operacionais retornam uma mensagem genérica sem dados da credencial.
+
 Configuração baseada na [documentação do Admin SDK](https://firebase.google.com/docs/admin/setup), nas [transações do Realtime Database](https://firebase.google.com/docs/database/admin/save-data) e nas [regras de segurança](https://firebase.google.com/docs/database/security).
 
 ## Validação realizada
@@ -61,6 +63,8 @@ Conferência no navegador em larguras efetivas de 320, 390, 430, 768, 1024 e 103
 Build completo de TypeScript/Vite aprovado. Testes locais e testes com Firebase real aprovados, incluindo disputa pela última vaga, ausência de anexos, consentimento de imagem opcional, CPF existente, código incorreto, limite de reenvio, código de uso único, recuperação autenticada, atualização da ficha, nova inscrição, sessão expirada, curso com ementa/mascote e relatórios.
 
 A leitura sem autenticação do Firebase retornou HTTP 401 após a aplicação das regras. Testes reais foram executados em área isolada e removidos; nenhuma ficha de cidadão real foi criada.
+
+A integração de catálogo e interessados também foi testada no Firebase real em área isolada: importação sem duplicação, edição refletida no site, proteção dos contatos, consentimento, atualização de situação e exportação. Os onze testes passaram. Após a publicação, o login administrativo e as duas listas retornaram HTTP 200; site e painel exibiram os mesmos cinco cursos e mascotes.
 
 ## Login administrativo com Firebase Authentication
 
