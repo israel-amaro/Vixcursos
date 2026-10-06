@@ -5,6 +5,23 @@ const access = require('./admin-access.json');
 const COOKIE = 'qualifica_vix_admin_session';
 const EXPIRY = 8 * 60 * 60 * 1000;
 
+function firebaseUnavailable(error) {
+    const messages = {
+        'config/firebase-account-missing': 'Configure FIREBASE_SERVICE_ACCOUNT_JSON na Vercel para Production e faça um novo deploy.',
+        'config/firebase-invalid-json': 'O valor de FIREBASE_SERVICE_ACCOUNT_JSON não é um JSON válido. Cole o conteúdo completo do arquivo e faça um novo deploy.',
+        'config/firebase-invalid-account': 'FIREBASE_SERVICE_ACCOUNT_JSON precisa conter o JSON completo de uma conta de serviço Firebase.',
+        'config/firebase-invalid-key': 'A chave privada da conta de serviço está inválida. Use um novo arquivo JSON gerado no Firebase e faça um novo deploy.',
+        'auth/invalid-credential': 'A credencial do servidor não foi aceita pelo Firebase. Confira a conta de serviço configurada na Vercel.',
+        'app/invalid-credential': 'A credencial do servidor não foi aceita pelo Firebase. Confira a conta de serviço configurada na Vercel.',
+        'auth/insufficient-permission': 'A conta de serviço não tem permissão para gerenciar sessões no Firebase Authentication. Confira as permissões no Google Cloud.',
+        'MODULE_NOT_FOUND': 'Uma dependência da autenticação está ausente no servidor. É necessário corrigir o deploy do portal.',
+        'ERR_MODULE_NOT_FOUND': 'Uma dependência da autenticação está ausente no servidor. É necessário corrigir o deploy do portal.',
+    };
+    // Never return/log the SDK message: parsing and credential errors may contain secrets.
+    const code = typeof error?.code === 'string' && /^[a-zA-Z0-9_/-]{1,80}$/.test(error.code) ? error.code : 'firebase/unavailable';
+    return { code, error: messages[code] || `Não foi possível validar o acesso no Firebase (${code}). Verifique os Logs do servidor na Vercel.` };
+}
+
 function createAdminAuth(options = {}) {
     const allowedUids = new Set(options.allowedUids || (process.env.FIREBASE_ADMIN_UIDS ? process.env.FIREBASE_ADMIN_UIDS.split(',').map(uid => uid.trim()).filter(Boolean) : access.allowedUids));
     const auth = options.getAuth || (() => {
@@ -23,18 +40,18 @@ function createAdminAuth(options = {}) {
             const user = await withTimeout(auth().verifySessionCookie(token, true));
             return permitted(user) ? user : null;
         } catch (error) {
-            if (error.status === 503 || ['auth/invalid-credential', 'app/invalid-credential'].includes(error.code)) throw Object.assign(error, { status: 503 });
+            if (error.status === 503 || ['auth/invalid-credential', 'app/invalid-credential', 'auth/insufficient-permission', 'MODULE_NOT_FOUND', 'ERR_MODULE_NOT_FOUND'].includes(error.code)) throw Object.assign(error, { status: 503 });
             return null;
         }
     };
-    const unavailable = res => res.status(503).json({ error: 'Não foi possível validar o acesso no Firebase. Verifique a configuração do servidor na Vercel.' });
+    const unavailable = (res, error) => res.status(503).json(firebaseUnavailable(error));
     const requireAuth = async (req, res, next) => {
         try {
             const user = await verify(req);
             if (!user) return res.status(401).json({ error: 'Entre com sua conta administrativa do Firebase.' });
             req.admin = user;
             next();
-        } catch { unavailable(res); }
+        } catch (error) { unavailable(res, error); }
     };
     const protectPages = async (req, res, next) => {
         if (!req.path.startsWith('/admin') || req.path === '/admin/login.html') return next();
@@ -44,7 +61,7 @@ function createAdminAuth(options = {}) {
             if (!user) return res.redirect('/admin/login.html');
             req.admin = user;
             next();
-        } catch { unavailable(res); }
+        } catch (error) { unavailable(res, error); }
     };
     const router = express.Router();
     router.post('/api/admin/login', async (req, res) => {
@@ -62,8 +79,8 @@ function createAdminAuth(options = {}) {
         } catch (error) {
             const invalid = ['auth/argument-error', 'auth/id-token-expired', 'auth/id-token-revoked', 'auth/user-disabled', 'auth/invalid-id-token'].includes(error.code);
             if (invalid) return res.status(401).json({ error: 'Sua sessão Firebase não é válida. Entre novamente.' });
-            console.error('[admin-auth] Falha ao validar sessão Firebase:', error.code || 'indisponível');
-            unavailable(res);
+            console.error('[admin-auth] Falha ao validar sessão Firebase:', firebaseUnavailable(error).code);
+            unavailable(res, error);
         }
     });
     router.get('/api/admin/me', requireAuth, (req, res) => res.json({ authenticated: true, uid: req.admin.uid || req.admin.sub, username: req.admin.email || '' }));

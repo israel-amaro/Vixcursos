@@ -63,6 +63,8 @@ A leitura sem autenticação do Firebase retornou HTTP 401 após a aplicação d
 3. Na Vercel, configure `FIREBASE_SERVICE_ACCOUNT_JSON` com o conteúdo da conta de serviço como segredo **somente do servidor**, `FIREBASE_PROJECT_ID=vixcursos` e `FIREBASE_DATABASE_URL=https://vixcursos-default-rtdb.firebaseio.com`. Não use prefixo `VITE_` para a conta de serviço. O caminho `GOOGLE_APPLICATION_CREDENTIALS` de um arquivo do computador não funciona na Vercel.
 4. Faça novo deploy após alterar as variáveis. Acesse `/admin` e entre com o e-mail e a senha desse usuário Firebase.
 
+Na Vercel, o campo **Name** é `FIREBASE_SERVICE_ACCOUNT_JSON` e o campo **Value** contém o JSON completo. O servidor também aceita `FIREBASE_SERVICE_ACCOUNT_JSON={...}` quando a atribuição inteira é colada no valor. Falhas de configuração, chave e permissão exibem uma orientação e um código seguro no login; o conteúdo da credencial nunca é incluído no erro nem nos Logs.
+
 O frontend usa o SDK Firebase instalado e passa um ID token ao servidor. O Admin SDK verifica o token, a autorização e o acesso recente, e cria uma sessão de oito horas em cookie HttpOnly, SameSite e Secure em produção. Sessões expiradas, revogadas ou de contas desativadas não dão acesso. A senha não é enviada ao backend do portal nem fica salva no navegador. O login tem tempo limite e permite tentar novamente quando há falha.
 
 O backend conecta o Realtime Database apenas quando precisa dos dados; a consulta de sessão não depende dessa conexão. Produção sempre usa Firebase, inclusive se existirem variáveis antigas de banco externo. `DB_PROVIDER=local` é permitido somente para demonstração fora de produção. A integração anterior com banco externo e o script de mock foram removidos.

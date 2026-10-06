@@ -54,3 +54,29 @@ test('Firebase Auth: UID, sessão revogada, acesso recente, origem e logout', as
         server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
     }
 });
+
+test('Falha operacional mostra causa segura e não cria sessão administrativa', async () => {
+    let failureCode = 'config/firebase-invalid-json';
+    const auth = createAdminAuth({ getAuth: () => {
+        throw Object.assign(new Error('sensitive-key-content'), { code: failureCode, status: 503 });
+    } });
+    const app = express(); app.use(express.json()); app.use(auth.router);
+    const server = app.listen(0, '127.0.0.1'); await once(server, 'listening');
+    const base = `http://127.0.0.1:${server.address().port}`;
+    try {
+        for (const code of ['config/firebase-invalid-json', 'auth/insufficient-permission', 'MODULE_NOT_FOUND']) {
+            failureCode = code;
+            const response = await fetch(base + '/api/admin/login', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idToken: 'firebase-id-token' }),
+            });
+            assert.equal(response.status, 503);
+            assert.equal(response.headers.get('set-cookie'), null);
+            const data = await response.json();
+            assert.equal(data.code, code);
+            assert.equal(JSON.stringify(data).includes('sensitive-key-content'), false);
+        }
+    } finally {
+        server.closeAllConnections(); await new Promise(resolve => server.close(resolve));
+    }
+});
