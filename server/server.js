@@ -8,6 +8,7 @@ const XLSX = require("xlsx");
 const crypto = require("crypto");
 const { LOCAL_PUBLIC_CURSOS, createLocalDb } = require("./local-db");
 const { createLazyFirebaseDb } = require('./firebase-db');
+const { createInterestedRouter } = require('./interested-router');
 const { createAdminAuth } = require('./admin-auth');
 const { createCitizenRouter } = require('./citizen-service');
 const { createStateAdminRouter } = require('./state-admin-router');
@@ -126,6 +127,7 @@ async function createApp(options = {}) {
             catch { res.status(503).json({ error: 'Configuração indisponível.' }); }
         });
         app.use(createStateAdminRouter(db, exigirAuthAdmin));
+        app.use(createInterestedRouter(db, exigirAuthAdmin));
         app.use(createCitizenRouter(db, {
             sendCode: async (email, code) => {
                 if (!EMAIL_CONFIGURADO) throw new Error('SMTP não configurado.');

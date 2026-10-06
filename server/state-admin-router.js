@@ -8,11 +8,54 @@ function createStateAdminRouter(db, auth) {
     const router = express.Router();
     const wrap = operation => async (req, res) => {
         res.set('Cache-Control', 'no-store');
-        try { await operation(req, res); } catch (e) { console.error('[admin]', e.message); res.status(e.status || 503).json({ error: e.status ? e.message : 'Não foi possível concluir a operação.' }); }
+        try { await operation(req, res); } catch (e) { console.error('[admin]', e.code || 'unavailable'); res.status(e.status || 503).json({ error: e.status && e.status < 500 ? e.message : 'Não foi possível concluir a operação.' }); }
     };
     const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
     const courses = s => createLocalDb(s).getPublicCourses();
+    const publicCourses = s => courses(s).filter(c => ['ativo', 'esgotado'].includes(c.status) && (!c.data_publicacao || Date.parse(c.data_publicacao) <= Date.now())).sort((a, b) => b.id - a.id);
     const nextId = rows => rows.reduce((max, row) => Math.max(max, Number(row.id)), 0) + 1;
+    const catalog = createLocalDb();
+    const options = type => catalog.query(`SELECT * FROM filtro_${type}`)[0];
+    const ages = options('idade');
+    const adminCourses = s => courses(s).map(course => {
+        const raw = s.cursos.find(row => row.id === course.id);
+        return { ...course, curso: raw.curso_id, categoria_id: raw.categoria_id, local_id: raw.local_id,
+            modalidade_id: raw.modalidade_id, idade_min_id: ages.find(a => a.idade === Number(raw.idade_min))?.id,
+            idade_max_id: ages.find(a => a.idade === Number(raw.idade_max))?.id,
+            data_inicio_iso: raw.data_inicio, data_termino_iso: raw.data_termino };
+    }).sort((a, b) => b.id - a.id);
+    const courseFields = b => {
+        if (!options('curso').some(c => c.id === Number(b.curso))) fail(400, 'Selecione a área do curso.');
+        if (!options('categoria').some(c => c.id === Number(b.categoria_id || b.curso))) fail(400, 'Selecione uma categoria válida.');
+        if (!Number.isInteger(Number(b.vagas)) || Number(b.vagas) < 1) fail(400, 'Informe pelo menos uma vaga.');
+        if (!options('local').some(c => c.id === Number(b.local))) fail(400, 'Selecione o local.');
+        if (!options('modalidade').some(c => c.id === Number(b.modalidade))) fail(400, 'Selecione a modalidade.');
+        const min = ages.find(a => a.id === Number(b.idade_min))?.idade;
+        const max = ages.find(a => a.id === Number(b.idade_max))?.idade;
+        if (!min || !max || max < min) fail(400, 'Confira as idades mínima e máxima.');
+        if (b.mascote_id && !mascots.some(m => m.id === b.mascote_id)) fail(400, 'Mascote inválido.');
+        if (b.status && !['ativo', 'esgotado', 'arquivado'].includes(b.status)) fail(400, 'Situação do curso inválida.');
+        for (const key of ['data_inicio', 'data_termino']) {
+            if (b[key] && (!/^\d{4}-\d{2}-\d{2}$/.test(b[key]) || Number.isNaN(Date.parse(b[key])))) fail(400, 'Data inválida.');
+        }
+        if (b.data_inicio && b.data_termino && b.data_termino < b.data_inicio) fail(400, 'O término precisa ser após o início.');
+        for (const key of ['horario_inicio', 'horario_termino']) {
+            if (b[key] && !/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(b[key])) fail(400, 'Horário inválido.');
+        }
+        const text = (key, limit = 10000) => {
+            const value = String(b[key] || '').trim();
+            if (value.length > limit) fail(400, 'Um dos textos excede o tamanho permitido.');
+            return value;
+        };
+        return {
+            curso_id: Number(b.curso), categoria_id: Number(b.categoria_id || b.curso), nome: text('nome', 160), vagas: Number(b.vagas),
+            status: b.status || 'ativo', local_id: Number(b.local), modalidade_id: Number(b.modalidade),
+            idade_min: min, idade_max: max, data_inicio: b.data_inicio || null, data_termino: b.data_termino || null,
+            horario_inicio: b.horario_inicio || null, horario_termino: b.horario_termino || null,
+            descricao: text('descricao'), ementa: text('ementa'), competencias: text('competencias'),
+            pre_requisitos: text('pre_requisitos'), carga_horaria: Number(b.carga_horaria) || null, mascote_id: b.mascote_id || null,
+        };
+    };
     const enriched = s => s.preInscricoes.map(i => {
         const c = courses(s).find(c => c.id === i.curso_id);
         return { ...i, curso_nome: c?.nome || 'Curso', local_nome: c?.local || 'A definir', data: i.criado_em };
@@ -27,34 +70,39 @@ function createStateAdminRouter(db, auth) {
         return acc;
     }, {})).map(([label, total]) => ({ label, total }));
 
+    router.get('/api/cursos-public', wrap(async (_req, res) => res.json(publicCourses(await db.readState()))));
+    router.get('/api/cursos-public/:id', wrap(async (req, res) => {
+        const course = publicCourses(await db.readState()).find(c => c.id === Number(req.params.id));
+        if (!course) fail(404, 'Curso não encontrado.');
+        res.json(course);
+    }));
+    router.get('/api/cursos-public/:id/vagas', wrap(async (req, res) => {
+        const course = publicCourses(await db.readState()).find(c => c.id === Number(req.params.id));
+        if (!course) fail(404, 'Curso não encontrado.');
+        res.json({ vagas_totais: course.vagas_totais, inscritos: course.inscritos, vagas_disponiveis: course.vagas_disponiveis, status: course.status });
+    }));
     router.get('/cursos', auth, wrap(async (req, res) => {
-        const list = courses(await db.readState());
+        const list = adminCourses(await db.readState());
         res.json(req.query.id ? list.filter(c => c.id === Number(req.query.id)) : list);
     }));
     router.post('/cursos', auth, wrap(async (req, res) => {
-        const b = req.body;
-        const catalog = createLocalDb();
-        const choices = catalog.query('SELECT * FROM filtro_curso')[0];
-        if (!choices.some(c => c.id === Number(b.curso))) fail(400, 'Selecione o curso.');
-        if (!Number.isInteger(Number(b.vagas)) || Number(b.vagas) < 1) fail(400, 'Informe pelo menos uma vaga.');
-        if (b.mascote_id && !mascots.some(m => m.id === b.mascote_id)) fail(400, 'Mascote inválido.');
-        const ages = catalog.query('SELECT * FROM filtro_idade')[0];
+        const fields = courseFields(req.body);
         const id = await db.mutate(s => {
             const id = nextId(s.cursos);
-            s.cursos.push({
-                id, curso_id: Number(b.curso), categoria_id: Number(b.categoria_id || b.curso), vagas: Number(b.vagas), status: 'ativo',
-                local_id: Number(b.local), modalidade_id: Number(b.modalidade),
-                idade_min: ages.find(a => a.id === Number(b.idade_min))?.idade || 16,
-                idade_max: ages.find(a => a.id === Number(b.idade_max))?.idade || 80,
-                data_inicio: b.data_inicio || null, data_termino: b.data_termino || null,
-                horario_inicio: b.horario_inicio || null, horario_termino: b.horario_termino || null,
-                descricao: String(b.descricao || ''), ementa: String(b.ementa || ''), competencias: String(b.competencias || ''),
-                pre_requisitos: String(b.pre_requisitos || ''), carga_horaria: Number(b.carga_horaria) || null,
-                mascote_id: b.mascote_id || null, criado_em: new Date().toISOString(),
-            });
+            s.cursos.push({ id, ...fields, criado_em: new Date().toISOString() });
             return id;
         });
         res.json({ status: 'ok', id });
+    }));
+    router.put('/cursos/:id', auth, wrap(async (req, res) => {
+        const fields = courseFields(req.body);
+        await db.mutate(s => {
+            const course = s.cursos.find(c => c.id === Number(req.params.id));
+            if (!course) fail(404, 'Curso não encontrado.');
+            if (fields.vagas < courses(s).find(c => c.id === course.id).inscritos) fail(409, 'As vagas não podem ser menores que as reservas existentes.');
+            Object.assign(course, fields, { atualizado_em: new Date().toISOString() });
+        });
+        res.json({ status: 'ok', id: Number(req.params.id) });
     }));
     router.put('/cursos/esgotar/:id', auth, wrap(async (req, res) => {
         await db.mutate(s => { const c = s.cursos.find(c => c.id === Number(req.params.id)); if (!c) fail(404, 'Curso não encontrado.'); c.status = 'esgotado'; });

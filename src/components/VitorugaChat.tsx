@@ -424,7 +424,7 @@ export default function VitorugaChat() {
           sender: 'bot',
           text: resultText,
           options: [
-            { texto: "Sim, quero me cadastrar! 📝", valor: "cadastrar_sim" },
+            { texto: "Sim, autorizo o contato sobre cursos! 📝", valor: "cadastrar_sim" },
             { texto: "Não, obrigado. 🐢", valor: "cadastrar_nao" }
           ]
         }
@@ -468,7 +468,7 @@ export default function VitorugaChat() {
 
   const submitQuizLead = async (answers: QuizState['answers'], winner: string) => {
     try {
-      await fetch('/api/interessados', {
+      const response = await fetch('/api/interessados', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -476,11 +476,19 @@ export default function VitorugaChat() {
           whatsapp: answers.whatsapp,
           email: answers.email,
           regiao: answers.regiao,
-          perfil: winner
+          perfil: winner,
+          origem: 'chat_quiz',
+          autoriza_contato: true
         })
       });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Não foi possível registrar seu interesse.');
+      return true;
     } catch (err) {
       console.warn("Erro ao salvar interessado do quiz:", err);
+      setIsTyping(false);
+      setMessages(prev => [...prev, { id: `lead-error-${Date.now()}`, sender: 'bot', text: 'Não consegui salvar seu interesse. Seus dados ainda não foram registrados. Selecione sua região novamente para tentar.' }]);
+      return false;
     }
   };
 
@@ -870,15 +878,11 @@ export default function VitorugaChat() {
       const regValue = text.startsWith('reg-') ? text.slice(4) : text;
       const updatedAnswers = { ...quiz.answers, regiao: regValue };
       
-      setQuiz({
-        ...quiz,
-        answers: updatedAnswers,
-        step: 'finished'
-      });
-
       // Submit lead to backend
-      await submitQuizLead(updatedAnswers, winner);
-      await finishQuizFlow(winner);
+      if (await submitQuizLead(updatedAnswers, winner)) {
+        setQuiz({ ...quiz, answers: updatedAnswers, step: 'finished' });
+        await finishQuizFlow(winner);
+      }
     }
   };
 

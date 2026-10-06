@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { CalendarCheck, BookOpen, GraduationCap, ExternalLink, Search, HelpCircle, MapPinCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Header from './Header';
+import { usePublicCourses } from '../lib/usePublicCourses';
 
 interface HeroProps {
   onOpenQuiz?: () => void;
@@ -15,6 +16,7 @@ const heroImages = [
 ];
 
 export default function Hero({ onOpenQuiz }: HeroProps) {
+  const { courses } = usePublicCourses<{ status: string; vagas_disponiveis: number; data_inicio: string; criado_em?: string }>();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [stats, setStats] = useState({
     cursosAbertos: 0,
@@ -33,11 +35,6 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
   }, []);
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const coursesRes = await fetch('/api/cursos-public');
-        if (coursesRes.ok) {
-          const courses: any[] = await coursesRes.json();
           const abertos = courses.filter(c => c.status !== 'esgotado' && c.vagas_disponiveis > 0);
           const totalVagas = abertos.reduce((sum, c) => sum + (c.vagas_disponiveis || 0), 0);
           
@@ -49,16 +46,9 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
               const start = new Date(year, month - 1, day).getTime();
               return start >= Date.now() && start <= Date.now() + 7 * 86400000;
             }).length,
-            novosCursos: courses.filter(c => Date.parse(c.criado_em) >= Date.now() - 14 * 86400000).length,
+            novosCursos: courses.filter(c => c.criado_em && Date.parse(c.criado_em) >= Date.now() - 14 * 86400000).length,
           });
-        }
-      } catch (err) {
-        console.warn('Falha ao obter estatísticas dinâmicas para o Hero', err);
-      }
-    };
-
-    fetchStats();
-  }, []);
+  }, [courses]);
 
   const scrollToSection = (id: string) => {
     const el = document.getElementById(id);

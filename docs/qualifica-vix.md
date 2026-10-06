@@ -12,7 +12,7 @@ O projeto está na branch `codex/qualifica-vix`. A configuração local fica em 
 
 `DB_PROVIDER=firebase` utiliza Realtime Database com Admin SDK. `DB_PROVIDER=local` oferece os cinco cursos de demonstração do repositório em memória. Para uma prévia local independente, use `$env:DB_PROVIDER='local'; $env:PORT='3100'; npm start`. O modo local perde seus cadastros quando o servidor é reiniciado.
 
-O Firebase foi conectado e suas regras de acesso direto foram bloqueadas. O catálogo real está vazio: publique os cursos pelo painel `/admin/menu.html`. Os dados de demonstração não são importados automaticamente. O painel usa Firebase Authentication com e-mail e senha. O UID autorizado está em `server/admin-access.json`; não existe senha administrativa local.
+O Firebase foi conectado e suas regras de acesso direto foram bloqueadas. A pedido do usuário, os cinco cursos existentes na prévia foram importados para o catálogo real: Beleza, Confecção, Gastronomia, Informática/Tecnologia e Enfermagem/Saúde. As datas e informações originais foram preservadas e podem ser corrigidas no painel. `node scripts/import-existing-courses.js` repete essa importação sem duplicar nem sobrescrever os cursos existentes. O painel usa Firebase Authentication com e-mail e senha. O UID autorizado está em `server/admin-access.json`; não existe senha administrativa local.
 
 ## Recuperação da ficha
 
@@ -24,7 +24,13 @@ Para enviar os códigos, configure `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_SECURE`, `
 
 ## Cursos e mascotes
 
-O catálogo exibe pré-requisitos e um pop-up com descrição, ementa, competências, carga horária, local, período e horário. Ao criar um curso, o administrador escolhe um Vitoruga para o banner, com prévia. Sem uma escolha explícita, o site usa a profissão correspondente à categoria.
+O catálogo exibe pré-requisitos e um pop-up com descrição, ementa, competências, carga horária, local, período e horário. O painel permite criar e editar título, área, local, modalidade, vagas, idades, período, horário, conteúdo e situação do curso, além de escolher um Vitoruga em uma galeria com prévia. Site e painel consultam o mesmo catálogo no Firebase. Cursos arquivados ficam fora do site, mas permanecem no painel. As listas atualizam a cada 30 segundos enquanto visíveis; o site também atualiza ao recuperar o foco. Sem uma escolha explícita de mascote, o site usa a profissão correspondente à categoria.
+
+## Pessoas interessadas
+
+O botão “Quero receber avisos de cursos”, a opção “Tenho interesse” nos detalhes e o quiz do chat salvam contatos no mesmo Firebase, com autorização explícita para contato. O formulário recebe nome, telefone ou e-mail, área e cidade/bairro opcional; o interesse em uma turma também registra o curso. Interesse não reserva vaga nem substitui a pré-inscrição. Reenvios com o mesmo contato, área e curso atualizam o registro existente.
+
+Em `/admin/interessados.html`, o administrador pode pesquisar os contatos, filtrar e atualizar a situação, consultar a origem e o curso, visualizar a demanda por área e exportar Excel. Essas consultas e alterações exigem sessão administrativa. Atualizar uma situação não envia mensagens automaticamente; o SMTP ainda depende da configuração do responsável.
 
 O cidadão pode escolher o ícone do assistente no chat e na pré-inscrição. A preferência fica no navegador e também na ficha salva. A opção “Automático” acompanha a área do curso ou da conversa.
 

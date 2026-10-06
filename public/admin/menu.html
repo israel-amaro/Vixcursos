@@ -97,13 +97,23 @@
 <div id="modalNovoCurso" class="modal">
     <div class="modal-content">
         <button class="fechar-modal" onclick="fecharModal()">&times;</button>
-        <p class="modal-title">Cadastrar Novo Curso</p>
+        <p class="modal-title" id="tituloModalCurso">Cadastrar Novo Curso</p>
         <p class="modal-desc">Preencha os dados abaixo para abrir uma nova turma.</p>
         <form id="formCriarCurso" onsubmit="criarCurso(event)">
+            <input type="hidden" id="categoria_id">
             <div class="form-grid">
                 <div class="form-group">
-                    <label>Nome do Curso</label>
+                    <label for="curso">Área do Curso</label>
                     <select id="curso" required></select>
+                </div>
+                <div class="form-group">
+                    <label for="nome">Nome público do curso</label>
+                    <input id="nome" maxlength="160" placeholder="Ex.: Cabeleireiro profissional">
+                    <small>Se ficar vazio, será usado o nome da área.</small>
+                </div>
+                <div class="form-group">
+                    <label for="status">Situação no site</label>
+                    <select id="status"><option value="ativo">Ativo — aparece no site</option><option value="esgotado">Esgotado — sem pré-inscrição</option><option value="arquivado">Arquivado — oculto no site</option></select>
                 </div>
                 <div class="form-group">
                     <label>Local / Polo</label>
@@ -148,6 +158,7 @@
                 <div class="form-group" style="grid-column: 1 / -1;">
                     <label for="mascote_id">Vitoruga no banner do curso</label>
                     <select id="mascote_id"><option value="">Automático pela categoria</option></select>
+                    <div id="mascoteOpcoes" class="mascot-options" aria-label="Escolha a tartaruga do curso"></div>
                     <img id="mascotePreview" src="/imagem/Vitoruga.png" alt="Prévia do Vitoruga" style="width: 140px; height: 140px; object-fit: contain; margin-top: 8px;">
                 </div>
                 <div class="form-group" style="grid-column: 1 / -1;">
@@ -169,7 +180,7 @@
             </div>
             <div class="form-footer">
                 <button type="button" class="btn btn-outline" onclick="fecharModal()">Cancelar</button>
-                <button type="submit" class="btn btn-primary"><i class="bi bi-floppy" aria-hidden="true"></i> Salvar Curso</button>
+                <button type="submit" class="btn btn-primary" id="salvarCurso"><i class="bi bi-floppy" aria-hidden="true"></i> Salvar Curso</button>
             </div>
         </form>
     </div>

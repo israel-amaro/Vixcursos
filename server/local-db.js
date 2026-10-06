@@ -302,7 +302,7 @@ function createLocalDb(initialState, options = {}) {
         const vagasDisponiveis = Math.max(0, Number(curso.vagas || 0) - inscritos);
         return {
             id: curso.id,
-            nome: cursoNome(curso.curso_id),
+            nome: curso.nome || cursoNome(curso.curso_id),
             vagas_totais: Number(curso.vagas || 0),
             inscritos,
             vagas_disponiveis: vagasDisponiveis,

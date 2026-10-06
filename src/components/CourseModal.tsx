@@ -32,9 +32,10 @@ interface CourseModalProps {
   isOpen: boolean;
   onClose: () => void;
   triggerRef?: React.RefObject<HTMLButtonElement | null>;
+  onInterest?: (course: CourseModalData) => void;
 }
 
-export default function CourseModal({ course, isOpen, onClose, triggerRef }: CourseModalProps) {
+export default function CourseModal({ course, isOpen, onClose, triggerRef, onInterest }: CourseModalProps) {
   const navigate = useNavigate();
   const modalRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -231,6 +232,7 @@ export default function CourseModal({ course, isOpen, onClose, triggerRef }: Cou
 
           {/* Footer Actions */}
           <div className="p-4 sm:p-6 shrink-0 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-3">
+            {onInterest && <button onClick={() => onInterest(course)} className="w-full sm:w-auto px-4 py-3 rounded-xl border border-accent text-accent font-bold text-xs">Tenho interesse</button>}
             <button
               onClick={() => {
                 onClose();

@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { MapPin, BookX, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, XCircle, Clock, Calendar, BookmarkPlus, TrendingUp, DollarSign, Tag, BookOpen } from 'lucide-react';
 import { FilterState } from './FiltroBusca';
 import CourseModal, { CourseModalData } from './CourseModal';
+import InterestModal from './InterestModal';
+import { usePublicCourses } from '../lib/usePublicCourses';
 
 const imagensCursos: { [key: string]: string } = {
   'Beleza':                       'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&q=80&w=800',
@@ -78,6 +80,8 @@ interface Course {
   competencias?: string;
   pre_requisitos?: string;
   carga_horaria?: number;
+  criado_em?: string;
+  acessos_contador?: number;
   isNovo?: boolean;
   isMaisProcurado?: boolean;
 }
@@ -89,7 +93,13 @@ interface ListagemCursosProps {
 
 export default function ListagemCursos({ filters, onClearFilters }: ListagemCursosProps) {
   const navigate = useNavigate();
-  const [courses, setCourses] = useState<Course[]>([]);
+  const { courses: catalog, loading, error } = usePublicCourses<Course>();
+  const courses = React.useMemo(() => catalog.map(c => ({ ...c,
+    isNovo: Boolean(c.criado_em && Date.parse(c.criado_em) >= Date.now() - 14 * 86400000),
+    isMaisProcurado: Number(c.acessos_contador) > 0,
+  })), [catalog]);
+  const [interestCourse, setInterestCourse] = useState<CourseModalData | null | undefined>(undefined);
+  const closeInterest = React.useCallback(() => setInterestCourse(undefined), []);
   const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
   const [activeTab, setActiveTab] = useState<'todos' | 'mais_procurados' | 'novos'>('todos');
   const [sortBy, setSortBy] = useState<string>('recentes');
@@ -102,28 +112,6 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
   // Pagination
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 6;
-
-  useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        const res = await fetch('/api/cursos-public');
-        if (res.ok) {
-          const data: Course[] = await res.json();
-          // Flag high demand & new courses
-          const mapped = data.map((c, index) => ({
-            ...c,
-            isNovo: index % 3 === 0,
-            isMaisProcurado: ['Beleza', 'Gastronomia', 'Informática / Tecnologia', 'Eletricista / Energia'].includes(c.categoria),
-          }));
-          setCourses(mapped);
-        }
-      } catch (err) {
-        console.warn('Erro ao carregar cursos para listagem', err);
-      }
-    };
-
-    fetchCourses();
-  }, []);
 
   // Filter Logic
   useEffect(() => {
@@ -236,6 +224,12 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
   return (
     <section id="cursos-list-section" className="w-full bg-slate-50 py-8 sm:py-14 px-4 sm:px-6 md:px-12 border-t border-slate-200">
       <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 p-4 rounded-2xl bg-violet-50 border border-violet-100">
+          <p className="text-sm text-slate-700">Quer acompanhar oportunidades na sua área?</p>
+          <button onClick={() => setInterestCourse(null)} className="rounded-xl bg-accent px-4 py-3 text-sm font-bold text-white">Quero receber avisos de cursos</button>
+        </div>
+        {loading && <p role="status" className="text-sm text-slate-500 mb-4">Carregando cursos…</p>}
+        {error && <p role="alert" className="text-sm text-red-600 mb-4">{error}</p>}
         
         {/* TAB CONTROLS: Todos, Mais Procurados, Novas Inscrições */}
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 mb-6 sm:mb-8">
@@ -509,7 +503,9 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
             setSelectedCourseForModal(null);
           }}
           triggerRef={triggerRef}
+          onInterest={course => { setIsModalOpen(false); setInterestCourse(course); }}
         />
+        {interestCourse !== undefined && <InterestModal course={interestCourse} onClose={closeInterest} />}
       </div>
     </section>
   );
