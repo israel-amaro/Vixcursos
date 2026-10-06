@@ -79,8 +79,8 @@
         <div class="ph-right" id="acoesCabecalho" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
             <button onclick="exportarExcelCompleto()" class="btn btn-outline" style="border-color:#10b981; color:#10b981;"><i class="bi bi-file-earmark-excel" aria-hidden="true"></i> Exportar Tudo</button>
             <div style="display:flex; gap:6px; align-items:center; background:#ffffff; padding:4px 8px; border-radius:8px; border:1px solid #dde5ef;">
-                <input type="text" id="buscaCpfInput" placeholder="Buscar aluno por CPF..." style="background:transparent; border:none; color:#24365a; font-size:0.85rem; outline:none; padding:4px; min-width:180px;" onkeydown="if(event.key === 'Enter') buscarAlunoPorCpf()">
-                <button onclick="buscarAlunoPorCpf()" style="background:none; border:none; color:#283e69; cursor:pointer; font-size:0.95rem; padding:4px;"><i class="bi bi-search" aria-hidden="true"></i></button>
+                <input type="text" id="buscaCpfInput" placeholder="Buscar aluno por CPF..." aria-label="Buscar aluno por CPF" inputmode="numeric" style="background:transparent; border:none; color:#24365a; font-size:0.85rem; outline:none; padding:4px; min-width:180px;" onkeydown="if(event.key === 'Enter') { event.preventDefault(); buscarAlunoPorCpf(); }">
+                <button onclick="buscarAlunoPorCpf()" aria-label="Buscar ficha" style="background:none; border:none; color:#283e69; cursor:pointer; font-size:0.95rem; padding:4px;"><i class="bi bi-search" aria-hidden="true"></i></button>
             </div>
             <a href="menu.html" class="btn btn-outline"><i class="bi bi-arrow-left" aria-hidden="true"></i> Menu</a>
         </div>
