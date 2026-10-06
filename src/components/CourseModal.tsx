@@ -108,7 +108,7 @@ export default function CourseModal({ course, isOpen, onClose, triggerRef, onInt
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="p-4 sm:p-6 shrink-0 border-b border-slate-100 bg-slate-900 text-white flex items-start justify-between relative">
+          <div className="p-4 sm:p-6 shrink-0 border-b border-slate-100 bg-primary text-white flex items-start justify-between relative">
             <div>
               <span className="inline-block px-3 py-1 bg-accent/20 border border-accent/40 text-accent rounded-full text-[10px] font-extrabold uppercase tracking-wider mb-2">
                 {course.categoria} • {course.modalidade}

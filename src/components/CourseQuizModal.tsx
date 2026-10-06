@@ -156,7 +156,7 @@ export default function CourseQuizModal({ isOpen, onClose, onSelectCategory }: C
                 </button>
                 <button
                   onClick={() => handleFinish('')}
-                  className="px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-xl uppercase tracking-wider transition-colors cursor-pointer"
+                  className="px-5 py-2.5 bg-primary hover:bg-primary-dark text-white font-bold text-xs rounded-xl uppercase tracking-wider transition-colors cursor-pointer"
                 >
                   Ver Todos os Cursos
                 </button>

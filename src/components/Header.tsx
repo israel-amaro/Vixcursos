@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import BrandLogo from './BrandLogo';
 
 interface HeaderProps {
   transparent?: boolean;
@@ -62,25 +63,21 @@ export default function Header({ transparent = false }: HeaderProps) {
 
   return (
     <header
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-500 bg-black/35 backdrop-blur-md border-b border-white/5 ${
+      className={`site-header fixed top-0 left-0 w-full z-50 transition-all duration-500 bg-white/95 backdrop-blur-md border-b border-slate-200 ${
         scrolled
-          ? 'bg-slate-950/95 py-3 shadow-xl'
-          : 'py-3 sm:py-5 shadow-none'
+          ? 'py-1 shadow-sm'
+          : 'py-1 sm:py-2 shadow-none'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 flex items-center justify-between gap-4">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-4 select-none">
-          <img
-            src="/imagem/qualifica-vix.svg"
-            alt="Qualifica Vix"
-            className="h-10 md:h-12 w-auto object-contain transition-transform duration-300 hover:scale-[1.02]"
-          />
-          <div className="w-[1px] h-8 bg-white/20 hidden sm:block" />
+          <BrandLogo className="header-logo" />
+          <div className="w-[1px] h-8 bg-slate-200 hidden sm:block" />
           <img
             src="/imagem/prefeitura.png"
             alt="Prefeitura de Vitória"
-            className="h-9 md:h-11 w-auto object-contain hidden sm:block transition-transform duration-300 hover:scale-[1.02]"
+            className="h-10 md:h-11 w-auto object-contain hidden sm:block bg-primary rounded-lg px-3 py-2"
           />
         </Link>
 
@@ -88,25 +85,25 @@ export default function Header({ transparent = false }: HeaderProps) {
         <nav className="hidden lg:flex items-center gap-8">
           <Link
             to="/"
-            className="text-xs font-bold tracking-widest uppercase text-white/75 hover:text-white transition-colors"
+            className="text-xs font-bold tracking-widest uppercase text-slate-600 hover:text-primary transition-colors"
           >
             Início
           </Link>
           <button
             onClick={() => handleNavClick('cursos-section')}
-            className="text-xs font-bold tracking-widest uppercase text-white/75 hover:text-white transition-colors cursor-pointer"
+            className="text-xs font-bold tracking-widest uppercase text-slate-600 hover:text-primary transition-colors cursor-pointer"
           >
             Cursos
           </button>
           <button
             onClick={() => handleNavClick('categorias-section')}
-            className="text-xs font-bold tracking-widest uppercase text-white/75 hover:text-white transition-colors cursor-pointer"
+            className="text-xs font-bold tracking-widest uppercase text-slate-600 hover:text-primary transition-colors cursor-pointer"
           >
             Categorias
           </button>
           <Link
             to="/sobre"
-            className="text-xs font-bold tracking-widest uppercase text-white/75 hover:text-white transition-colors"
+            className="text-xs font-bold tracking-widest uppercase text-slate-600 hover:text-primary transition-colors"
           >
             Sobre
           </Link>
@@ -128,7 +125,7 @@ export default function Header({ transparent = false }: HeaderProps) {
           onClick={() => setIsOpen(!isOpen)}
           aria-expanded={isOpen}
           aria-label={isOpen ? 'Fechar menu' : 'Abrir menu'}
-          className="lg:hidden p-3 rounded-xl bg-white/5 text-white hover:text-accent transition-colors cursor-pointer"
+          className="lg:hidden p-3 rounded-xl bg-primary/5 text-primary hover:text-accent transition-colors cursor-pointer"
         >
           {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
@@ -142,32 +139,32 @@ export default function Header({ transparent = false }: HeaderProps) {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
-            className="lg:hidden w-full bg-black/95 backdrop-blur-lg border-b border-white/5 overflow-hidden"
+            className="lg:hidden w-full bg-white backdrop-blur-lg border-b border-slate-200 overflow-hidden"
           >
             <div className="px-4 sm:px-6 py-4 flex flex-col gap-1 max-h-[calc(100dvh-5rem)] overflow-y-auto">
               <Link
                 to="/"
                 onClick={() => setIsOpen(false)}
-                className="block rounded-xl px-3 py-3 text-sm font-bold tracking-widest uppercase text-white/80 hover:text-white"
+                className="block rounded-xl px-3 py-3 text-sm font-bold tracking-widest uppercase text-slate-600 hover:text-primary"
               >
                 Início
               </Link>
               <button
                 onClick={() => handleNavClick('cursos-section')}
-                className="text-left block rounded-xl px-3 py-3 text-sm font-bold tracking-widest uppercase text-white/80 hover:text-white cursor-pointer"
+                className="text-left block rounded-xl px-3 py-3 text-sm font-bold tracking-widest uppercase text-slate-600 hover:text-primary cursor-pointer"
               >
                 Cursos
               </button>
               <button
                 onClick={() => handleNavClick('categorias-section')}
-                className="text-left block rounded-xl px-3 py-3 text-sm font-bold tracking-widest uppercase text-white/80 hover:text-white cursor-pointer"
+                className="text-left block rounded-xl px-3 py-3 text-sm font-bold tracking-widest uppercase text-slate-600 hover:text-primary cursor-pointer"
               >
                 Categorias
               </button>
               <Link
                 to="/sobre"
                 onClick={() => setIsOpen(false)}
-                className="block rounded-xl px-3 py-3 text-sm font-bold tracking-widest uppercase text-white/80 hover:text-white"
+                className="block rounded-xl px-3 py-3 text-sm font-bold tracking-widest uppercase text-slate-600 hover:text-primary"
               >
                 Sobre
               </Link>

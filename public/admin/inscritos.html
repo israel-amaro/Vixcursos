@@ -30,24 +30,25 @@
         .acoes-container { display: flex; gap: 6px; align-items: center; position: relative; }
         .acoes-toggle { background: #475569; color: white; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; gap: 3px; transition: all 0.15s; }
         .acoes-toggle:hover { background: #64748b; }
-        .acoes-dropdown { display: none; position: absolute; top: 100%; right: 0; background: #1e293b; border: 1px solid #334155; border-radius: 8px; min-width: 140px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); z-index: 500; margin-top: 2px; }
+        .acoes-dropdown { display: none; position: absolute; top: 100%; right: 0; background: #ffffff; border: 1px solid #dde5ef; border-radius: 8px; min-width: 140px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); z-index: 500; margin-top: 2px; }
         .acoes-dropdown.open { display: block; }
-        .acoes-dropdown a, .acoes-dropdown button { display: flex; align-items: center; gap: 6px; width: 100%; padding: 8px 12px; border: none; background: none; color: #e2e8f0; text-align: left; cursor: pointer; font-size: 0.75rem; transition: all 0.1s; text-decoration: none; border-bottom: 1px solid #334155; }
+        .acoes-dropdown a, .acoes-dropdown button { display: flex; align-items: center; gap: 6px; width: 100%; padding: 8px 12px; border: none; background: none; color: #24365a; text-align: left; cursor: pointer; font-size: 0.75rem; transition: all 0.1s; text-decoration: none; border-bottom: 1px solid #dde5ef; }
         .acoes-dropdown a:last-child, .acoes-dropdown button:last-child { border-bottom: none; }
-        .acoes-dropdown a:hover, .acoes-dropdown button:hover { background: #334155; color: white; }
+        .acoes-dropdown a:hover, .acoes-dropdown button:hover { background: #eef3fb; color: #24365a; }
         .grid-detalhes  { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
-        .detalhe-item   { background: #1e293b; padding: 12px; border-radius: 8px; border: 1px solid #334155; }
-        .detalhe-item span   { display: block; font-size: .72rem; color: #94a3b8; margin-bottom: 4px; }
-        .detalhe-item strong { color: #f8fafc; font-size: .9rem; }
-        .detalhe-secao  { grid-column: 1 / -1; color: #f9c852; border-bottom: 1px solid #334155; padding-bottom: 5px; margin-top: 12px; font-size: 1rem; font-weight: 700; }
+        .detalhe-item   { background: #ffffff; padding: 12px; border-radius: 8px; border: 1px solid #dde5ef; }
+        .detalhe-item span   { display: block; font-size: .72rem; color: #5f6f86; margin-bottom: 4px; }
+        .detalhe-item strong { color: #24365a; font-size: .9rem; }
+        .detalhe-secao  { grid-column: 1 / -1; color: #283e69; border-bottom: 1px solid #dde5ef; padding-bottom: 5px; margin-top: 12px; font-size: 1rem; font-weight: 700; }
     </style>
     <script src="/admin/adminjs/session.js" defer></script>
+    <link rel="icon" type="image/png" href="/imagem/logo.png">
 </head>
 <body>
 
 <nav class="admin-sidebar">
     <a href="menu.html" class="sidebar-brand">
-        <span class="brand-icon"><i class="bi bi-mortarboard-fill" aria-hidden="true"></i></span>
+        <img class="sidebar-logo" src="/imagem/logo.png" alt="Qualifica Vix">
         <div>
             <span class="brand-name">Qualifica Vix</span>
             <span class="brand-sub">Área administrativa</span>
@@ -76,9 +77,9 @@
         </div>
         <div class="ph-right" id="acoesCabecalho" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
             <button onclick="exportarExcelCompleto()" class="btn btn-outline" style="border-color:#10b981; color:#10b981;"><i class="bi bi-file-earmark-excel" aria-hidden="true"></i> Exportar Tudo</button>
-            <div style="display:flex; gap:6px; align-items:center; background:#1e293b; padding:4px 8px; border-radius:8px; border:1px solid #334155;">
-                <input type="text" id="buscaCpfInput" placeholder="Buscar aluno por CPF..." style="background:transparent; border:none; color:white; font-size:0.85rem; outline:none; padding:4px; min-width:180px;" onkeydown="if(event.key === 'Enter') buscarAlunoPorCpf()">
-                <button onclick="buscarAlunoPorCpf()" style="background:none; border:none; color:#f9c852; cursor:pointer; font-size:0.95rem; padding:4px;"><i class="bi bi-search" aria-hidden="true"></i></button>
+            <div style="display:flex; gap:6px; align-items:center; background:#ffffff; padding:4px 8px; border-radius:8px; border:1px solid #dde5ef;">
+                <input type="text" id="buscaCpfInput" placeholder="Buscar aluno por CPF..." style="background:transparent; border:none; color:#24365a; font-size:0.85rem; outline:none; padding:4px; min-width:180px;" onkeydown="if(event.key === 'Enter') buscarAlunoPorCpf()">
+                <button onclick="buscarAlunoPorCpf()" style="background:none; border:none; color:#283e69; cursor:pointer; font-size:0.95rem; padding:4px;"><i class="bi bi-search" aria-hidden="true"></i></button>
             </div>
             <a href="menu.html" class="btn btn-outline"><i class="bi bi-arrow-left" aria-hidden="true"></i> Menu</a>
         </div>

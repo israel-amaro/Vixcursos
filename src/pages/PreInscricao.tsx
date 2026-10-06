@@ -1008,7 +1008,7 @@ export default function PreInscricao() {
 
   if (loadingCurso) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white px-4">
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-primary px-4">
         <Loader2 className="w-12 h-12 text-accent animate-spin mb-4" />
         <p className="font-display font-medium text-lg">Carregando dados da matrícula...</p>
       </div>
@@ -1018,13 +1018,13 @@ export default function PreInscricao() {
   // Course sold out/closed view
   if (!cursoDisponivel && vagasVerificadas) {
     return (
-      <div className="min-h-screen bg-[linear-gradient(120deg,rgba(4,8,22,0.92),rgba(7,17,31,0.85),rgba(11,23,48,0.9)),url('https://images.unsplash.com/photo-1606761568499-6d2451b23c66?auto=format&fit=crop&q=80&w=2000')] bg-center bg-cover bg-no-repeat flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[linear-gradient(120deg,rgba(248,250,254,0.96),rgba(255,255,255,0.95),rgba(255,255,255,0.98)),url('https://images.unsplash.com/photo-1606761568499-6d2451b23c66?auto=format&fit=crop&q=80&w=2000')] bg-center bg-cover bg-no-repeat flex items-center justify-center p-4">
         <div className="w-full max-w-md glass-dark rounded-3xl p-8 border border-danger/20 text-center shadow-2xl animate-float">
           <div className="w-16 h-16 bg-danger/10 border border-danger/20 rounded-2xl flex items-center justify-center mx-auto mb-6 text-danger">
             <X className="w-8 h-8" />
           </div>
-          <h2 className="font-display font-bold text-2xl text-white mb-2">Inscrições Encerradas</h2>
-          <p className="text-white/60 mb-6 leading-relaxed">
+          <h2 className="font-display font-bold text-2xl text-primary mb-2">Inscrições Encerradas</h2>
+          <p className="text-slate-600 mb-6 leading-relaxed">
             As inscrições para o curso <strong>{cursoNome}</strong> estão encerradas ou temporariamente indisponíveis.
           </p>
           <Link
@@ -1039,21 +1039,21 @@ export default function PreInscricao() {
   }
 
   return (
-    <div className="registration-page min-h-screen bg-[linear-gradient(120deg,rgba(4,8,22,0.94),rgba(7,17,31,0.85),rgba(11,23,48,0.92)),url('https://images.unsplash.com/photo-1606761568499-6d2451b23c66?auto=format&fit=crop&q=80&w=2000')] bg-center bg-cover bg-no-repeat flex items-center justify-center p-4 md:p-8 select-none relative overflow-hidden">
+    <div className="registration-page min-h-screen bg-[linear-gradient(120deg,rgba(248,250,254,0.96),rgba(255,255,255,0.95),rgba(255,255,255,0.98)),url('https://images.unsplash.com/photo-1606761568499-6d2451b23c66?auto=format&fit=crop&q=80&w=2000')] bg-center bg-cover bg-no-repeat flex items-center justify-center p-4 md:p-8 select-none relative overflow-hidden">
 
       {/* Background Ambient Glow */}
       <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-sky-500/10 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-20%] w-[70%] h-[70%] rounded-full bg-coral/10 blur-[120px] pointer-events-none" />
 
-      <div className="registration-shell w-full max-w-lg h-[88vh] md:max-h-[820px] glass-dark rounded-3xl flex flex-col overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)] border border-white/10 relative z-10">
+      <div className="registration-shell w-full max-w-lg h-[88vh] md:max-h-[820px] glass-dark rounded-3xl flex flex-col overflow-hidden shadow-[0_25px_50px_-12px_rgba(40,62,105,0.12)] border border-slate-200 relative z-10">
 
         {/* Chat Header */}
-        <header className="bg-black/40 px-4 sm:px-6 py-3 sm:py-4 shrink-0 flex items-center justify-between gap-2 border-b border-white/5 shadow-md">
+        <header className="bg-white/95 px-4 sm:px-6 py-3 sm:py-4 shrink-0 flex items-center justify-between gap-2 border-b border-slate-200 shadow-md">
           <div className="flex min-w-0 items-center gap-2 sm:gap-4">
             <Link
               to="/"
               aria-label="Voltar para página inicial"
-              className="text-white/60 hover:text-white transition-colors"
+              className="text-slate-600 hover:text-primary transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
             </Link>
@@ -1061,15 +1061,15 @@ export default function PreInscricao() {
               <img
                 src={mascot.imagem}
                 alt="Vitoruga"
-                className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 border-accent p-[2px] bg-slate-900 object-contain"
+                className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 border-accent p-[2px] bg-white object-contain"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = '/imagem/Vitoruga.png';
                 }}
               />
-              <span className="absolute bottom-0 right-0 w-3 h-3 bg-success rounded-full border-2 border-slate-900 animate-pulse" />
+              <span className="absolute bottom-0 right-0 w-3 h-3 bg-success rounded-full border-2 border-white animate-pulse" />
             </div>
             <div>
-              <h1 className="font-display font-bold text-white text-sm tracking-wide">Vitoruga</h1>
+              <h1 className="font-display font-bold text-primary text-sm tracking-wide">Vitoruga</h1>
               <p className="text-[11px] text-success font-semibold flex items-center gap-1">
                 Assistente virtual do Qualifica Vix
               </p>
@@ -1084,7 +1084,7 @@ export default function PreInscricao() {
             className={`p-2.5 rounded-full border transition-all ${
               speechEnabled
                 ? 'bg-accent/20 border-accent text-accent glow-accent'
-                : 'bg-white/5 border-white/10 text-white/50 hover:text-white'
+                : 'bg-primary/5 border-slate-200 text-slate-600 hover:text-primary'
             }`}
           >
             {speechEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
@@ -1092,14 +1092,14 @@ export default function PreInscricao() {
         </header>
 
         {/* Info Strip */}
-        <div className="bg-primary/20 px-4 sm:px-6 py-2 shrink-0 border-b border-white/5 flex flex-wrap items-center justify-between gap-2 text-white/70 text-xs">
+        <div className="bg-primary/20 px-4 sm:px-6 py-2 shrink-0 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 text-slate-600 text-xs">
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <MapPin className="w-3.5 h-3.5 text-accent flex-shrink-0" />
             <span className="line-clamp-2 break-words">
-              Turma: <strong className="text-white">{cursoNome}</strong> no {cursoLocal || 'Senai'}
+              Turma: <strong className="text-primary">{cursoNome}</strong> no {cursoLocal || 'Senai'}
             </span>
           </div>
-          <span className="text-[10px] bg-white/5 border border-white/10 px-2 py-0.5 rounded-full font-mono font-bold text-accent">
+          <span className="text-[10px] bg-primary/5 border border-slate-200 px-2 py-0.5 rounded-full font-mono font-bold text-accent">
             Inscrições: {inscricoesAtivas}/{limiteInscricoes}
           </span>
         </div>
@@ -1111,13 +1111,13 @@ export default function PreInscricao() {
               key={msg.id}
               className={`max-w-[94%] sm:max-w-[85%] break-words rounded-2xl px-4 py-3 text-[14px] leading-relaxed shadow-lg transition-all animate-[popIn_0.35s_cubic-bezier(0.175,0.885,0.32,1.275)] ${
                 msg.sender === 'bot'
-                  ? 'bg-slate-800/90 text-white border border-white/5 self-start rounded-tl-sm'
+                  ? 'bg-blue-50 text-primary border border-slate-200 self-start rounded-tl-sm'
                   : 'bg-gradient-to-r from-coral to-accent text-white self-end rounded-tr-sm shadow-accent/10'
               }`}
             >
               {msg.isDocument ? (
                 <div className="flex items-center gap-2 font-semibold">
-                  <FileText className="w-5 h-5 flex-shrink-0 text-white" />
+                  <FileText className="w-5 h-5 flex-shrink-0 text-primary" />
                   <span className="truncate">{msg.docName}</span>
                 </div>
               ) : (
@@ -1128,7 +1128,7 @@ export default function PreInscricao() {
 
           {/* Typing Indicator */}
           {isTyping && (
-            <div className="bg-slate-800/90 text-white border border-white/5 self-start rounded-2xl rounded-tl-sm px-4 py-4 flex gap-1.5 items-center w-16">
+            <div className="bg-blue-50 text-primary border border-slate-200 self-start rounded-2xl rounded-tl-sm px-4 py-4 flex gap-1.5 items-center w-16">
               <span className="w-1.5 h-1.5 bg-white/40 rounded-full animate-[bounce_1.4s_infinite_ease-in-out_both]" />
               <span className="w-1.5 h-1.5 bg-white/40 rounded-full animate-[bounce_1.4s_infinite_ease-in-out_both_-0.16s]" />
               <span className="w-1.5 h-1.5 bg-white/40 rounded-full animate-[bounce_1.4s_infinite_ease-in-out_both_-0.32s]" />
@@ -1137,15 +1137,15 @@ export default function PreInscricao() {
 
           {/* Success Banner context links */}
           {dadosSalvosExito && (
-            <div className="bg-slate-900/60 border border-white/10 rounded-2xl p-6 mt-4 text-center">
-              <h3 className="font-bold text-white text-base mb-2">{profileOnly ? 'Ficha atualizada' : 'Comprovante de Pré-Inscrição'}</h3>
-              <p className="text-white/60 text-xs mb-4">{profileOnly ? 'Seus dados foram salvos para facilitar as próximas inscrições.' : <>Sua pré-inscrição foi recebida. A instituição entrará em contato para validar a matrícula. Protocolo: <strong>{protocoloGerado}</strong>.</>}</p>
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 mt-4 text-center">
+              <h3 className="font-bold text-primary text-base mb-2">{profileOnly ? 'Ficha atualizada' : 'Comprovante de Pré-Inscrição'}</h3>
+              <p className="text-slate-600 text-xs mb-4">{profileOnly ? 'Seus dados foram salvos para facilitar as próximas inscrições.' : <>Sua pré-inscrição foi recebida. A instituição entrará em contato para validar a matrícula. Protocolo: <strong>{protocoloGerado}</strong>.</>}</p>
 
               {/* SINE Link */}
               {(respostasUsuario.objetivo?.includes('conseguir emprego') || respostasUsuario.objetivo?.includes('mudar de área')) && (
                 <div className="bg-accent/15 border border-accent/30 rounded-xl p-4 mb-4 text-left">
                   <h4 className="font-bold text-accent text-sm mb-1">Encaminhamento ao SINE Vitória</h4>
-                  <p className="text-white/70 text-xs mb-3">Encontramos vagas alinhadas com o seu curso de qualificação! Acesse o portal SINE Vitória para candidatar-se.</p>
+                  <p className="text-slate-600 text-xs mb-3">Encontramos vagas alinhadas com o seu curso de qualificação! Acesse o portal SINE Vitória para candidatar-se.</p>
                   <a href="https://trabalha.vitoria.es.gov.br" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 bg-accent text-white font-bold text-xs px-3 py-2 rounded-lg hover:scale-102 transition-all">
                     Ver Vagas no SINE <ExternalLink className="w-3.5 h-3.5" />
                   </a>
@@ -1156,7 +1156,7 @@ export default function PreInscricao() {
               {respostasUsuario.objetivo?.includes('empreender') && (
                 <div className="bg-success/15 border border-success/30 rounded-xl p-4 mb-4 text-left">
                   <h4 className="font-bold text-success text-sm mb-1">Deseja Empreender? Parceria Sebrae-ES</h4>
-                  <p className="text-white/70 text-xs mb-3">Quer montar seu próprio negócio e formalizar como MEI? O Sebrae-ES oferece cursos e consultorias gratuitas.</p>
+                  <p className="text-slate-600 text-xs mb-3">Quer montar seu próprio negócio e formalizar como MEI? O Sebrae-ES oferece cursos e consultorias gratuitas.</p>
                   <a href="https://www.es.sebrae.com.br" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 bg-success text-white font-bold text-xs px-3 py-2 rounded-lg hover:scale-102 transition-all">
                     Acessar Sebrae-ES <ExternalLink className="w-3.5 h-3.5" />
                   </a>
@@ -1165,7 +1165,7 @@ export default function PreInscricao() {
 
               <Link
                 to="/"
-                className="inline-flex items-center justify-center gap-1.5 w-full py-3 bg-white/5 border border-white/10 hover:border-accent/40 rounded-xl text-xs font-bold uppercase tracking-wider text-white hover:bg-slate-800 transition-all cursor-pointer"
+                className="inline-flex items-center justify-center gap-1.5 w-full py-3 bg-primary/5 border border-slate-200 hover:border-accent/40 rounded-xl text-xs font-bold uppercase tracking-wider text-primary hover:bg-blue-50 transition-all cursor-pointer"
               >
                 Voltar à página inicial
               </Link>
@@ -1177,7 +1177,7 @@ export default function PreInscricao() {
 
         <div className="shrink-0 max-h-[25%] overflow-y-auto overscroll-contain px-4"><MascotPicker /></div>
         {/* Form Controls / Inputs */}
-        <footer data-lenis-prevent className="registration-controls shrink-0 overflow-y-auto overscroll-contain bg-black/20 border-t border-white/5 p-3 sm:p-4 flex flex-col gap-3">
+        <footer data-lenis-prevent className="registration-controls shrink-0 overflow-y-auto overscroll-contain bg-slate-50 border-t border-slate-200 p-3 sm:p-4 flex flex-col gap-3">
 
           {/* CEP fora de Vitoria prompt buttons */}
           {aguardandoConfirmacaoCepForaVitoria && !dadosSalvosExito && (
@@ -1190,7 +1190,7 @@ export default function PreInscricao() {
                 addUserMessage('Sim, trabalho em Vitória');
                 setEtapaAtual(roteiro.findIndex(q => q.chave === 'numero'));
               }}>Sim, trabalho em Vitória</button>}
-              {!semVinculoVitoria && <button type="button" disabled={isTyping} className="border border-white/20 text-white rounded-xl py-2.5 px-4 text-xs font-bold disabled:opacity-50" onClick={async () => {
+              {!semVinculoVitoria && <button type="button" disabled={isTyping} className="border border-slate-200 text-primary rounded-xl py-2.5 px-4 text-xs font-bold disabled:opacity-50" onClick={async () => {
                 setSemVinculoVitoria(true);
                 setRespostasUsuario(prev => ({ ...prev, mora_vitoria: 'nao', trabalha_vitoria: 'nao' }));
                 addUserMessage('Não trabalho em Vitória');
@@ -1218,7 +1218,7 @@ export default function PreInscricao() {
                 onClick={() => {
                   navigate('/');
                 }}
-                className="bg-slate-900 border border-red-500/30 text-red-400 hover:bg-red-500/10 font-semibold text-xs py-2.5 px-4 rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
+                className="bg-white border border-red-500/30 text-red-400 hover:bg-red-500/10 font-semibold text-xs py-2.5 px-4 rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
               >
                 Sair do Formulário
               </button>
@@ -1227,10 +1227,10 @@ export default function PreInscricao() {
 
           {/* CARD OBRIGATÓRIO DE TERMOS E LGPD (Requisitos 7 e 8) */}
           {roteiro[etapaAtual]?.chave === 'confirmacao_final' && !dadosSalvosExito && (
-            <div className="bg-slate-900 border border-white/15 rounded-2xl p-5 mb-2 flex flex-col gap-4 text-left shadow-xl">
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 mb-2 flex flex-col gap-4 text-left shadow-xl">
 
               {/* TERMO DE CIÊNCIA E VALIDAÇÃO DE MATRÍCULA (Item 7) */}
-              <div className="bg-slate-950/80 p-4 rounded-xl border border-white/10">
+              <div className="bg-primary/40 p-4 rounded-xl border border-slate-200">
                 <h4 className="font-bold text-accent text-xs uppercase tracking-wider mb-2 flex items-center gap-1.5">
                   <FileText className="w-4 h-4 text-accent" /> Termo de Ciência e Validação de Matrícula
                 </h4>
@@ -1241,14 +1241,14 @@ export default function PreInscricao() {
                     onChange={(e) => setAceitouTermosCompromisso(e.target.checked)}
                     className="w-4 h-4 rounded text-accent accent-accent mt-0.5"
                   />
-                  <span className="text-xs font-semibold text-white/95 leading-relaxed">
+                  <span className="text-xs font-semibold text-slate-600 leading-relaxed">
                     “Confirmação da matricula no formulário somente após a instituição entrar em contato e validar as informações, não comparecendo a matricula perde a vaga pré reservada” <span className="text-accent font-bold">* (obrigatório)</span>
                   </span>
                 </label>
               </div>
 
               {/* AVISO DE PRIVACIDADE E DUAL CONSENTIMENTO LGPD (Item 8) */}
-              <div className="bg-slate-950/80 p-4 rounded-xl border border-white/10 flex flex-col gap-3">
+              <div className="bg-primary/40 p-4 rounded-xl border border-slate-200 flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <h4 className="font-bold text-emerald-400 text-xs uppercase tracking-wider flex items-center gap-1.5">
                     <Check className="w-4 h-4 text-emerald-400" /> Consentimentos e Privacidade (LGPD)
@@ -1262,7 +1262,7 @@ export default function PreInscricao() {
                   </button>
                 </div>
 
-                <div className="text-white/80 text-xs leading-relaxed">
+                <div className="text-slate-600 text-xs leading-relaxed">
                   {mostrarAvisoLgpdCompleto ? (
                     <div className="space-y-2">
                       <p>
@@ -1293,20 +1293,20 @@ export default function PreInscricao() {
                     onChange={(e) => setAceitouAvisoLgpd(e.target.checked)}
                     className="w-4 h-4 rounded text-emerald-400 accent-emerald-400 mt-0.5"
                   />
-                  <span className="text-xs font-semibold text-white/95 leading-snug">
+                  <span className="text-xs font-semibold text-slate-600 leading-snug">
                     Aviso de Privacidade e tratamento de dados pessoais necessários para a gestão do curso <span className="text-accent font-bold">* (obrigatório para concluir o cadastro)</span>
                   </span>
                 </label>
 
                 {/* Consentimento 2 - Opcional / Facultativo */}
-                <label className="flex items-start gap-2.5 cursor-pointer select-none pt-2 border-t border-white/10">
+                <label className="flex items-start gap-2.5 cursor-pointer select-none pt-2 border-t border-slate-200">
                   <input
                     type="checkbox"
                     checked={autorizaUsoImagem}
                     onChange={(e) => setAutorizaUsoImagem(e.target.checked)}
                     className="w-4 h-4 rounded text-accent accent-accent mt-0.5"
                   />
-                  <span className="text-xs font-semibold text-white/80 leading-snug">
+                  <span className="text-xs font-semibold text-slate-600 leading-snug">
                     Autorização de uso de imagem e voz para divulgação institucional dos projetos da prefeitura <span className="text-emerald-400 font-bold">(opcional e facultativo - a recusa não impede a sua pré-inscrição)</span>
                   </span>
                 </label>
@@ -1333,7 +1333,7 @@ export default function PreInscricao() {
                 <button
                   key={opt.valor}
                   onClick={() => prosseguirEtapa(opt.valor, opt.texto)}
-                  className="bg-slate-900 border border-accent/40 text-accent hover:bg-accent hover:text-white font-semibold text-xs py-2.5 px-4 rounded-xl shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer"
+                  className="bg-white border border-accent/40 text-accent hover:bg-accent hover:text-white font-semibold text-xs py-2.5 px-4 rounded-xl shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer"
                 >
                   {opt.texto}
                 </button>
@@ -1353,7 +1353,7 @@ export default function PreInscricao() {
               </button>
               <button
                 onClick={() => prosseguirEtapa('editar', 'Quero mudar algo')}
-                className="bg-slate-900 border border-white/20 text-white/80 hover:bg-white/10 font-semibold text-xs py-2.5 px-4 rounded-xl shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer"
+                className="bg-white border border-slate-200 text-slate-600 hover:bg-primary/5 font-semibold text-xs py-2.5 px-4 rounded-xl shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer"
               >
                 Revisar e atualizar dados
               </button>
@@ -1369,7 +1369,7 @@ export default function PreInscricao() {
                   <button
                     key={opt.valor}
                     onClick={() => prosseguirEtapa(opt.valor, opt.texto)}
-                    className="bg-slate-900 border border-accent/40 text-accent hover:bg-accent hover:text-white font-semibold text-xs py-2.5 px-4 rounded-xl shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer"
+                    className="bg-white border border-accent/40 text-accent hover:bg-accent hover:text-white font-semibold text-xs py-2.5 px-4 rounded-xl shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer"
                   >
                     + Adicionar: {opt.texto}
                   </button>
@@ -1406,13 +1406,13 @@ export default function PreInscricao() {
                     : 'Digite sua resposta...'
                 }
                 autoFocus={!smallScreen}
-                className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-full py-3 px-4 sm:px-5 text-base sm:text-sm text-white focus:outline-none focus:border-accent focus:bg-slate-900/60 focus:ring-4 focus:ring-accent/10 placeholder-white/30 transition-all font-sans disabled:opacity-50"
+                className="flex-1 min-w-0 bg-primary/5 border border-slate-200 rounded-full py-3 px-4 sm:px-5 text-base sm:text-sm text-primary focus:outline-none focus:border-accent focus:bg-slate-50 focus:ring-4 focus:ring-accent/10 placeholder-slate-400 transition-all font-sans disabled:opacity-50"
               />
               {roteiro[etapaAtual].chave === 'telefone_alternativo' && (
                 <button
                   type="button"
                   onClick={() => prosseguirEtapa('', 'Pular')}
-                  className="bg-slate-800 text-white border border-white/10 px-4 py-3 rounded-full hover:bg-slate-700 transition-all font-bold text-xs"
+                  className="bg-blue-50 text-primary border border-slate-200 px-4 py-3 rounded-full hover:bg-primary/10 transition-all font-bold text-xs"
                 >
                   Pular
                 </button>

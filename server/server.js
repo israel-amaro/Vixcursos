@@ -2522,11 +2522,13 @@ async function createApp(options = {}) {
                 <head>
                     <meta charset="UTF-8">
                     <title>Certificado de ConclusÃ£o | ${aluno.nome}</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <link rel="icon" type="image/png" href="/imagem/logo.png">
                     <style>
                         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Montserrat:wght@300;400;600&display=swap');
                         body {
-                            background: #090f1d;
-                            color: #f8fafc;
+                            background: #f7f9fd;
+                            color: #24365a;
                             font-family: 'Montserrat', sans-serif;
                             display: flex;
                             flex-direction: column;
@@ -2537,14 +2539,14 @@ async function createApp(options = {}) {
                             padding: 20px;
                         }
                         .certificate-container {
-                            border: 12px double #f9c852;
-                            background: #111827;
+                            border: 12px double #283e69;
+                            background: #ffffff;
                             padding: 60px 40px;
                             width: 100%;
                             max-width: 800px;
                             text-align: center;
                             position: relative;
-                            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+                            box-shadow: 0 25px 50px -12px rgba(40, 62, 105, 0.12);
                             border-radius: 4px;
                             box-sizing: border-box;
                         }
@@ -2552,13 +2554,13 @@ async function createApp(options = {}) {
                             content: "";
                             position: absolute;
                             top: 15px; bottom: 15px; left: 15px; right: 15px;
-                            border: 2px solid #f9c852;
+                            border: 2px solid #283e69;
                             pointer-events: none;
                         }
                         .header {
                             font-family: 'Cinzel', serif;
                             font-size: 2.2rem;
-                            color: #f9c852;
+                            color: #283e69;
                             margin-top: 0;
                             margin-bottom: 20px;
                             letter-spacing: 2px;
@@ -2567,19 +2569,19 @@ async function createApp(options = {}) {
                         .subheader {
                             font-size: 0.9rem;
                             text-transform: uppercase;
-                            color: #94a3b8;
+                            color: #5f6f86;
                             letter-spacing: 3px;
                             margin-bottom: 30px;
                         }
                         .body-text {
                             font-size: 1.1rem;
                             line-height: 1.8;
-                            color: #cbd5e1;
+                            color: #50617c;
                             margin-bottom: 40px;
                             font-weight: 300;
                         }
                         .highlight {
-                            color: #f8fafc;
+                            color: #24365a;
                             font-weight: 600;
                             border-bottom: 1px dashed #64748b;
                             padding-bottom: 2px;
@@ -2596,11 +2598,11 @@ async function createApp(options = {}) {
                             border-top: 1px solid #64748b;
                             padding-top: 10px;
                             font-size: 0.8rem;
-                            color: #94a3b8;
+                            color: #5f6f86;
                         }
                         .signature-title {
                             font-weight: 600;
-                            color: #cbd5e1;
+                            color: #50617c;
                             margin-bottom: 4px;
                         }
                         .actions {
@@ -2610,7 +2612,7 @@ async function createApp(options = {}) {
                             display: inline-flex;
                             align-items: center;
                             gap: 8px;
-                            background: #ff8a5a;
+                            background: #2e64bd;
                             color: white;
                             text-decoration: none;
                             padding: 12px 24px;
@@ -2621,8 +2623,16 @@ async function createApp(options = {}) {
                             cursor: pointer;
                         }
                         .btn:hover {
-                            background: #f97316;
+                            background: #254f96;
                             transform: translateY(-1px);
+                        }
+                        .certificate-logo { width: 200px; max-width: 100%; height: auto; margin-bottom: 24px; }
+                        @media (max-width: 600px) {
+                            body { padding: 12px; }
+                            .certificate-container { padding: 32px 24px; border-width: 6px; }
+                            .header { font-size: 1.5rem; }
+                            .footer { flex-direction: column; align-items: center; gap: 32px; }
+                            .actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
                         }
                         @media print {
                             body {
@@ -2657,6 +2667,7 @@ async function createApp(options = {}) {
                 </head>
                 <body>
                     <div class="certificate-container">
+                        <img class="certificate-logo" src="/imagem/logo.png" alt="Qualifica Vix">
                         <div class="header">Certificado de ConclusÃ£o</div>
                         <div class="subheader">Prefeitura de VitÃ³ria â€” Qualifica Vix</div>
 

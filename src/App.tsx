@@ -102,7 +102,7 @@ function FloatingHomeButton() {
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
       onClick={handleClick}
-      className="floating-home fixed z-[998] p-3 sm:p-4 rounded-full bg-slate-900/85 sm:bg-black/35 backdrop-blur-md text-white border border-white/10 hover:bg-accent hover:border-accent/40 shadow-[0_8px_32px_rgba(0,0,0,0.3)] transition-all flex items-center justify-center cursor-pointer group"
+      className="floating-home fixed z-[998] p-3 sm:p-4 rounded-full bg-primary/95 backdrop-blur-md text-white border border-white/10 hover:bg-accent hover:border-accent/40 shadow-[0_8px_32px_rgba(40,62,105,0.18)] transition-all flex items-center justify-center cursor-pointer group"
       title={isHome ? 'Voltar ao topo' : 'Voltar à tela principal'}
       aria-label={isHome ? 'Voltar ao topo' : 'Voltar à tela principal'}
     >

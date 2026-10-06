@@ -67,7 +67,7 @@ function inicializarGrafico(tipo) {
     interessados.forEach(lead => { const area = lead.perfil_curso || 'Não informada'; groups[area] = (groups[area] || 0) + 1; });
     if (meuGrafico) meuGrafico.destroy();
     meuGrafico = new Chart(document.getElementById('graficoDemanda').getContext('2d'), {
-        type: tipo, data: { labels: Object.keys(groups), datasets: [{ label: 'Interessados por área', data: Object.values(groups), backgroundColor: '#7c3aed99', borderColor: '#7c3aed', borderWidth: 2 }] },
+        type: tipo, data: { labels: Object.keys(groups), datasets: [{ label: 'Interessados por área', data: Object.values(groups), backgroundColor: '#75429b99', borderColor: '#75429b', borderWidth: 2 }] },
         options: { responsive: true, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } },
     });
 }

@@ -58,7 +58,7 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
   };
 
   return (
-    <section className="w-full relative overflow-hidden bg-slate-950 flex flex-col justify-between border-b border-slate-800">
+    <section className="w-full relative overflow-hidden bg-white flex flex-col justify-between border-b border-slate-200">
       
       {/* Background Image Carousel with Smooth Transitions */}
       <div className="absolute inset-0 z-0 overflow-hidden">
@@ -78,8 +78,8 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
         ))}
 
         {/* Softened Overlays for Vibrant Images with High Readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/60 to-black/70 sm:from-black/70 sm:via-black/40 sm:to-black/60" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-black/50 via-transparent to-black/60" />
+        <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/90 to-white/80" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-white/40 via-transparent to-white/70" />
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-accent/10 rounded-full filter blur-[120px] pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/15 rounded-full filter blur-[100px] pointer-events-none" />
         
@@ -106,23 +106,23 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
             <span className="leading-tight">Exclusivo para moradores de Vitória e/ou trabalhadores na cidade</span>
           </div>
           
-          <h1 className="text-[1.875rem] sm:text-4xl md:text-5xl lg:text-6xl font-display font-extrabold leading-[1.1] sm:leading-[1.05] tracking-tight text-white drop-shadow-md">
+          <h1 className="text-[1.875rem] sm:text-4xl md:text-5xl lg:text-6xl font-display font-extrabold leading-[1.1] sm:leading-[1.05] tracking-tight text-primary">
             Cursos de qualificação profissional - prefeitura de vitória
           </h1>
           
-          <p className="text-sm sm:text-sm md:text-base text-slate-200 max-w-xl mt-2.5 sm:mt-4 leading-relaxed font-medium drop-shadow-sm">
+          <p className="text-sm sm:text-sm md:text-base text-slate-600 max-w-xl mt-2.5 sm:mt-4 leading-relaxed font-medium">
             Cursos gratuitos da Prefeitura de Vitória para aumentar suas oportunidades de trabalho. Escolha um curso e faça sua pré-inscrição em poucos minutos.
           </p>
           
           {/* Answer Key Questions Pills */}
           <div className="flex flex-wrap gap-2 sm:gap-2.5 mt-3 sm:mt-4 text-[11px] sm:text-xs font-semibold">
-            <span className="px-2.5 py-1 sm:px-3 sm:py-1 bg-white/10 backdrop-blur-md rounded-lg text-white border border-white/15">
+            <span className="px-2.5 py-1 sm:px-3 sm:py-1 bg-primary/5 backdrop-blur-md rounded-lg text-primary border border-slate-200">
               ✓ 100% Gratuito
             </span>
-            <span className="px-2.5 py-1 sm:px-3 sm:py-1 bg-white/10 backdrop-blur-md rounded-lg text-white border border-white/15">
+            <span className="px-2.5 py-1 sm:px-3 sm:py-1 bg-primary/5 backdrop-blur-md rounded-lg text-primary border border-slate-200">
               ✓ Vagas Abertas
             </span>
-            <span className="px-2.5 py-1 sm:px-3 sm:py-1 bg-white/10 backdrop-blur-md rounded-lg text-white border border-white/15">
+            <span className="px-2.5 py-1 sm:px-3 sm:py-1 bg-primary/5 backdrop-blur-md rounded-lg text-primary border border-slate-200">
               ✓ Com Certificado
             </span>
           </div>
@@ -131,7 +131,7 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mt-5 sm:mt-7 w-full sm:w-auto">
             <button
               onClick={() => scrollToSection('cursos-list-section')}
-              className="px-6 sm:px-9 py-3.5 sm:py-4 bg-accent hover:bg-accent/90 text-white rounded-2xl font-extrabold text-xs sm:text-sm tracking-wider uppercase shadow-[0_8px_25px_rgba(255,138,90,0.35)] active:scale-95 transition-all duration-300 w-full sm:w-auto text-center cursor-pointer flex items-center justify-center gap-2"
+              className="px-6 sm:px-9 py-3.5 sm:py-4 bg-accent hover:bg-accent/90 text-white rounded-2xl font-extrabold text-xs sm:text-sm tracking-wider uppercase shadow-[0_8px_25px_rgba(46,100,189,0.2)] active:scale-95 transition-all duration-300 w-full sm:w-auto text-center cursor-pointer flex items-center justify-center gap-2"
             >
               <Search className="w-4 h-4" />
               QUERO ME INSCREVER
@@ -140,7 +140,7 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
             {onOpenQuiz && (
               <button
                 onClick={onOpenQuiz}
-                className="px-5 sm:px-6 py-3.5 sm:py-4 glass hover:bg-white/15 text-white/90 rounded-2xl font-bold text-[11px] sm:text-xs tracking-wider uppercase active:scale-95 transition-all duration-300 w-full sm:w-auto text-center cursor-pointer flex items-center justify-center gap-2 border border-white/15 backdrop-blur-md"
+                className="px-5 sm:px-6 py-3.5 sm:py-4 glass hover:bg-white/15 text-slate-600 rounded-2xl font-bold text-[11px] sm:text-xs tracking-wider uppercase active:scale-95 transition-all duration-300 w-full sm:w-auto text-center cursor-pointer flex items-center justify-center gap-2 border border-slate-200 backdrop-blur-md"
               >
                 <HelpCircle className="w-4 h-4 text-accent" />
                 Não sabe qual escolher? (Quiz)
@@ -158,7 +158,7 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
                 className="h-8 w-8 flex items-center justify-center cursor-pointer"
               >
                 <span className={`h-2 rounded-full transition-all duration-500 ${
-                  idx === currentImageIndex ? 'w-8 bg-accent' : 'w-2 bg-white/30 hover:bg-white/60'
+                  idx === currentImageIndex ? 'w-8 bg-accent' : 'w-2 bg-primary/20 hover:bg-primary/40'
                 }`} />
               </button>
             ))}
@@ -170,61 +170,61 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="w-full sm:max-w-[340px] lg:shrink-0 bg-slate-800/45 backdrop-blur-2xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-[0_12px_40px_rgba(0,0,0,0.35)] flex flex-col border border-white/20 relative overflow-hidden mt-1 sm:mt-0"
+          className="w-full sm:max-w-[340px] lg:shrink-0 bg-white/95 backdrop-blur-2xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-[0_12px_40px_rgba(40,62,105,0.08)] flex flex-col border border-slate-200 relative overflow-hidden mt-1 sm:mt-0"
         >
           {/* Subtle Glass Highlight Glow */}
-          <div className="absolute -top-12 -right-12 w-28 h-28 bg-white/10 rounded-full filter blur-xl pointer-events-none" />
+          <div className="absolute -top-12 -right-12 w-28 h-28 bg-primary/5 rounded-full filter blur-xl pointer-events-none" />
 
           <div className="flex items-center gap-3 mb-4">
             <img src="/imagem/Vitoruga.png" alt="Vitoruga, assistente virtual do Qualifica Vix" className="w-20 h-20 sm:w-28 sm:h-28 shrink-0 object-contain" />
-            <div><p className="text-accent font-extrabold text-base sm:text-lg">Aprenda com o Vitoruga</p><p className="text-white/85 text-xs">Seu próximo passo profissional começa aqui.</p></div>
+            <div><p className="text-accent font-extrabold text-base sm:text-lg">Aprenda com o Vitoruga</p><p className="text-slate-600 text-xs">Seu próximo passo profissional começa aqui.</p></div>
           </div>
-          <h3 className="font-display font-bold text-white text-sm sm:text-base mb-3 sm:mb-5 tracking-wide flex items-center gap-2">
+          <h3 className="font-display font-bold text-primary text-sm sm:text-base mb-3 sm:mb-5 tracking-wide flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
             Oportunidades Disponíveis
           </h3>
 
           <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-col sm:gap-3.5">
             {/* Stat 1: Cursos com Inscrições Abertas */}
-            <div className="flex min-w-0 flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 hover:bg-white/15 transition-all">
+            <div className="flex min-w-0 flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-primary/5 backdrop-blur-md border border-slate-200 hover:bg-white/15 transition-all">
               <div className="hidden sm:block p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-accent/25 text-accent shadow-sm flex-shrink-0">
-                <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               </div>
               <div className="flex flex-col">
-                <span className="text-base sm:text-xl font-mono font-extrabold text-white leading-none">
+                <span className="text-base sm:text-xl font-mono font-extrabold text-primary leading-none">
                   {stats.cursosAbertos} <span className="hidden sm:inline">cursos</span>
                 </span>
-                <span className="text-[10px] sm:text-[11px] text-slate-200 font-medium tracking-wide mt-0.5 sm:mt-1">
+                <span className="text-[10px] sm:text-[11px] text-slate-600 font-medium tracking-wide mt-0.5 sm:mt-1">
                   <span className="sm:hidden">Cursos </span>com inscrições abertas
                 </span>
               </div>
             </div>
 
             {/* Stat 2: Total Vagas Restantes */}
-            <div className="flex min-w-0 flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 hover:bg-white/15 transition-all">
+            <div className="flex min-w-0 flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-primary/5 backdrop-blur-md border border-slate-200 hover:bg-white/15 transition-all">
               <div className="hidden sm:block p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-accent/25 text-accent shadow-sm flex-shrink-0">
-                <CalendarCheck className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                <CalendarCheck className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               </div>
               <div className="flex flex-col">
-                <span className="text-base sm:text-xl font-mono font-extrabold text-white leading-none">
+                <span className="text-base sm:text-xl font-mono font-extrabold text-primary leading-none">
                   {stats.vagasRestantes} <span className="hidden sm:inline">vagas</span>
                 </span>
-                <span className="text-[10px] sm:text-[11px] text-slate-200 font-medium tracking-wide mt-0.5 sm:mt-1">
+                <span className="text-[10px] sm:text-[11px] text-slate-600 font-medium tracking-wide mt-0.5 sm:mt-1">
                   <span className="sm:hidden">Vagas </span>restantes no momento
                 </span>
               </div>
             </div>
 
             {/* Stat 3: Iniciando esta semana */}
-            <div className="flex min-w-0 flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 hover:bg-white/15 transition-all">
+            <div className="flex min-w-0 flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-primary/5 backdrop-blur-md border border-slate-200 hover:bg-white/15 transition-all">
               <div className="hidden sm:block p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-accent/25 text-accent shadow-sm flex-shrink-0">
-                <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               </div>
               <div className="flex flex-col">
-                <span className="text-base sm:text-xl font-mono font-extrabold text-white leading-none">
+                <span className="text-base sm:text-xl font-mono font-extrabold text-primary leading-none">
                   {stats.iniciandoSemana} <span className="hidden sm:inline">turmas</span>
                 </span>
-                <span className="text-[10px] sm:text-[11px] text-slate-200 font-medium tracking-wide mt-0.5 sm:mt-1">
+                <span className="text-[10px] sm:text-[11px] text-slate-600 font-medium tracking-wide mt-0.5 sm:mt-1">
                   <span className="sm:hidden">Turmas </span>iniciando esta semana
                 </span>
               </div>
@@ -233,7 +233,7 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
 
           <button
             onClick={() => scrollToSection('cursos-list-section')}
-            className="w-full bg-white/15 hover:bg-white/25 border border-white/25 py-2.5 sm:py-3 rounded-xl font-bold uppercase tracking-wider text-[11px] sm:text-xs text-white mt-3 sm:mt-5 transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 backdrop-blur-md shadow-md active:scale-95"
+            className="w-full bg-primary/5 hover:bg-primary/10 border border-slate-200 py-2.5 sm:py-3 rounded-xl font-bold uppercase tracking-wider text-[11px] sm:text-xs text-primary mt-3 sm:mt-5 transition-all duration-300 cursor-pointer flex items-center justify-center gap-2 backdrop-blur-md shadow-md active:scale-95"
           >
             Ver Todas as Vagas
           </button>

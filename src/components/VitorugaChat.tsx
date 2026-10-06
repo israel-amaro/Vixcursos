@@ -1074,7 +1074,7 @@ export default function VitorugaChat() {
               initial={{ opacity: 0, y: 10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-black/35 backdrop-blur-md border border-white/10 text-white rounded-2xl py-2.5 px-4 shadow-2xl mb-3 ml-2 max-w-[200px] text-xs font-semibold relative text-left"
+              className="bg-white/95 backdrop-blur-md border border-slate-200 text-primary rounded-2xl py-2.5 px-4 shadow-2xl mb-3 ml-2 max-w-[200px] text-xs font-semibold relative text-left"
             >
               <span>Precisa de ajuda para encontrar um curso? 🐢</span>
               <button 
@@ -1082,13 +1082,13 @@ export default function VitorugaChat() {
                   e.stopPropagation();
                   setShowTooltip(false);
                 }}
-                className="absolute -top-1.5 -right-1.5 bg-slate-800 border border-white/10 rounded-full p-0.5 text-white/60 hover:text-white"
+                className="absolute -top-1.5 -right-1.5 bg-blue-50 border border-slate-200 rounded-full p-0.5 text-slate-600 hover:text-primary"
                 aria-label="Fechar dica"
               >
                 <X className="w-3 h-3" />
               </button>
               {/* Arrow adjusted to left side */}
-              <div className="absolute bottom-[-6px] left-6 w-3 h-3 bg-black/35 border-r border-b border-white/10 rotate-45" />
+              <div className="absolute bottom-[-6px] left-6 w-3 h-3 bg-white/95 border-r border-b border-slate-200 rotate-45" />
             </motion.div>
           )}
         </AnimatePresence>
@@ -1118,8 +1118,8 @@ export default function VitorugaChat() {
             whileTap={{ scale: 0.95 }}
             className={`relative w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center shadow-[0_8px_32px_rgba(0,0,0,0.3)] border transition-all ${
               isOpen 
-                ? 'bg-slate-950 border-white/10' 
-                : 'border-white/10 backdrop-blur-md shadow-lg shadow-black/20'
+                ? 'bg-slate-50 border-slate-200'
+                : 'border-slate-200 backdrop-blur-md shadow-lg shadow-black/20'
             }`}
             style={!isOpen ? {
               background: 'color-mix(in oklab, var(--color-black) 35%, transparent)',
@@ -1127,7 +1127,7 @@ export default function VitorugaChat() {
             aria-label={isOpen ? "Fechar chatbot" : "Abrir chatbot do Vitoruga"}
           >
             {isOpen ? (
-              <X className="w-6 h-6 text-white" />
+              <X className="w-6 h-6 text-primary" />
             ) : (
               <div className="w-full h-full p-[2px] flex items-center justify-center relative">
                 <img
@@ -1138,7 +1138,7 @@ export default function VitorugaChat() {
                     (e.target as HTMLImageElement).src = '/imagem/vitorugaoficial.png';
                   }}
                 />
-                <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-success rounded-full border-2 border-slate-900" />
+                <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-success rounded-full border-2 border-white" />
               </div>
             )}
           </motion.button>
@@ -1146,7 +1146,7 @@ export default function VitorugaChat() {
       </div>
 
       {/* Chat Box Drawer - Positioned relative to button */}
-      {isOpen && smallScreen && <button type="button" aria-label="Fechar conversa" onClick={() => setIsOpen(false)} className="fixed inset-0 bg-slate-950/60 z-[1000]" />}
+      {isOpen && smallScreen && <button type="button" aria-label="Fechar conversa" onClick={() => setIsOpen(false)} className="fixed inset-0 bg-slate-50/60 z-[1000]" />}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -1157,41 +1157,41 @@ export default function VitorugaChat() {
             role="dialog"
             aria-label="Conversa com Vitoruga"
             aria-modal={smallScreen ? true : undefined}
-            className="chat-drawer fixed w-96 max-w-[calc(100vw-2rem)] h-[540px] max-h-[calc(100dvh-11rem)] rounded-2xl border border-white/10 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.6)] flex flex-col z-[1001] overflow-hidden bg-slate-900"
+            className="chat-drawer fixed w-96 max-w-[calc(100vw-2rem)] h-[540px] max-h-[calc(100dvh-11rem)] rounded-2xl border border-slate-200 shadow-[0_20px_60px_-15px_rgba(40,62,105,0.14)] flex flex-col z-[1001] overflow-hidden bg-white"
             style={smallScreen ? undefined : position
               ? {
                   left: Math.max(16, Math.min(position.x, window.innerWidth - 400)),
                   top: Math.max(16, Math.min(window.innerHeight - 556, position.y > window.innerHeight / 2
                     ? Math.max(0, position.y - 550)
                     : position.y + 72)),
-                  background: 'rgba(15,23,42,0.98)',
+                  background: 'rgba(255,255,255,0.98)',
                   backdropFilter: 'blur(12px)',
                 }
               : {
                   bottom: '9rem',
                   right: '1.5rem',
-                  background: 'rgba(15,23,42,0.98)',
+                  background: 'rgba(255,255,255,0.98)',
                   backdropFilter: 'blur(12px)',
                 }
             }
           >
             {/* Header */}
-            <header className="px-3 sm:px-4 py-3 shrink-0 flex items-center justify-between gap-2 border-b border-white/5 shadow-sm bg-transparent">
+            <header className="px-3 sm:px-4 py-3 shrink-0 flex items-center justify-between gap-2 border-b border-slate-200 shadow-sm bg-transparent">
               <div className="flex min-w-0 items-center gap-2 sm:gap-3">
                 <div className="relative shrink-0">
                   <img
                     src={displayedMascot}
                     alt="Vitoruga"
-                    className="w-12 h-12 sm:w-16 sm:h-16 object-contain rounded-full border border-accent/40 p-[1px] bg-slate-900"
+                    className="w-12 h-12 sm:w-16 sm:h-16 object-contain rounded-full border border-accent/40 p-[1px] bg-white"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = '/imagem/vitorugaoficial.png';
                     }}
                   />
-                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-success rounded-full border border-slate-900" />
+                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-success rounded-full border border-white" />
                 </div>
                 <div>
-                  <h2 className="font-display font-bold text-white text-sm sm:text-xs leading-snug">Vitoruga</h2>
-                  <p className="text-xs text-white/75 leading-snug">Assistente virtual do Qualifica Vix</p>
+                  <h2 className="font-display font-bold text-primary text-sm sm:text-xs leading-snug">Vitoruga</h2>
+                  <p className="text-xs text-slate-600 leading-snug">Assistente virtual do Qualifica Vix</p>
                   <p className="text-[10px] text-success font-semibold">Online</p>
                 </div>
               </div>
@@ -1204,7 +1204,7 @@ export default function VitorugaChat() {
                   className={`p-2 rounded-full border transition-all ${
                     speechEnabled 
                       ? 'bg-accent/20 border-accent text-accent' 
-                      : 'bg-white/5 border-white/10 text-white/40 hover:text-white'
+                      : 'bg-primary/5 border-slate-200 text-slate-600 hover:text-primary'
                   }`}
                 >
                   {speechEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
@@ -1213,7 +1213,7 @@ export default function VitorugaChat() {
                 <button
                   onClick={() => setIsOpen(false)}
                   aria-label="Fechar chatbot"
-                  className="p-2 rounded-full bg-white/5 border border-white/10 text-white/40 hover:text-white hover:bg-white/10"
+                  className="p-2 rounded-full bg-primary/5 border border-slate-200 text-slate-600 hover:text-primary hover:bg-primary/5"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -1228,7 +1228,7 @@ export default function VitorugaChat() {
                   <div
                     className={`max-w-[92%] sm:max-w-[85%] break-words rounded-2xl px-4 py-3 text-sm sm:text-xs leading-relaxed shadow-lg ${
                       msg.sender === 'bot'
-                        ? 'bg-slate-800/90 text-white border border-white/5 self-start rounded-tl-sm'
+                        ? 'bg-blue-50 text-primary border border-slate-200 self-start rounded-tl-sm'
                         : 'bg-gradient-to-r from-coral to-accent text-white self-end rounded-tr-sm shadow-accent/5'
                     }`}
                   >
@@ -1258,7 +1258,7 @@ export default function VitorugaChat() {
 
               {/* Bot thinking bubble */}
               {isTyping && (
-                <div className="bg-slate-800/90 text-white border border-white/5 self-start rounded-2xl rounded-tl-sm px-4 py-3.5 flex gap-1 items-center w-14">
+                <div className="bg-blue-50 text-primary border border-slate-200 self-start rounded-2xl rounded-tl-sm px-4 py-3.5 flex gap-1 items-center w-14">
                   <span className="w-1.5 h-1.5 bg-white/40 rounded-full animate-[bounce_1.4s_infinite_ease-in-out_both]" />
                   <span className="w-1.5 h-1.5 bg-white/40 rounded-full animate-[bounce_1.4s_infinite_ease-in-out_both_-0.16s]" />
                   <span className="w-1.5 h-1.5 bg-white/40 rounded-full animate-[bounce_1.4s_infinite_ease-in-out_both_-0.32s]" />
@@ -1269,13 +1269,13 @@ export default function VitorugaChat() {
 
             {/* Interactive Options Buttons */}
             {activeOptions && activeOptions.length > 0 && (
-              <div data-lenis-prevent className="px-3 py-2 shrink-0 bg-transparent border-t border-white/5 flex flex-wrap gap-1.5 justify-start max-h-[25%] overflow-y-auto overscroll-contain">
+              <div data-lenis-prevent className="px-3 py-2 shrink-0 bg-transparent border-t border-slate-200 flex flex-wrap gap-1.5 justify-start max-h-[25%] overflow-y-auto overscroll-contain">
                 {activeOptions.map((opt, i) => (
                   <button
                     key={i}
                     type="button"
                     onClick={() => handleOptionClick(opt.valor, opt.texto)}
-                    className="bg-slate-800 hover:bg-accent border border-white/10 text-white hover:text-white text-[10px] font-bold py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center gap-1 max-w-full text-left"
+                    className="bg-blue-50 hover:bg-accent border border-slate-200 text-primary hover:text-white text-[10px] font-bold py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center gap-1 max-w-full text-left"
                   >
                     {opt.texto} <ArrowRight className="w-3 h-3 flex-shrink-0" />
                   </button>
@@ -1284,7 +1284,7 @@ export default function VitorugaChat() {
             )}
 
             {/* Input area */}
-            <form onSubmit={handleSendMessage} className="shrink-0 bg-transparent border-t border-white/5 p-3 flex gap-2 items-center">
+            <form onSubmit={handleSendMessage} className="shrink-0 bg-transparent border-t border-slate-200 p-3 flex gap-2 items-center">
               <input
                 type="text"
                 value={inputValue}
@@ -1302,7 +1302,7 @@ export default function VitorugaChat() {
                   (quiz.active && ['questions', 'ask_register', 'ask_regiao'].includes(quiz.step)) ||
                   (suggestion.active && suggestion.step === 'ask_areas')
                 }
-                className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-full py-3 px-4 text-base sm:text-xs text-white focus:outline-none focus:border-accent focus:bg-slate-900/60 placeholder-white/30 transition-all font-sans disabled:opacity-50"
+                className="flex-1 min-w-0 bg-primary/5 border border-slate-200 rounded-full py-3 px-4 text-base sm:text-xs text-primary focus:outline-none focus:border-accent focus:bg-slate-50 placeholder-slate-400 transition-all font-sans disabled:opacity-50"
               />
               <button
                 type="submit"

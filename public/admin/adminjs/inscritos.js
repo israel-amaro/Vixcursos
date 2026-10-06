@@ -234,7 +234,7 @@ async function abrirListaAlunos(idCurso) {
 
                 const statusSelecionado = String(aluno.status || '').toLowerCase();
                 const selectStatus = `
-                    <select onchange="atualizarStatusAluno(${aluno.id}, this.value, '${nomeEscapadoJs}')" class="admin-status-select" style="background:#1e293b; color:white; border:1px solid #334155; padding:6px 10px; border-radius:6px; font-size:0.75rem; font-weight:600; outline:none; cursor:pointer;">
+                    <select onchange="atualizarStatusAluno(${aluno.id}, this.value, '${nomeEscapadoJs}')" class="admin-status-select" style="background:#ffffff; color:#24365a; border:1px solid #dde5ef; padding:6px 10px; border-radius:6px; font-size:0.75rem; font-weight:600; outline:none; cursor:pointer;">
                         <option value="inscrito" ${statusSelecionado === 'inscrito' ? 'selected' : ''}>Pré-inscrito</option>
                         <option value="titular" ${statusSelecionado === 'titular' ? 'selected' : ''}>Classificado (Titular)</option>
                         <option value="suplente" ${statusSelecionado === 'suplente' ? 'selected' : ''}>Suplente</option>
@@ -314,9 +314,9 @@ function exibirFichaCompleta(aluno, historico) {
             return '<em style="color:#94a3b8; font-style:normal; font-weight:500;"><i class="bi bi-person-badge icon-inline"></i> Apresentação presencial exigida na matrícula</em>';
         }
         if (String(documento).startsWith('data:application/pdf') || String(documento).includes('.pdf')) {
-            return `<a href="${documento}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:10px;padding:8px 12px;border-radius:6px;background:#0f172a;border:1px solid #334155;color:#e2e8f0;text-decoration:none;"><i class="bi bi-filetype-pdf" aria-hidden="true"></i> Abrir PDF do ${label} (Histórico)</a>`;
+            return `<a href="${documento}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:10px;padding:8px 12px;border-radius:6px;background:#f7f9fd;border:1px solid #dde5ef;color:#24365a;text-decoration:none;"><i class="bi bi-filetype-pdf" aria-hidden="true"></i> Abrir PDF do ${label} (Histórico)</a>`;
         }
-        return `<img src="${documento}" alt="Documento ${label}" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;border:1px solid #334155;background:#0f172a;padding:6px;">`;
+        return `<img src="${documento}" alt="Documento ${label}" style="width:100%;max-height:220px;object-fit:contain;border-radius:8px;border:1px solid #dde5ef;background:#f7f9fd;padding:6px;">`;
     };
 
     let idadeTexto = 'Não informada';

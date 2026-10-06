@@ -116,22 +116,22 @@ export default function CpfVerificationModal({
   };
 
   return (
-    <div data-lenis-prevent className="responsive-overlay fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
+    <div data-lenis-prevent className="responsive-overlay fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-primary/40 backdrop-blur-md animate-fadeIn">
       <div 
-        className="responsive-dialog overflow-y-auto overscroll-contain w-full max-w-md bg-slate-900 border border-white/15 rounded-3xl p-5 sm:p-6 shadow-2xl text-left flex flex-col gap-5"
+        className="responsive-dialog overflow-y-auto overscroll-contain w-full max-w-md bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-2xl text-left flex flex-col gap-5"
         role="dialog"
         aria-modal="true"
       >
         {/* Header */}
-        <div className="flex items-center gap-3 border-b border-white/10 pb-4">
+        <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
           <div className="p-3 rounded-2xl bg-accent/15 text-accent border border-accent/30">
             <ShieldCheck className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="font-display font-bold text-white text-lg leading-snug">
+            <h3 className="font-display font-bold text-primary text-lg leading-snug">
               Recuperar meu cadastro
             </h3>
-            <p className="text-xs text-white/60">
+            <p className="text-xs text-slate-600">
               Proteção de dados do cidadão — Qualifica Vix
             </p>
           </div>
@@ -140,22 +140,22 @@ export default function CpfVerificationModal({
         {/* Content Step 1: Prompt */}
         {step === 'prompt' && (
           <div className="flex flex-col gap-4">
-            <p className="text-xs text-white/80 leading-relaxed">
+            <p className="text-xs text-slate-600 leading-relaxed">
               Encontramos um cadastro existente vinculado ao CPF informado. Por razões de privacidade (LGPD), precisamos confirmar sua identidade antes de preencher seus dados:
             </p>
 
             {/* Masked Info Card */}
-            <div className="bg-slate-950/90 border border-white/10 rounded-2xl p-4 flex flex-col gap-2 font-mono text-xs text-white/90">
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col gap-2 font-mono text-xs text-slate-600">
               <div>
-                <span className="text-white/40 uppercase text-[10px] block font-sans">Nome</span>
+                <span className="text-slate-600 uppercase text-[10px] block font-sans">Nome</span>
                 <strong>{maskedIdentity.nome}</strong>
               </div>
               <div>
-                <span className="text-white/40 uppercase text-[10px] block font-sans">E-mail</span>
+                <span className="text-slate-600 uppercase text-[10px] block font-sans">E-mail</span>
                 <strong>{maskedIdentity.email}</strong>
               </div>
               <div>
-                <span className="text-white/40 uppercase text-[10px] block font-sans">Celular</span>
+                <span className="text-slate-600 uppercase text-[10px] block font-sans">Celular</span>
                 <strong>{maskedIdentity.telefone}</strong>
               </div>
             </div>
@@ -186,7 +186,7 @@ export default function CpfVerificationModal({
               <button
                 type="button"
                 onClick={onStartFromScratch}
-                className="w-full py-2.5 bg-transparent hover:bg-white/5 text-white/70 hover:text-white font-semibold text-xs rounded-xl transition-all text-center cursor-pointer"
+                className="w-full py-2.5 bg-transparent hover:bg-primary/5 text-slate-600 hover:text-primary font-semibold text-xs rounded-xl transition-all text-center cursor-pointer"
               >
                 Não reconheço esses dados (Preencher do zero)
               </button>
@@ -197,12 +197,12 @@ export default function CpfVerificationModal({
         {/* Content Step 2: Code Input */}
         {step === 'code' && (
           <form onSubmit={handleVerifyCode} className="flex flex-col gap-4">
-            <p className="text-xs text-white/80 leading-relaxed">
+            <p className="text-xs text-slate-600 leading-relaxed">
               Enviamos um código de 6 dígitos para o e-mail <strong>{maskedIdentity.email}</strong>. Digite-o abaixo:
             </p>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-bold text-white/70 uppercase tracking-wider">
+              <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
                 Código de 6 dígitos
               </label>
               <input
@@ -214,12 +214,12 @@ export default function CpfVerificationModal({
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
                 placeholder="000000"
-                className="w-full py-3 px-4 rounded-xl bg-slate-950 border border-accent/40 text-center font-mono font-extrabold text-2xl tracking-[0.5em] text-white focus:outline-none focus:border-accent"
+                className="w-full py-3 px-4 rounded-xl bg-slate-50 border border-accent/40 text-center font-mono font-extrabold text-2xl tracking-[0.5em] text-primary focus:outline-none focus:border-accent"
                 autoFocus
               />
             </div>
 
-            <div className="flex items-center justify-between text-xs text-white/50">
+            <div className="flex items-center justify-between text-xs text-slate-600">
               <span>Validade do código:</span>
               <span className={`font-mono font-bold ${timeLeft < 60 ? 'text-red-400' : 'text-accent'}`}>
                 {formatTime(timeLeft)}
@@ -252,7 +252,7 @@ export default function CpfVerificationModal({
                 type="button"
                 onClick={handleSendCode}
                 disabled={loading || timeLeft > 240}
-                className="w-full py-2 bg-transparent text-white/60 hover:text-white text-xs text-center cursor-pointer disabled:opacity-30"
+                className="w-full py-2 bg-transparent text-slate-600 hover:text-primary text-xs text-center cursor-pointer disabled:opacity-30"
               >
                 Reenviar novo código
               </button>

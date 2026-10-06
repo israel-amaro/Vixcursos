@@ -8,16 +8,16 @@
 
     <style>
         :root {
-            color-scheme: dark;
-            --bg: #030712;
-            --text: #f3f4f6;
-            --muted: #9ca3af;
-            --primary: #7c3aed;
-            --primary-light: #a78bfa;
-            --border: rgba(255, 255, 255, 0.08);
-            --input-bg: rgba(15, 23, 42, 0.6);
-            --danger: #f87171;
-            --success: #34d399;
+            color-scheme: light;
+            --bg: #f7f9fd;
+            --text: #24365a;
+            --muted: #5f6f86;
+            --primary: #2e64bd;
+            --primary-light: #2e64bd;
+            --border: #dde5ef;
+            --input-bg: #ffffff;
+            --danger: #b91c1c;
+            --success: #146844;
         }
 
         * { box-sizing: border-box; }
@@ -25,9 +25,7 @@
         body {
             font-family: Inter, "Segoe UI", system-ui, sans-serif;
             color: var(--text);
-            background:
-                linear-gradient(135deg, rgba(3, 7, 18, 0.88), rgba(7, 17, 31, 0.85), rgba(15, 23, 42, 0.9)),
-                url("/imagem/terceira_ponte.png") center bottom / cover no-repeat fixed;
+            background: radial-gradient(circle at 20% 10%, #eee8f6, transparent 40%), radial-gradient(circle at 85% 80%, #e7f1ef, transparent 35%), #f7f9fd;
             display: grid;
             place-items: center;
             overflow-x: clip;
@@ -42,12 +40,12 @@
             padding: 44px 36px;
             border-radius: 24px;
             border: 1px solid var(--border);
-            background: rgba(10, 18, 36, 0.45);
+            background: #ffffff;
             backdrop-filter: blur(25px) saturate(180%);
             -webkit-backdrop-filter: blur(25px) saturate(180%);
             box-shadow: 
-                0 30px 60px rgba(0, 0, 0, 0.5),
-                inset 0 1px 1px rgba(255, 255, 255, 0.1);
+                0 30px 60px rgba(40, 62, 105, 0.1),
+                inset 0 1px 1px #dde5ef;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -73,10 +71,10 @@
         .logo-img {
             height: auto;
             width: min(45%, 180px);
-            max-height: 48px;
+            max-height: 120px;
             min-width: 0;
             object-fit: contain;
-            filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+            filter: none;
             transition: transform 0.3s;
         }
 
@@ -87,7 +85,7 @@
         .logo-divider {
             width: 1px;
             height: 36px;
-            background: rgba(255, 255, 255, 0.15);
+            background: #dde5ef;
         }
 
         form {
@@ -122,7 +120,7 @@
             width: 100%;
             padding: 15px 16px 15px 46px;
             border-radius: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid #dde5ef;
             background: var(--input-bg);
             color: var(--text);
             font-size: 16px;
@@ -132,8 +130,8 @@
 
         .input-wrapper input:focus {
             border-color: var(--primary-light);
-            background: rgba(15, 23, 42, 0.85);
-            box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.15);
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(46, 100, 189, 0.15);
         }
 
         .input-wrapper input:focus + i {
@@ -148,8 +146,8 @@
             font-weight: 600;
             cursor: pointer;
             color: white;
-            background: linear-gradient(135deg, var(--primary), #6366f1);
-            box-shadow: 0 10px 20px rgba(124, 58, 237, 0.2);
+            background: linear-gradient(135deg, var(--primary), #283e69);
+            box-shadow: 0 10px 20px rgba(46, 100, 189, 0.2);
             transition: all 0.25s;
             display: flex;
             align-items: center;
@@ -160,7 +158,7 @@
 
         .button:hover {
             transform: translateY(-1px);
-            box-shadow: 0 12px 24px rgba(124, 58, 237, 0.3);
+            box-shadow: 0 12px 24px rgba(46, 100, 189, 0.3);
             filter: brightness(1.15);
         }
 
@@ -191,7 +189,7 @@
             position: absolute;
             border-radius: 50%;
             filter: blur(80px);
-            opacity: 0.35;
+            opacity: 0.08;
             z-index: 1;
             pointer-events: none;
             animation: pulse 10s ease-in-out infinite alternate;
@@ -210,7 +208,14 @@
             .orb { display: none; }
         }
         .login-help { color: var(--muted); font-size: 13px; line-height: 1.5; text-align: center; }
+        .municipal-logo { background: #283e69; border-radius: 10px; padding: 10px; max-height: 48px; }
+        .logo-container { flex-direction: column; gap: 4px; }
+        .logo-divider { display: none; }
+        .qualifica-logo { width: 220px; max-width: 100%; }
+        .glass-card { gap: 22px; }
+        @media (prefers-reduced-motion: reduce) { .orb, .glass-card { animation: none; } }
     </style>
+    <link rel="icon" type="image/png" href="/imagem/logo.png">
 </head>
 <body>
     <div class="orb orb-1"></div>
@@ -218,9 +223,9 @@
 
     <main class="glass-card">
         <div class="logo-container">
-            <img src="/imagem/qualifica-vix.svg" alt="Qualifica Vix" class="logo-img">
+            <img src="/imagem/logo.png" alt="Qualifica Vix" class="logo-img qualifica-logo">
             <div class="logo-divider"></div>
-            <img src="/imagem/prefeitura.png" alt="Prefeitura de Vitória" class="logo-img">
+            <img src="/imagem/prefeitura.png" alt="Prefeitura de Vitória" class="logo-img municipal-logo">
         </div>
 
         <p class="login-help">Acesso administrativo com sua conta do Firebase Authentication.</p>

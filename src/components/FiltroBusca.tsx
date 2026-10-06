@@ -134,19 +134,19 @@ export default function FiltroBusca({ onFilterChange }: FiltroBuscaProps) {
   };
 
   return (
-    <section id="cursos-section" className="w-full bg-slate-900 py-7 sm:py-10 px-4 sm:px-6 md:px-12 relative z-30 border-b border-slate-800">
+    <section id="cursos-section" className="w-full bg-slate-50 py-7 sm:py-10 px-4 sm:px-6 md:px-12 relative z-30 border-b border-slate-200">
       <div className="max-w-7xl mx-auto">
         <h2 className="sr-only">Filtro de Busca de Cursos</h2>
         
         {/* Grid de Filtros */}
-        <label className="block mb-4 text-sm font-bold text-white/80">Buscar curso ou profissão
+        <label className="block mb-4 text-sm font-bold text-slate-600">Buscar curso ou profissão
         <input value={filters.buscaInteligente} onChange={handleSearchInputChange} placeholder="Ex.: gastronomia, informática, costura" className="mt-2 block w-full rounded-xl border border-slate-200 bg-white p-3 text-slate-900" />
       </label>
       <div className="grid grid-cols-1 min-[360px]:grid-cols-2 lg:grid-cols-5 gap-4">
           
           {/* Filtro 1: Faixa Etária (14+, 16+, 18+, 60+) */}
           <div className="flex min-w-0 flex-col last:col-span-1 min-[360px]:last:col-span-2 lg:last:col-span-1">
-            <label htmlFor="filtro-idade" className="text-white font-semibold text-xs tracking-wider uppercase mb-2 min-[360px]:min-h-8 lg:min-h-0">
+            <label htmlFor="filtro-idade" className="text-primary font-semibold text-xs tracking-wider uppercase mb-2 min-[360px]:min-h-8 lg:min-h-0">
               Faixa Etária:
             </label>
             <div className="relative">
@@ -169,7 +169,7 @@ export default function FiltroBusca({ onFilterChange }: FiltroBuscaProps) {
 
           {/* Filtro 2: Turno (Manhã, Tarde, Noite) */}
           <div className="flex min-w-0 flex-col last:col-span-1 min-[360px]:last:col-span-2 lg:last:col-span-1">
-            <label htmlFor="filtro-turno" className="text-white font-semibold text-xs tracking-wider uppercase mb-2 min-[360px]:min-h-8 lg:min-h-0">
+            <label htmlFor="filtro-turno" className="text-primary font-semibold text-xs tracking-wider uppercase mb-2 min-[360px]:min-h-8 lg:min-h-0">
               Turno:
             </label>
             <div className="relative">
@@ -191,7 +191,7 @@ export default function FiltroBusca({ onFilterChange }: FiltroBuscaProps) {
 
           {/* Filtro 3: Situação da Vaga */}
           <div className="flex min-w-0 flex-col last:col-span-1 min-[360px]:last:col-span-2 lg:last:col-span-1">
-            <label htmlFor="filtro-situacao" className="text-white font-semibold text-xs tracking-wider uppercase mb-2 min-[360px]:min-h-8 lg:min-h-0">
+            <label htmlFor="filtro-situacao" className="text-primary font-semibold text-xs tracking-wider uppercase mb-2 min-[360px]:min-h-8 lg:min-h-0">
               Situação da Vaga:
             </label>
             <div className="relative">
@@ -213,7 +213,7 @@ export default function FiltroBusca({ onFilterChange }: FiltroBuscaProps) {
 
           {/* Filtro 4: Categoria */}
           <div className="flex min-w-0 flex-col last:col-span-1 min-[360px]:last:col-span-2 lg:last:col-span-1">
-            <label htmlFor="filtro-categoria" className="text-white font-semibold text-xs tracking-wider uppercase mb-2 min-[360px]:min-h-8 lg:min-h-0">
+            <label htmlFor="filtro-categoria" className="text-primary font-semibold text-xs tracking-wider uppercase mb-2 min-[360px]:min-h-8 lg:min-h-0">
               Categoria:
             </label>
             <div className="relative">
@@ -237,7 +237,7 @@ export default function FiltroBusca({ onFilterChange }: FiltroBuscaProps) {
 
           {/* Filtro 5: Local */}
           <div className="flex min-w-0 flex-col last:col-span-1 min-[360px]:last:col-span-2 lg:last:col-span-1">
-            <label htmlFor="filtro-local" className="text-white font-semibold text-xs tracking-wider uppercase mb-2 min-[360px]:min-h-8 lg:min-h-0">
+            <label htmlFor="filtro-local" className="text-primary font-semibold text-xs tracking-wider uppercase mb-2 min-[360px]:min-h-8 lg:min-h-0">
               Local em Vitória:
             </label>
             <div className="relative">
@@ -262,7 +262,7 @@ export default function FiltroBusca({ onFilterChange }: FiltroBuscaProps) {
         </div>
 
         {/* Checkbox Opção Vagas Disponíveis */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mt-6 pt-4 border-t border-white/10">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mt-6 pt-4 border-t border-slate-200">
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -272,7 +272,7 @@ export default function FiltroBusca({ onFilterChange }: FiltroBuscaProps) {
               onChange={handleCheckboxChange}
               className="w-4 h-4 rounded text-accent accent-accent border-gray-300 focus:ring-accent cursor-pointer"
             />
-            <label htmlFor="somenteDisponiveis" className="text-white text-xs font-medium cursor-pointer select-none">
+            <label htmlFor="somenteDisponiveis" className="text-primary text-xs font-medium cursor-pointer select-none">
               Exibir somente turmas com vagas abertas no momento
             </label>
           </div>

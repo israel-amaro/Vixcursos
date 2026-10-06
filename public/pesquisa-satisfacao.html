@@ -6,8 +6,8 @@
     <title>Pesquisa de Satisfação | Qualifica Vix</title>
     <style>
         body {
-            background: #090f1d;
-            color: white;
+            background: #f7f9fd;
+            color: #24365a;
             font-family: system-ui, -apple-system, sans-serif;
             display: flex;
             justify-content: center;
@@ -17,8 +17,8 @@
             margin: 0;
         }
         .survey-card {
-            background: #111827;
-            border: 1px solid #1f2937;
+            background: #ffffff;
+            border: 1px solid #f1f5fb;
             border-radius: 16px;
             padding: 30px;
             width: 100%;
@@ -28,7 +28,7 @@
         }
         h1 {
             font-size: 1.5rem;
-            color: #ff8a5a;
+            color: #2e64bd;
             margin-top: 0;
             margin-bottom: 10px;
             text-align: center;
@@ -39,27 +39,27 @@
         label {
             display: block;
             font-size: 0.85rem;
-            color: #9ca3af;
+            color: #5f6f86;
             margin-bottom: 8px;
         }
         select, textarea {
             width: 100%;
             padding: 12px;
             border-radius: 8px;
-            border: 1px solid #374151;
-            background: #1f2937;
-            color: white;
+            border: 1px solid #dde5ef;
+            background: #f1f5fb;
+            color: #24365a;
             font-size: 0.9rem;
             box-sizing: border-box;
         }
         select:focus, textarea:focus {
-            outline: 2px solid #ff8a5a;
+            outline: 2px solid #2e64bd;
             border-color: transparent;
         }
         button {
             width: 100%;
             padding: 14px;
-            background: #ff8a5a;
+            background: #2e64bd;
             color: white;
             border: none;
             border-radius: 8px;
@@ -69,15 +69,17 @@
             transition: all 0.2s;
         }
         button:hover {
-            background: #f97316;
+            background: #254f96;
             transform: translateY(-1px);
         }
     </style>
+    <link rel="icon" type="image/png" href="/imagem/logo.png">
 </head>
 <body>
     <div class="survey-card">
+        <img src="/imagem/logo.png" alt="Qualifica Vix" style="display:block; width:180px; height:100px; object-fit:contain; margin:0 auto 8px;">
         <h1>Pesquisa de Satisfação</h1>
-        <p style="text-align: center; font-size: 0.8rem; color: #9ca3af; margin-bottom: 25px;">Sua opinião é muito importante para melhorarmos nossos cursos!</p>
+        <p style="text-align: center; font-size: 0.8rem; color: #5f6f86; margin-bottom: 25px;">Sua opinião é muito importante para melhorarmos nossos cursos!</p>
         <form id="satisfactionForm" onsubmit="enviarSatisfacao(event)">
             <div class="form-group">
                 <label>Avaliação do Instrutor (1 a 5 estrelas)</label>

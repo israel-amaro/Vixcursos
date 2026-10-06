@@ -15,12 +15,13 @@
         }
     </style>
     <script src="/admin/adminjs/session.js" defer></script>
+    <link rel="icon" type="image/png" href="/imagem/logo.png">
 </head>
 <body>
 
 <nav class="admin-sidebar">
     <a href="menu.html" class="sidebar-brand">
-        <span class="brand-icon"><i class="bi bi-mortarboard-fill" aria-hidden="true"></i></span>
+        <img class="sidebar-logo" src="/imagem/logo.png" alt="Qualifica Vix">
         <div>
             <span class="brand-name">Qualifica Vix</span>
             <span class="brand-sub">Área administrativa</span>
@@ -37,7 +38,7 @@
         <div class="sidebar-divider"></div>
         <a href="#" onclick="logout(); return false;" class="sidebar-link sidebar-link-danger"><i class="bi bi-box-arrow-right" aria-hidden="true"></i> <span>Sair</span></a>
     </nav>
-</aside>
+</nav>
 
 <main class="admin-main">
     <header class="admin-header">
@@ -49,7 +50,7 @@
             <button class="btn btn-primary" onclick="abrirModalFaq()"><i class="bi bi-plus-circle" aria-hidden="true"></i> Novo FAQ</button>
             <a href="menu.html" class="btn btn-outline" style="margin-left: 8px;"><i class="bi bi-arrow-left" aria-hidden="true"></i> Menu</a>
         </div>
-    </div>
+    </header>
 
     <div class="page-body">
         <div class="card">
@@ -73,7 +74,7 @@
             </div>
         </div>
     </div>
-</div>
+</main>
 
 <!-- Modal: Adicionar/Editar FAQ -->
 <div id="modalFaq" class="modal">
@@ -95,7 +96,7 @@
                 <div class="form-group" style="grid-column: 1 / -1;">
                     <label>Ordem de Exibição</label>
                     <input type="number" id="ordem" min="0" required value="0">
-                    <small style="color: #94a3b8; display: block; margin-top: 4px;">Menores números aparecem primeiro na lista do site.</small>
+                    <small style="color: #5f6f86; display: block; margin-top: 4px;">Menores números aparecem primeiro na lista do site.</small>
                 </div>
             </div>
             <div class="form-footer" style="margin-top: 20px;">

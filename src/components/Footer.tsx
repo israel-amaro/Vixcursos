@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import BrandLogo from './BrandLogo';
 import { Phone, Mail, MapPin, Clock, MessageSquareHeart } from 'lucide-react';
 
 interface FooterProps {
@@ -14,7 +15,7 @@ export default function Footer({ onOpenSurvey }: FooterProps) {
   };
 
   return (
-    <footer className="w-full bg-slate-900 text-white/80 py-12 sm:py-16 px-4 sm:px-6 md:px-12 border-t border-white/5 relative z-20">
+    <footer className="w-full bg-slate-50 text-slate-600 py-12 sm:py-16 px-4 sm:px-6 md:px-12 border-t border-slate-200 relative z-20">
       <div className="max-w-7xl mx-auto">
 
         {/* Main Grid */}
@@ -23,14 +24,10 @@ export default function Footer({ onOpenSurvey }: FooterProps) {
           {/* Column 1: Identity */}
           <div className="flex flex-col items-start">
             <div className="flex select-none mb-2">
-              <img
-                src="/imagem/qualifica-vix.svg"
-                alt="Qualifica Vix"
-                className="h-10 w-auto object-contain"
-              />
+              <BrandLogo className="footer-logo" />
             </div>
 
-            <p className="text-sm text-white/40 mt-4 max-w-xs leading-relaxed">
+            <p className="text-sm text-slate-600 mt-4 max-w-xs leading-relaxed">
               Plataforma oficial de cursos profissionalizantes gratuitos da Prefeitura Municipal de Vitória, Espírito Santo.
             </p>
 
@@ -52,7 +49,7 @@ export default function Footer({ onOpenSurvey }: FooterProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Facebook da PMV"
-                className="p-2 bg-white/5 hover:bg-white/10 rounded-full text-white/40 hover:text-white transition-all flex items-center justify-center"
+                className="p-2 bg-primary/5 hover:bg-primary/5 rounded-full text-slate-600 hover:text-primary transition-all flex items-center justify-center"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
               </a>
@@ -61,7 +58,7 @@ export default function Footer({ onOpenSurvey }: FooterProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram da PMV"
-                className="p-2 bg-white/5 hover:bg-white/10 rounded-full text-white/40 hover:text-white transition-all flex items-center justify-center"
+                className="p-2 bg-primary/5 hover:bg-primary/5 rounded-full text-slate-600 hover:text-primary transition-all flex items-center justify-center"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
               </a>
@@ -70,7 +67,7 @@ export default function Footer({ onOpenSurvey }: FooterProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="YouTube da PMV"
-                className="p-2 bg-white/5 hover:bg-white/10 rounded-full text-white/40 hover:text-white transition-all flex items-center justify-center"
+                className="p-2 bg-primary/5 hover:bg-primary/5 rounded-full text-slate-600 hover:text-primary transition-all flex items-center justify-center"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg>
               </a>
@@ -79,34 +76,34 @@ export default function Footer({ onOpenSurvey }: FooterProps) {
 
           {/* Column 2: Navigation Links */}
           <div className="flex flex-col items-start md:pl-10">
-            <h4 className="text-xs font-bold tracking-[0.2em] uppercase text-white/30 mb-6">
+            <h4 className="text-xs font-bold tracking-[0.2em] uppercase text-slate-600 mb-6">
               Navegação
             </h4>
             <nav className="flex flex-col gap-3 text-sm">
-              <Link to="/" className="text-white/50 hover:text-white transition-colors">
+              <Link to="/" className="text-slate-600 hover:text-primary transition-colors">
                 Início
               </Link>
               <button
                 onClick={() => handleNavClick('cursos-section')}
-                className="text-left text-white/50 hover:text-white transition-colors cursor-pointer"
+                className="text-left text-slate-600 hover:text-primary transition-colors cursor-pointer"
               >
                 Buscar Cursos
               </button>
               <button
                 onClick={() => handleNavClick('categorias-section')}
-                className="text-left text-white/50 hover:text-white transition-colors cursor-pointer"
+                className="text-left text-slate-600 hover:text-primary transition-colors cursor-pointer"
               >
                 Categorias
               </button>
               {onOpenSurvey && (
                 <button
                   onClick={onOpenSurvey}
-                  className="text-left text-white/50 hover:text-white transition-colors cursor-pointer"
+                  className="text-left text-slate-600 hover:text-primary transition-colors cursor-pointer"
                 >
                   Pesquisa de Satisfação
                 </button>
               )}
-              <Link to="/sobre" className="text-white/50 hover:text-white transition-colors">
+              <Link to="/sobre" className="text-slate-600 hover:text-primary transition-colors">
                 Sobre o Qualifica Vix
               </Link>
             </nav>
@@ -114,11 +111,11 @@ export default function Footer({ onOpenSurvey }: FooterProps) {
 
           {/* Column 3: Contact */}
           <div className="flex flex-col items-start">
-            <h4 className="text-xs font-bold tracking-[0.2em] uppercase text-white/30 mb-6">
+            <h4 className="text-xs font-bold tracking-[0.2em] uppercase text-slate-600 mb-6">
               Contato
             </h4>
 
-            <div className="flex flex-col gap-4 text-sm text-white/50">
+            <div className="flex flex-col gap-4 text-sm text-slate-600">
               <div className="flex items-start gap-3">
                 <Phone className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
                 <span>(27) 3135-1000</span>
@@ -144,21 +141,21 @@ export default function Footer({ onOpenSurvey }: FooterProps) {
         </div>
 
         {/* Separator */}
-        <div className="w-full h-[1px] bg-white/10 my-10" />
+        <div className="w-full h-[1px] bg-primary/5 my-10" />
 
         {/* Bottom footer */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-center">
-          <span className="text-[10px] text-white/20 tracking-wider font-mono">
+          <span className="text-[10px] text-slate-600 tracking-wider font-mono">
             © 2026 Qualifica Vix — Prefeitura Municipal de Vitória. Todos os direitos reservados.
           </span>
           <div className="flex flex-col sm:flex-row items-center gap-3 justify-center md:justify-end select-none">
-            <span className="text-[10px] text-white/20 tracking-wider font-mono">
+            <span className="text-[10px] text-slate-600 tracking-wider font-mono">
               Desenvolvido para a comunidade capixaba 💙
             </span>
-            <span className="text-white/10 hidden sm:inline">|</span>
+            <span className="text-slate-600 hidden sm:inline">|</span>
             <a
               href="/admin/login.html"
-              className="text-[10px] text-white/10 hover:text-white/40 hover:bg-white/[0.02] px-2 py-1 rounded transition-all duration-300 font-mono flex items-center gap-1.5 select-none border border-transparent hover:border-white/5"
+              className="text-[10px] text-slate-600 hover:text-slate-600 hover:bg-white/[0.02] px-2 py-1 rounded transition-all duration-300 font-mono flex items-center gap-1.5 select-none border border-transparent hover:border-slate-200"
               title="Painel de Administração"
             >
               <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

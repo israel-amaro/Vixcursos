@@ -94,12 +94,12 @@ async function carregarRelatorios() {
 }
 
 const PALETTE = [
-    '#f9c852', '#ff8a5a', '#3b82f6', '#10b981', '#6366f1', 
+    '#283e69', '#75429b', '#2e64bd', '#146844', '#6366f1',
     '#ec4899', '#14b8a6', '#f59e0b', '#84cc16', '#a855f7'
 ];
 
-const TEXT_COLOR = '#cbd5e1';
-const GRID_COLOR = '#334155';
+const TEXT_COLOR = '#50617c';
+const GRID_COLOR = '#dde5ef';
 
 function getChartData(rawData) {
     const labels = rawData.map(d => d.label || 'Não informado');
@@ -120,7 +120,7 @@ function renderDoughnutChart(canvasId, rawData, label) {
                 data: values,
                 backgroundColor: PALETTE.slice(0, values.length),
                 borderWidth: 1,
-                borderColor: '#1e293b'
+                borderColor: '#ffffff'
             }]
         },
         options: {
@@ -149,7 +149,7 @@ function renderPieChart(canvasId, rawData, label) {
                 data: values,
                 backgroundColor: PALETTE.slice(0, values.length),
                 borderWidth: 1,
-                borderColor: '#1e293b'
+                borderColor: '#ffffff'
             }]
         },
         options: {
@@ -177,7 +177,7 @@ function renderBarChart(canvasId, rawData, label) {
             datasets: [{
                 label: 'Inscrições',
                 data: values,
-                backgroundColor: '#3b82f6',
+                backgroundColor: '#2e64bd',
                 borderWidth: 0,
                 borderRadius: 4
             }]
@@ -214,7 +214,7 @@ function renderHorizontalBarChart(canvasId, rawData, label) {
             datasets: [{
                 label: 'Inscrições',
                 data: values,
-                backgroundColor: '#ff8a5a',
+                backgroundColor: '#75429b',
                 borderWidth: 0,
                 borderRadius: 4
             }]

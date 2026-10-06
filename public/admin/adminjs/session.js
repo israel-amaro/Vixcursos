@@ -14,7 +14,8 @@ document.addEventListener('DOMContentLoaded', () => {
         button.className = 'nav-link';
         button.dataset.adminLogout = 'true';
         button.style.cssText = 'border:0;background:transparent;width:100%;cursor:pointer;text-align:left';
-        button.textContent = 'Sair do painel';
+        button.setAttribute('aria-label', 'Sair do painel');
+        button.innerHTML = '<span class="ni"><i class="bi bi-box-arrow-right" aria-hidden="true"></i></span><span>Sair</span>';
         button.addEventListener('click', logout);
         nav.appendChild(button);
     }

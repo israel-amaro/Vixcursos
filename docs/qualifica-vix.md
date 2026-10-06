@@ -80,3 +80,9 @@ O projeto usa Node.js 24. A dependência `jose` de `jwks-rsa` está restrita à 
 O frontend usa o SDK Firebase instalado e passa um ID token ao servidor. O Admin SDK verifica o token, a autorização e o acesso recente, e cria uma sessão de oito horas em cookie HttpOnly, SameSite e Secure em produção. Sessões expiradas, revogadas ou de contas desativadas não dão acesso. A senha não é enviada ao backend do portal nem fica salva no navegador. O login tem tempo limite e permite tentar novamente quando há falha.
 
 O backend conecta o Realtime Database apenas quando precisa dos dados; a consulta de sessão não depende dessa conexão. Produção sempre usa Firebase, inclusive se existirem variáveis antigas de banco externo. `DB_PROVIDER=local` é permitido somente para demonstração fora de produção. A integração anterior com banco externo e o script de mock foram removidos.
+
+## Identidade visual e abertura
+
+A logo fornecida está em `public/imagem/logo.png`, compartilhada pelo portal, login e páginas administrativas, pesquisas e certificado. A interface usa branco como base, azul nos textos e ações e roxo e verde nos detalhes, seguindo a marca. Formulários, chat, tabelas, gráficos e modais acompanham a mesma paleta.
+
+A home reproduz a abertura enviada pelo Cloudinary com vídeo silencioso e inline, preservando a proporção em computador e celular. A abertura aparece uma vez por sessão da aba, tem botão de pular e saída por Escape, e libera a página ao terminar ou falhar. Um limite de 15 segundos evita bloquear o acesso quando a conexão é lenta. Quem prefere movimento reduzido acessa diretamente o portal. A antiga animação de logos foi removida.
