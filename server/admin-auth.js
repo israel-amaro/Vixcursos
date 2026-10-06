@@ -16,6 +16,7 @@ function firebaseUnavailable(error) {
         'auth/insufficient-permission': 'A conta de serviço não tem permissão para gerenciar sessões no Firebase Authentication. Confira as permissões no Google Cloud.',
         'MODULE_NOT_FOUND': 'Uma dependência da autenticação está ausente no servidor. É necessário corrigir o deploy do portal.',
         'ERR_MODULE_NOT_FOUND': 'Uma dependência da autenticação está ausente no servidor. É necessário corrigir o deploy do portal.',
+        'ERR_REQUIRE_ESM': 'Uma dependência da autenticação é incompatível com o servidor. É necessário atualizar o deploy do portal.',
     };
     // Never return/log the SDK message: parsing and credential errors may contain secrets.
     const code = typeof error?.code === 'string' && /^[a-zA-Z0-9_/-]{1,80}$/.test(error.code) ? error.code : 'firebase/unavailable';
@@ -40,7 +41,7 @@ function createAdminAuth(options = {}) {
             const user = await withTimeout(auth().verifySessionCookie(token, true));
             return permitted(user) ? user : null;
         } catch (error) {
-            if (error.status === 503 || ['auth/invalid-credential', 'app/invalid-credential', 'auth/insufficient-permission', 'MODULE_NOT_FOUND', 'ERR_MODULE_NOT_FOUND'].includes(error.code)) throw Object.assign(error, { status: 503 });
+            if (error.status === 503 || ['auth/invalid-credential', 'app/invalid-credential', 'auth/insufficient-permission', 'MODULE_NOT_FOUND', 'ERR_MODULE_NOT_FOUND', 'ERR_REQUIRE_ESM'].includes(error.code)) throw Object.assign(error, { status: 503 });
             return null;
         }
     };

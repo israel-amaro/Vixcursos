@@ -1,9 +1,15 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { generateKeyPairSync } = require('node:crypto');
+const { spawnSync } = require('node:child_process');
 const { deleteApp } = require('firebase-admin/app');
 const { getAuth } = require('firebase-admin/auth');
 const { getFirebaseAdminApp, parseServiceAccount } = require('../server/firebase-admin');
+
+test('SDK Authentication carrega sem suporte a require de ESM, como no servidor Vercel', () => {
+    const result = spawnSync(process.execPath, ['--no-experimental-require-module', '-e', "require('firebase-admin/auth');"], { encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+});
 
 test('Conta de serviço: JSON e atribuição copiada inicializam a validação real do SDK', async () => {
     const { privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });

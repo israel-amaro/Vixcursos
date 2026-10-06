@@ -65,6 +65,8 @@ A leitura sem autenticação do Firebase retornou HTTP 401 após a aplicação d
 
 Na Vercel, o campo **Name** é `FIREBASE_SERVICE_ACCOUNT_JSON` e o campo **Value** contém o JSON completo. O servidor também aceita `FIREBASE_SERVICE_ACCOUNT_JSON={...}` quando a atribuição inteira é colada no valor. Falhas de configuração, chave e permissão exibem uma orientação e um código seguro no login; o conteúdo da credencial nunca é incluído no erro nem nos Logs.
 
+O projeto usa Node.js 24. A dependência `jose` de `jwks-rsa` está restrita à versão 5, com suporte a CommonJS, para evitar `ERR_REQUIRE_ESM` ao carregar Firebase Authentication no ambiente serverless. O teste de configuração carrega o SDK com `--no-experimental-require-module` para reproduzir essa condição de produção.
+
 O frontend usa o SDK Firebase instalado e passa um ID token ao servidor. O Admin SDK verifica o token, a autorização e o acesso recente, e cria uma sessão de oito horas em cookie HttpOnly, SameSite e Secure em produção. Sessões expiradas, revogadas ou de contas desativadas não dão acesso. A senha não é enviada ao backend do portal nem fica salva no navegador. O login tem tempo limite e permite tentar novamente quando há falha.
 
 O backend conecta o Realtime Database apenas quando precisa dos dados; a consulta de sessão não depende dessa conexão. Produção sempre usa Firebase, inclusive se existirem variáveis antigas de banco externo. `DB_PROVIDER=local` é permitido somente para demonstração fora de produção. A integração anterior com banco externo e o script de mock foram removidos.
