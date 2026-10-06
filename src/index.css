@@ -142,7 +142,7 @@ html, body { background: #f3f6fa; color: #24365a; color-scheme: light; }
 .brand-logo { object-fit: contain; flex-shrink: 0; }
 .header-logo { width: 190px; height: 84px; }
 .footer-logo { width: 210px; height: 112px; }
-.intro-video { height: 100dvh; outline: none !important; }
+.intro-video { top: var(--app-viewport-top, 0px); bottom: auto; height: var(--app-viewport-height, 100dvh); outline: none !important; }
 body:has(.intro-video) .chat-launcher, body:has(.intro-video) .floating-home { visibility: hidden; }
 button, a, input, select, textarea { touch-action: manipulation; }
 .floating-home { bottom: 1.5rem; right: 1.5rem; }
@@ -211,11 +211,23 @@ button, a, input, select, textarea { touch-action: manipulation; }
 
 /* Subtle separation between content surfaces, with visible hero photography. */
 .hero-photo-shade { background: linear-gradient(90deg, rgba(255,255,255,.94) 0%, rgba(249,251,255,.84) 36%, rgba(244,248,254,.60) 65%, rgba(239,244,252,.32) 100%); }
+.hero-title-city { text-transform: lowercase; }
 #cursos-section { background: #eaf0f8; border-color: #d5e0ef; }
 #cursos-list-section { background: linear-gradient(180deg, #f2f5fa, #f8fafc); }
 .card-curso { border: 1px solid #dce5f0; box-shadow: 0 6px 24px rgba(40,62,105,.07); }
 .card-curso:hover { box-shadow: 0 14px 32px rgba(40,62,105,.12); }
 .site-header { box-shadow: 0 2px 16px rgba(40,62,105,.045); }
 @media (max-width: 639px) {
-  .hero-photo-shade { background: linear-gradient(180deg, rgba(255,255,255,.90), rgba(246,249,254,.78) 45%, rgba(239,244,252,.65)); }
+  .hero-photo-shade { background: linear-gradient(180deg, rgba(243,247,253,.96), rgba(242,247,254,.91) 45%, rgba(233,240,251,.86)); }
+  .home-hero .hero-content { padding: 108px 24px 28px; gap: 0; }
+  .home-hero .hero-title { font-size: clamp(1.75rem, 8vw, 2.125rem); line-height: 1.12; letter-spacing: -.035em; text-wrap: balance; }
+  .home-hero .hero-title-city { display: block; margin-top: 12px; font-family: var(--font-sans); font-size: 1rem; font-weight: 600; line-height: 1.4; letter-spacing: 0; text-transform: none; }
+  .home-hero .hero-description { margin-top: 14px; font-weight: 400; line-height: 1.65; }
+  .home-hero .hero-benefits { gap: 8px; margin-top: 16px; font-size: 12px; letter-spacing: -.02em; }
+  .home-hero .hero-benefits > span { padding: 5px 7px; border-color: rgba(40,62,105,.12); background: rgba(255,255,255,.64); }
+  .home-hero .hero-actions { margin-top: 22px; gap: 8px; }
+  .home-hero .hero-primary-action { min-height: 52px; font-size: 13px; letter-spacing: .025em; border-radius: 14px; }
+  .home-hero .hero-quiz-action { padding: 10px 8px; font-size: 12px; text-transform: none; letter-spacing: 0; font-weight: 600; border-color: transparent; background: transparent; backdrop-filter: none; box-shadow: none; }
+  .home-hero .hero-quiz-action:hover { background: rgba(255,255,255,.6); }
+  .home-hero .hero-mobile-summary { padding-right: 64px; }
 }

@@ -37,7 +37,7 @@ export default function IntroVideo({ onFinish }: { onFinish: () => void }) {
     exit={{ opacity: 0, filter: 'blur(22px)', scale: 1.015 }}
     transition={{ duration: 1.3, ease: [0.22, 1, 0.36, 1] }}>
     <video src={INTRO_VIDEO_URL} autoPlay muted playsInline preload="auto"
-      aria-label="Abertura da Prefeitura de Vitória" className="h-full w-full object-cover"
+      aria-label="Abertura da Prefeitura de Vitória" className="h-full w-full object-contain"
       onEnded={onFinish} onError={onFinish} />
   </motion.div>;
 }

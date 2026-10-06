@@ -58,7 +58,7 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
   };
 
   return (
-    <section className="w-full relative overflow-hidden bg-white flex flex-col justify-between border-b border-slate-200">
+    <section className="home-hero w-full relative overflow-hidden bg-white flex flex-col justify-between border-b border-slate-200">
       
       {/* Background Image Carousel with Smooth Transitions */}
       <div className="absolute inset-0 z-0 overflow-hidden">
@@ -91,7 +91,7 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
       <Header transparent={true} />
 
       {/* Hero Content — Responsive layout for mobile and desktop */}
-      <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 md:px-12 flex-grow flex flex-col lg:flex-row items-center justify-between pt-24 pb-8 sm:pt-28 sm:pb-12 md:pt-32 md:pb-16 gap-6 sm:gap-8">
+      <div className="hero-content relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 md:px-12 flex-grow flex flex-col lg:flex-row items-center justify-between pt-24 pb-8 sm:pt-28 sm:pb-12 md:pt-32 md:pb-16 gap-6 sm:gap-8">
         
         {/* Left Column: Title & Main Action Buttons */}
         <motion.div
@@ -100,20 +100,20 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
           transition={{ duration: 0.7, ease: 'easeOut' }}
           className="flex flex-col items-start text-left max-w-2xl w-full"
         >
-          <h1 className="text-[1.875rem] sm:text-4xl md:text-5xl lg:text-6xl font-display font-extrabold leading-[1.1] sm:leading-[1.05] tracking-tight text-primary">
-            Cursos de qualificação profissional - prefeitura de vitória
+          <h1 className="hero-title text-[1.875rem] sm:text-4xl md:text-5xl lg:text-6xl font-display font-extrabold leading-[1.1] sm:leading-[1.05] tracking-tight text-primary">
+            <span>Cursos de qualificação profissional</span>{' '}<span className="hero-title-city">Prefeitura de Vitória</span>
           </h1>
           
-          <p className="text-sm sm:text-sm md:text-base text-slate-600 max-w-xl mt-2.5 sm:mt-4 leading-relaxed font-medium">
-            Cursos gratuitos da Prefeitura de Vitória para aumentar suas oportunidades de trabalho. Escolha um curso e faça sua pré-inscrição em poucos minutos.
+          <p className="hero-description text-sm sm:text-sm md:text-base text-slate-600 max-w-xl mt-2.5 sm:mt-4 leading-relaxed font-medium">
+            <span className="hidden sm:inline">Cursos gratuitos da Prefeitura de Vitória para aumentar suas oportunidades de trabalho. </span>Escolha um curso<span className="sm:hidden"> gratuito</span> e faça sua pré-inscrição em poucos minutos.
           </p>
           
           {/* Answer Key Questions Pills */}
-          <div className="flex flex-wrap gap-2 sm:gap-2.5 mt-3 sm:mt-4 text-[11px] sm:text-xs font-semibold">
+          <div className="hero-benefits flex flex-wrap gap-2 sm:gap-2.5 mt-3 sm:mt-4 text-[11px] sm:text-xs font-semibold">
             <span className="px-2.5 py-1 sm:px-3 sm:py-1 bg-primary/5 backdrop-blur-md rounded-lg text-primary border border-slate-200">
               ✓ 100% Gratuito
             </span>
-            <span className="px-2.5 py-1 sm:px-3 sm:py-1 bg-primary/5 backdrop-blur-md rounded-lg text-primary border border-slate-200">
+            <span className="hidden sm:inline-block px-2.5 py-1 sm:px-3 sm:py-1 bg-primary/5 backdrop-blur-md rounded-lg text-primary border border-slate-200">
               ✓ Vagas Abertas
             </span>
             <span className="px-2.5 py-1 sm:px-3 sm:py-1 bg-primary/5 backdrop-blur-md rounded-lg text-primary border border-slate-200">
@@ -122,10 +122,10 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
           </div>
 
           {/* MAIN PRIMARY CTA + Secondary Quiz */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mt-5 sm:mt-7 w-full sm:w-auto">
+          <div className="hero-actions flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mt-5 sm:mt-7 w-full sm:w-auto">
             <button
               onClick={() => scrollToSection('cursos-list-section')}
-              className="px-6 sm:px-9 py-3.5 sm:py-4 bg-accent hover:bg-accent/90 text-white rounded-2xl font-extrabold text-xs sm:text-sm tracking-wider uppercase shadow-[0_8px_25px_rgba(46,100,189,0.2)] active:scale-95 transition-all duration-300 w-full sm:w-auto text-center cursor-pointer flex items-center justify-center gap-2"
+              className="hero-primary-action px-6 sm:px-9 py-3.5 sm:py-4 bg-accent hover:bg-accent/90 text-white rounded-2xl font-extrabold text-xs sm:text-sm tracking-wider uppercase shadow-[0_8px_25px_rgba(46,100,189,0.2)] active:scale-95 transition-all duration-300 w-full sm:w-auto text-center cursor-pointer flex items-center justify-center gap-2"
             >
               <Search className="w-4 h-4" />
               QUERO ME INSCREVER
@@ -134,7 +134,7 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
             {onOpenQuiz && (
               <button
                 onClick={onOpenQuiz}
-                className="px-5 sm:px-6 py-3.5 sm:py-4 glass hover:bg-white/95 text-slate-600 rounded-2xl font-bold text-[11px] sm:text-xs tracking-wider uppercase active:scale-95 transition-all duration-300 w-full sm:w-auto text-center cursor-pointer flex items-center justify-center gap-2 border border-slate-200 backdrop-blur-md"
+                className="hero-quiz-action px-5 sm:px-6 py-3.5 sm:py-4 glass hover:bg-white/95 text-slate-600 rounded-2xl font-bold text-[11px] sm:text-xs tracking-wider uppercase active:scale-95 transition-all duration-300 w-full sm:w-auto text-center cursor-pointer flex items-center justify-center gap-2 border border-slate-200 backdrop-blur-md"
               >
                 <HelpCircle className="w-4 h-4 text-accent" />
                 Não sabe qual escolher? (Quiz)
@@ -143,7 +143,7 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
           </div>
 
           {/* Carousel Navigation Indicators (Dots) */}
-          <div className="flex items-center gap-2 mt-4 sm:mt-6 select-none">
+          <div className="hidden sm:flex items-center gap-2 mt-4 sm:mt-6 select-none">
             {heroImages.map((_, idx) => (
               <button
                 key={idx}
@@ -157,6 +157,13 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
               </button>
             ))}
           </div>
+          <div className="hero-mobile-summary flex sm:hidden items-center gap-3 w-full mt-5 pt-4 border-t border-primary/15">
+            <img src="/imagem/Vitoruga.png" alt="Vitoruga, assistente virtual do Qualifica Vix" className="w-12 h-12 shrink-0 object-contain" />
+            <div className="min-w-0">
+              <p className="text-sm font-bold text-primary">{stats.cursosAbertos} cursos abertos</p>
+              <p className="text-xs text-slate-600 mt-1">{stats.vagasRestantes} vagas abertas</p>
+            </div>
+          </div>
         </motion.div>
 
         {/* Right Column: Glassmorphism Statistics Card (Grayish Frosted Glass) */}
@@ -164,7 +171,7 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="w-full sm:max-w-[340px] lg:shrink-0 bg-white/95 backdrop-blur-2xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-[0_20px_55px_rgba(40,62,105,0.14)] flex flex-col border border-slate-200 relative overflow-hidden mt-1 sm:mt-0"
+          className="hidden sm:flex w-full sm:max-w-[340px] lg:shrink-0 bg-white/95 backdrop-blur-2xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-[0_20px_55px_rgba(40,62,105,0.14)] flex-col border border-slate-200 relative overflow-hidden mt-1 sm:mt-0"
         >
           {/* Subtle Glass Highlight Glow */}
           <div className="absolute -top-12 -right-12 w-28 h-28 bg-primary/5 rounded-full filter blur-xl pointer-events-none" />
