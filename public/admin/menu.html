@@ -98,7 +98,7 @@
     <div class="modal-content">
         <button class="fechar-modal" onclick="fecharModal()">&times;</button>
         <p class="modal-title" id="tituloModalCurso">Cadastrar Novo Curso</p>
-        <p class="modal-desc">Preencha os dados abaixo para abrir uma nova turma.</p>
+        <p class="modal-desc">Os dados e a tartaruga desta turma serão exibidos no site.</p>
         <form id="formCriarCurso" onsubmit="criarCurso(event)">
             <input type="hidden" id="categoria_id">
             <div class="form-grid">
@@ -113,7 +113,7 @@
                 </div>
                 <div class="form-group">
                     <label for="status">Situação no site</label>
-                    <select id="status"><option value="ativo">Ativo — aparece no site</option><option value="esgotado">Esgotado — sem pré-inscrição</option><option value="arquivado">Arquivado — oculto no site</option></select>
+                    <select id="status"><option value="ativo">Ativo — aparece no site</option><option value="esgotado">Esgotado — somente lista de espera</option><option value="arquivado">Arquivado — oculto no site</option></select>
                 </div>
                 <div class="form-group">
                     <label>Local / Polo</label>
