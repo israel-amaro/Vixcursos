@@ -61,7 +61,7 @@ export default function Depoimentos() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-10%' }}
               transition={{ duration: 0.7, delay: index * 0.15, ease: 'easeOut' }}
-              className="bg-slate-50/50 p-5 sm:p-8 rounded-2xl border border-slate-100 hover:shadow-lg hover:border-slate-200 transition-all duration-300 flex flex-col justify-between"
+              className="bg-[#f1f5fb] p-5 sm:p-8 rounded-2xl border border-[#dce5f0] hover:shadow-lg hover:border-slate-200 transition-all duration-300 flex flex-col justify-between"
             >
               <div>
                 {/* 5 Estrelas */}

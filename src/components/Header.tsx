@@ -75,9 +75,9 @@ export default function Header({ transparent = false }: HeaderProps) {
           <BrandLogo className="header-logo" />
           <div className="w-[1px] h-8 bg-slate-200 hidden sm:block" />
           <img
-            src="/imagem/prefeitura.png"
+            src="/imagem/prefeitura-preto-transparente.png"
             alt="Prefeitura de Vitória"
-            className="h-10 md:h-11 w-auto object-contain hidden sm:block bg-primary rounded-lg px-3 py-2"
+            className="h-10 md:h-11 w-auto max-w-[155px] object-contain hidden sm:block"
           />
         </Link>
 

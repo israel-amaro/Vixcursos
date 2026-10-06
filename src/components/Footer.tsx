@@ -15,7 +15,7 @@ export default function Footer({ onOpenSurvey }: FooterProps) {
   };
 
   return (
-    <footer className="w-full bg-slate-50 text-slate-600 py-12 sm:py-16 px-4 sm:px-6 md:px-12 border-t border-slate-200 relative z-20">
+    <footer className="w-full bg-[#e9eff7] text-slate-600 py-12 sm:py-16 px-4 sm:px-6 md:px-12 border-t border-[#d4deed] relative z-20">
       <div className="max-w-7xl mx-auto">
 
         {/* Main Grid */}

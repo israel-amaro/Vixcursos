@@ -12,7 +12,7 @@
   --color-secondary: #75429b;
   --color-accent: #2e64bd;
   --color-coral: #75429b;
-  --color-bg-light: #ffffff;
+  --color-bg-light: #f3f6fa;
   --color-text-dark: #24365a;
   --color-success: #146844;
   --color-danger: #ef4444;
@@ -29,7 +29,7 @@
   border: 1px solid #dde5ef;
 }
 
-/* Glassmorphism escuro */
+/* Superfície clara de destaque */
 .glass-dark {
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(12px);
@@ -138,11 +138,11 @@ html.lenis {
 }
 
 html { scroll-padding-top: 6rem; }
-html, body { background: #ffffff; color: #24365a; color-scheme: light; }
+html, body { background: #f3f6fa; color: #24365a; color-scheme: light; }
 .brand-logo { object-fit: contain; flex-shrink: 0; }
 .header-logo { width: 190px; height: 84px; }
 .footer-logo { width: 210px; height: 112px; }
-.intro-video { padding-bottom: env(safe-area-inset-bottom); }
+.intro-video { height: 100dvh; outline: none !important; }
 body:has(.intro-video) .chat-launcher, body:has(.intro-video) .floating-home { visibility: hidden; }
 button, a, input, select, textarea { touch-action: manipulation; }
 .floating-home { bottom: 1.5rem; right: 1.5rem; }
@@ -207,4 +207,15 @@ button, a, input, select, textarea { touch-action: manipulation; }
 @media (prefers-reduced-motion: reduce) {
   .animate-float, .animate-pulse-slow { animation: none; }
   html { scroll-behavior: auto; }
+}
+
+/* Subtle separation between content surfaces, with visible hero photography. */
+.hero-photo-shade { background: linear-gradient(90deg, rgba(255,255,255,.94) 0%, rgba(249,251,255,.84) 36%, rgba(244,248,254,.60) 65%, rgba(239,244,252,.32) 100%); }
+#cursos-section { background: #eaf0f8; border-color: #d5e0ef; }
+#cursos-list-section { background: linear-gradient(180deg, #f2f5fa, #f8fafc); }
+.card-curso { border: 1px solid #dce5f0; box-shadow: 0 6px 24px rgba(40,62,105,.07); }
+.card-curso:hover { box-shadow: 0 14px 32px rgba(40,62,105,.12); }
+.site-header { box-shadow: 0 2px 16px rgba(40,62,105,.045); }
+@media (max-width: 639px) {
+  .hero-photo-shade { background: linear-gradient(180deg, rgba(255,255,255,.90), rgba(246,249,254,.78) 45%, rgba(239,244,252,.65)); }
 }

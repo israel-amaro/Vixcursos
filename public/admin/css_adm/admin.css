@@ -10,12 +10,12 @@
     --danger-hover: #dc2626;
     --success: #10b981;
     --warning: #f59e0b;
-    --bg: #f7f9fd;
+    --bg: #edf2f8;
     --surface: #ffffff;
-    --surface-2: #f7f9fd;
+    --surface-2: #eaf0f8;
     --text: #24365a;
     --text-light: #5f6f86;
-    --border: #dde5ef;
+    --border: #d6e0ed;
     --sidebar-w: 230px;
 }
 
@@ -30,7 +30,7 @@
 body {
     font-family: Inter, "Segoe UI", system-ui, sans-serif;
     color: var(--text);
-    background: #f7f9fd;
+    background: #edf2f8;
     display: flex;
     min-height: 100vh;
     position: relative;
@@ -59,7 +59,7 @@ body::after {
 
 .admin-sidebar {
     width: var(--sidebar-w);
-    background: #ffffff;
+    background: #e7edf6;
     backdrop-filter: blur(14px);
     border-right: 1px solid var(--border);
     position: fixed;
@@ -138,7 +138,7 @@ body::after {
 .nav-link.active {
     background: linear-gradient(135deg, #2e64bd, #283e69);
     color: white;
-    box-shadow: 0 12px 24px rgba(79, 70, 229, 0.3);
+    box-shadow: 0 12px 24px rgba(46, 100, 189, 0.17);
 }
 
 .nav-link .ni {
@@ -1027,3 +1027,7 @@ input, select, textarea { color: var(--text); background-color: #fff; accent-col
   .admin-main { margin-bottom: calc(84px + env(safe-area-inset-bottom)); }
   .sidebar-nav button[data-admin-logout] { width: auto !important; }
 }
+
+.card, .kpi-card { box-shadow: 0 6px 22px rgba(40,62,105,.055); }
+.sidebar-brand { background: rgba(255,255,255,.38); }
+.page-header, .admin-header { box-shadow: 0 2px 14px rgba(40,62,105,.035); }

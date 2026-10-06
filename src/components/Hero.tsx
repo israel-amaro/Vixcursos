@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CalendarCheck, BookOpen, GraduationCap, ExternalLink, Search, HelpCircle, MapPinCheck } from 'lucide-react';
+import { CalendarCheck, BookOpen, GraduationCap, ExternalLink, Search, HelpCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Header from './Header';
 import { usePublicCourses } from '../lib/usePublicCourses';
@@ -72,14 +72,14 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
             <img
               src={imgUrl}
               alt={`Profissão ${index + 1}`}
-              className="w-full h-full object-cover object-center filter brightness-[0.88] saturate-[1.10] contrast-[1.05]"
+              className="w-full h-full object-cover object-center saturate-[1.04] contrast-[1.02]"
             />
           </div>
         ))}
 
         {/* Softened Overlays for Vibrant Images with High Readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/90 to-white/80" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-white/40 via-transparent to-white/70" />
+        <div className="absolute inset-0 hero-photo-shade" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-white/10 via-transparent to-white/20" />
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-accent/10 rounded-full filter blur-[120px] pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/15 rounded-full filter blur-[100px] pointer-events-none" />
         
@@ -100,12 +100,6 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
           transition={{ duration: 0.7, ease: 'easeOut' }}
           className="flex flex-col items-start text-left max-w-2xl w-full"
         >
-          {/* Eligibility Badge */}
-          <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 rounded-full bg-accent/20 border border-accent/30 text-accent text-[11px] sm:text-xs font-bold mb-3 sm:mb-4 shadow-sm backdrop-blur-md">
-            <MapPinCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
-            <span className="leading-tight">Exclusivo para moradores de Vitória e/ou trabalhadores na cidade</span>
-          </div>
-          
           <h1 className="text-[1.875rem] sm:text-4xl md:text-5xl lg:text-6xl font-display font-extrabold leading-[1.1] sm:leading-[1.05] tracking-tight text-primary">
             Cursos de qualificação profissional - prefeitura de vitória
           </h1>
@@ -140,7 +134,7 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
             {onOpenQuiz && (
               <button
                 onClick={onOpenQuiz}
-                className="px-5 sm:px-6 py-3.5 sm:py-4 glass hover:bg-white/15 text-slate-600 rounded-2xl font-bold text-[11px] sm:text-xs tracking-wider uppercase active:scale-95 transition-all duration-300 w-full sm:w-auto text-center cursor-pointer flex items-center justify-center gap-2 border border-slate-200 backdrop-blur-md"
+                className="px-5 sm:px-6 py-3.5 sm:py-4 glass hover:bg-white/95 text-slate-600 rounded-2xl font-bold text-[11px] sm:text-xs tracking-wider uppercase active:scale-95 transition-all duration-300 w-full sm:w-auto text-center cursor-pointer flex items-center justify-center gap-2 border border-slate-200 backdrop-blur-md"
               >
                 <HelpCircle className="w-4 h-4 text-accent" />
                 Não sabe qual escolher? (Quiz)
@@ -170,7 +164,7 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="w-full sm:max-w-[340px] lg:shrink-0 bg-white/95 backdrop-blur-2xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-[0_12px_40px_rgba(40,62,105,0.08)] flex flex-col border border-slate-200 relative overflow-hidden mt-1 sm:mt-0"
+          className="w-full sm:max-w-[340px] lg:shrink-0 bg-white/95 backdrop-blur-2xl p-4 sm:p-6 rounded-2xl sm:rounded-3xl shadow-[0_20px_55px_rgba(40,62,105,0.14)] flex flex-col border border-slate-200 relative overflow-hidden mt-1 sm:mt-0"
         >
           {/* Subtle Glass Highlight Glow */}
           <div className="absolute -top-12 -right-12 w-28 h-28 bg-primary/5 rounded-full filter blur-xl pointer-events-none" />
@@ -186,7 +180,7 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
 
           <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-col sm:gap-3.5">
             {/* Stat 1: Cursos com Inscrições Abertas */}
-            <div className="flex min-w-0 flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-primary/5 backdrop-blur-md border border-slate-200 hover:bg-white/15 transition-all">
+            <div className="flex min-w-0 flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-blue-50/90 backdrop-blur-md border border-blue-100 hover:bg-blue-100/70 transition-all">
               <div className="hidden sm:block p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-accent/25 text-accent shadow-sm flex-shrink-0">
                 <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               </div>
@@ -201,7 +195,7 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
             </div>
 
             {/* Stat 2: Total Vagas Restantes */}
-            <div className="flex min-w-0 flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-primary/5 backdrop-blur-md border border-slate-200 hover:bg-white/15 transition-all">
+            <div className="flex min-w-0 flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-blue-50/90 backdrop-blur-md border border-blue-100 hover:bg-blue-100/70 transition-all">
               <div className="hidden sm:block p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-accent/25 text-accent shadow-sm flex-shrink-0">
                 <CalendarCheck className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               </div>
@@ -216,7 +210,7 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
             </div>
 
             {/* Stat 3: Iniciando esta semana */}
-            <div className="flex min-w-0 flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-primary/5 backdrop-blur-md border border-slate-200 hover:bg-white/15 transition-all">
+            <div className="flex min-w-0 flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-blue-50/90 backdrop-blur-md border border-blue-100 hover:bg-blue-100/70 transition-all">
               <div className="hidden sm:block p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-accent/25 text-accent shadow-sm flex-shrink-0">
                 <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               </div>
