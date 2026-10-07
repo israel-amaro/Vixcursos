@@ -1,0 +1,36 @@
+#modalNovoCurso .modal-content { width: min(800px, calc(100% - 24px)); height: min(92dvh, 960px); max-height: 92dvh; padding: 0; display: flex; flex-direction: column; overflow: hidden; }
+.curso-form-header { padding: 24px 72px 20px 28px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+#modalNovoCurso .modal-title { font-size: 1.4rem; margin-bottom: 7px; }
+.curso-form-header p { font-size: 1rem; line-height: 1.5; color: var(--text-light); }
+#modalNovoCurso .fechar-modal { width: 44px; height: 44px; font-size: 1.8rem; right: 20px; top: 20px; border: 1px solid var(--border); }
+#formCriarCurso { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.curso-form-scroll { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 24px 28px 8px; }
+.curso-form-section { min-width: 0; border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 24px; }
+.curso-form-section legend { padding: 0 8px; font-weight: 700; font-size: 1.05rem; }
+#formCriarCurso .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.curso-form-full { grid-column: 1 / -1; }
+#formCriarCurso label { font-size: 1rem; line-height: 1.4; }
+#formCriarCurso input, #formCriarCurso select, #formCriarCurso textarea { font-family: inherit; font-size: 1rem; min-height: 48px; padding: 11px 12px; }
+#formCriarCurso small, .curso-form-help { font-size: .9rem; line-height: 1.6; color: var(--text-light); }
+.curso-situacao { padding: 14px 16px; margin-bottom: 18px; border-radius: 10px; background: var(--surface-2); line-height: 1.6; }
+.curso-situacao p { margin-top: 4px; font-size: .95rem; }
+#publicacaoAgendada { margin-top: 20px; }
+.curso-resumo { font-size: 1rem; line-height: 1.6; margin-top: 18px; padding: 14px; border-left: 4px solid var(--primary); background: #f4f7fc; border-radius: 6px; }
+.curso-resumo[data-encerrado="true"] { border-color: #bc6a11; background: #fff8ed; }
+.curso-opcionais summary { font-size: 1rem; font-weight: 650; cursor: pointer; min-height: 32px; }
+.curso-opcionais[open] > .form-grid { margin-top: 20px; }
+#mascotePreview { object-fit: contain; }
+.curso-form-footer { padding: 16px 28px; border-top: 1px solid var(--border); flex-shrink: 0; background: white; }
+.curso-form-buttons { display: flex; justify-content: flex-end; gap: 12px; }
+.curso-form-buttons .btn { min-height: 48px; padding: 12px 22px; font-size: 1rem; }
+#erroFormularioCurso { color: #a32435; font-size: 1rem; line-height: 1.5; margin-bottom: 12px; }
+@media (max-width: 600px) {
+    .curso-form-header { padding: 18px 65px 16px 18px; }
+    #modalNovoCurso .modal-title { font-size: 1.2rem; }
+    #modalNovoCurso .fechar-modal { top: 14px; right: 14px; }
+    .curso-form-scroll { padding: 20px 16px 4px; }
+    .curso-form-section { padding: 16px 12px; }
+    #formCriarCurso .form-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+    .curso-form-footer { padding: 14px 16px; }
+    .curso-form-buttons .btn { flex: 1; justify-content: center; padding: 12px; }
+}

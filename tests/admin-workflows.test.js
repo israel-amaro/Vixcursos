@@ -48,6 +48,25 @@ async function exercise(db, t) {
             assert.equal(monitor.reduce((n, c) => n + c.total_inscritos, 0), (await json('/api/admin/stats')).inscritos);
             assert.deepEqual((await db.readState()).cursos.find(c => c.id === 5), raw);
         });
+        await t.test('Escolha única de publicação preserva histórico e rejeita combinações confusas', async () => {
+            await reset();
+            const body = { nome: 'Curso com escolha simples', curso: 4, categoria_id: 4, local: 12, modalidade: 1, idade_min: 7, idade_max: 71, vagas: 30, data_inicio: '2026-07-12', data_termino: '2026-09-30', status: 'ativo', publicacao_modo: 'manter' };
+            await json('/cursos/5', 'PUT', body);
+            assert.equal((await json('/cursos?id=5'))[0].situacao, 'encerrado');
+            await json('/cursos/5', 'PUT', { ...body, publicacao_modo: 'agora' }, 400);
+            const renewed = { ...body, data_inicio: '2026-11-01', data_termino: '2026-12-01', publicacao_modo: 'agora' };
+            await json('/cursos/5', 'PUT', renewed);
+            assert.equal((await json('/api/cursos-public/5')).aceita_inscricoes, true);
+            await json('/cursos/5', 'PUT', { ...renewed, publicacao_modo: 'arquivado', status: 'arquivado' });
+            await json('/api/cursos-public/5', 'GET', undefined, 404);
+            await json('/cursos/5', 'PUT', { ...renewed, publicacao_modo: 'espera', status: 'esgotado' });
+            assert.equal((await json('/api/cursos-public/5')).situacao, 'esgotado');
+            await json('/cursos/5', 'PUT', { ...renewed, publicacao_modo: 'agora', status: 'arquivado' }, 400);
+            await json('/cursos/5', 'PUT', { ...renewed, publicacao_modo: 'agendada', data_publicacao: '2026-10-01T09:00:00-03:00' }, 400);
+            await json('/cursos/5', 'PUT', { ...renewed, publicacao_modo: 'agendada', data_publicacao: null }, 400);
+            await json('/cursos/5', 'PUT', { ...renewed, publicacao_modo: 'agora', data_publicacao: '2026-11-01T09:00:00-03:00' }, 400);
+            await reset();
+        });
         await t.test('Lista, ficha por CPF e erros de turma inexistente', async () => {
             const list = await json('/inscritos/1'); assert.equal(list.length, 2); assert.match(list[0].nome, /D'Ávila/);
             const record = await json('/api/admin/aluno/completo/529.982.247-25'); assert.equal(record.historico.length, 1); assert.equal(record.aluno.aceitou_aviso_lgpd, true);

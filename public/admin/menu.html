@@ -6,6 +6,7 @@
     <title>Dashboard | Qualifica Vix Admin</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="css_adm/admin.css">
+    <link rel="stylesheet" href="css_adm/curso-form.css">
     <script src="/admin/adminjs/session.js" defer></script>
     <link rel="icon" type="image/png" href="/imagem/logo.png">
 </head>
@@ -73,102 +74,87 @@
     </div>
 </div>
 
-<div id="modalNovoCurso" class="modal">
+<div id="modalNovoCurso" class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloModalCurso" aria-describedby="orientacaoCurso">
     <div class="modal-content">
-        <button class="fechar-modal" onclick="fecharModal()">&times;</button>
-        <p class="modal-title" id="tituloModalCurso">Cadastrar Novo Curso</p>
+        <header class="curso-form-header">
+            <h2 class="modal-title" id="tituloModalCurso">Novo curso</h2>
+            <p id="orientacaoCurso">Preencha os dados e escolha quando mostrar o curso no site.</p>
+            <button type="button" class="fechar-modal" onclick="fecharModal()" aria-label="Fechar formulário de curso">&times;</button>
+        </header>
         <form id="formCriarCurso" onsubmit="criarCurso(event)">
             <input type="hidden" id="categoria_id">
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="curso">Área do Curso</label>
-                    <select id="curso" required></select>
-                </div>
-                <div class="form-group">
-                    <label for="nome">Nome público do curso</label>
-                    <input id="nome" maxlength="160" placeholder="Ex.: Cabeleireiro profissional">
-                    <small>Se ficar vazio, será usado o nome da área.</small>
-                </div>
-                <div class="form-group">
-                    <label for="status">Situação no site</label>
-                    <select id="status"><option value="ativo">Ativo — aparece no site</option><option value="esgotado">Esgotado — somente lista de espera</option><option value="arquivado">Arquivado — oculto no site</option></select>
-                </div>
-                <div class="form-group">
-                    <label for="publicacaoModo">Publicação</label>
-                    <select id="publicacaoModo" onchange="atualizarPublicacao()"><option value="agora">Publicar agora</option><option value="agendada">Agendar publicação</option></select>
-                </div>
-                <div class="form-group" id="publicacaoAgendada" hidden>
-                    <label for="data_publicacao">Data e hora de publicação</label>
-                    <input type="datetime-local" id="data_publicacao">
-                    <small>Horário de Brasília. O curso aparecerá automaticamente no horário escolhido.</small>
-                </div>
-                <div class="form-group">
-                    <label>Local / Polo</label>
-                    <select id="local" required></select>
-                </div>
-                <div class="form-group">
-                    <label>Modalidade</label>
-                    <select id="modalidade" required></select>
-                </div>
-                <div class="form-group">
-                    <label>Vagas</label>
-                    <input type="number" id="vagas" min="1" required>
-                </div>
-                <div class="form-group">
-                    <label>Idade Mínima</label>
-                    <select id="idade_min" required></select>
-                </div>
-                <div class="form-group">
-                    <label>Idade Máxima</label>
-                    <select id="idade_max" required></select>
-                </div>
-                <div class="form-group">
-                    <label>Data de Início</label>
-                    <input type="date" id="data_inicio" required>
-                </div>
-                <div class="form-group">
-                    <label>Data de Término</label>
-                    <input type="date" id="data_termino" required>
-                </div>
-                <div class="form-group">
-                    <label>Horário Início</label>
-                    <input type="time" id="horario_inicio" required>
-                </div>
-                <div class="form-group">
-                    <label>Horário Término</label>
-                    <input type="time" id="horario_termino" required>
-                </div>
-                <div class="form-group">
-                    <label>Carga Horária (h)</label>
-                    <input type="number" id="carga_horaria" min="1" placeholder="Ex: 40">
-                </div>
-                <div class="form-group" style="grid-column: 1 / -1;">
-                    <label for="mascote_id">Vitoruga no banner do curso</label>
-                    <select id="mascote_id"><option value="">Automático pela categoria</option></select>
-                    <div id="mascoteOpcoes" class="mascot-options" aria-label="Escolha a tartaruga do curso"></div>
-                    <img id="mascotePreview" src="/imagem/Vitoruga.png" alt="Prévia do Vitoruga" style="width: 140px; height: 140px; object-fit: contain; margin-top: 8px;">
-                </div>
-                <div class="form-group" style="grid-column: 1 / -1;">
-                    <label>Descrição Resumida</label>
-                    <textarea id="descricao" rows="2" placeholder="Resumo do curso..."></textarea>
-                </div>
-                <div class="form-group" style="grid-column: 1 / -1;">
-                    <label>Ementa Completa</label>
-                    <textarea id="ementa" rows="3" placeholder="Tópicos e disciplinas ensinadas..."></textarea>
-                </div>
-                <div class="form-group" style="grid-column: 1 / -1;">
-                    <label>Competências Desenvolvidas</label>
-                    <textarea id="competencias" rows="2" placeholder="Habilidades práticas..."></textarea>
-                </div>
-                <div class="form-group" style="grid-column: 1 / -1;">
-                    <label>Pré-requisitos</label>
-                    <textarea id="pre_requisitos" rows="2" placeholder="Ex: Ensino Fundamental completo e idade mínima..."></textarea>
-                </div>
+            <div class="curso-form-scroll">
+                <div id="situacaoAtualCurso" class="curso-situacao" hidden><strong id="situacaoAtualTexto"></strong><p id="situacaoAtualMotivo"></p></div>
+                <fieldset class="curso-form-section">
+                    <legend>1. Sobre o curso</legend>
+                    <div class="form-grid">
+                        <div class="form-group"><label for="curso">Área do curso</label><select id="curso" required></select></div>
+                        <div class="form-group"><label for="nome">Nome do curso (opcional)</label><input id="nome" maxlength="160" placeholder="Ex.: Cabeleireiro profissional"><small>Sem um nome, usamos o nome da área escolhida.</small></div>
+                    </div>
+                </fieldset>
+                <fieldset class="curso-form-section">
+                    <legend>2. Local e período das aulas</legend>
+                    <div class="form-grid">
+                        <div class="form-group"><label for="local">Onde serão as aulas?</label><select id="local" required></select></div>
+                        <div class="form-group"><label for="modalidade">Tipo de aula</label><select id="modalidade" required></select></div>
+                        <div class="form-group"><label for="data_inicio">Primeiro dia de aula</label><input type="date" id="data_inicio" required></div>
+                        <div class="form-group"><label for="data_termino">Último dia de aula</label><input type="date" id="data_termino" required></div>
+                        <div class="form-group"><label for="horario_inicio">Horário de início</label><input type="time" id="horario_inicio" required></div>
+                        <div class="form-group"><label for="horario_termino">Horário de término</label><input type="time" id="horario_termino" required></div>
+                        <div class="form-group"><label for="carga_horaria">Total de horas do curso (opcional)</label><input type="number" id="carga_horaria" min="1" placeholder="Ex.: 40"></div>
+                    </div>
+                </fieldset>
+                <fieldset class="curso-form-section">
+                    <legend>3. Vagas e idade dos alunos</legend>
+                    <div class="form-grid">
+                        <div class="form-group curso-form-full"><label for="vagas">Quantidade de vagas</label><input type="number" id="vagas" min="1" required></div>
+                        <div class="form-group"><label for="idade_min">Idade mínima</label><select id="idade_min" required></select></div>
+                        <div class="form-group"><label for="idade_max">Idade máxima</label><select id="idade_max" required></select></div>
+                    </div>
+                </fieldset>
+                <fieldset class="curso-form-section">
+                    <legend>4. Mostrar o curso no site</legend>
+                    <div class="form-group">
+                        <label for="publicacaoModo">O que você quer fazer?</label>
+                        <select id="publicacaoModo" onchange="atualizarPublicacao()" aria-describedby="avisoPublicacao">
+                            <option value="manter" id="modoManter" hidden>Manter como está</option>
+                            <option value="agora" selected>Mostrar no site agora</option>
+                            <option value="agendada">Agendar dia e hora</option>
+                            <option value="arquivado">Guardar sem mostrar no site</option>
+                            <option value="espera">Abrir lista de espera</option>
+                        </select>
+                        <p id="avisoPublicacao" class="curso-form-help"></p>
+                    </div>
+                    <div class="form-group" id="publicacaoAgendada" hidden>
+                        <label for="data_publicacao">Quando o curso deve aparecer?</label>
+                        <input type="datetime-local" id="data_publicacao" aria-describedby="horarioPublicacao">
+                        <small id="horarioPublicacao">Horário de Brasília. Depois de salvar, o curso aparecerá sozinho nesse dia e horário.</small>
+                    </div>
+                    <p id="resumoPublicacao" class="curso-resumo" role="status"></p>
+                </fieldset>
+                <details id="detalhesCursoOpcionais" class="curso-form-section curso-opcionais">
+                    <summary>Mais informações (opcional)</summary>
+                    <div class="form-grid">
+                        <div class="form-group curso-form-full"><label for="descricao">Descrição do curso</label><textarea id="descricao" rows="2" placeholder="Conte um pouco sobre o curso"></textarea></div>
+                        <div class="form-group curso-form-full"><label for="ementa">O que será ensinado?</label><textarea id="ementa" rows="3" placeholder="Conteúdos e atividades das aulas"></textarea></div>
+                        <div class="form-group curso-form-full"><label for="competencias">Habilidades que o aluno vai aprender</label><textarea id="competencias" rows="2"></textarea></div>
+                        <div class="form-group curso-form-full"><label for="pre_requisitos">O que o aluno precisa saber ou ter?</label><textarea id="pre_requisitos" rows="2" placeholder="Ex.: Ensino Fundamental completo"></textarea></div>
+                        <div class="form-group curso-form-full">
+                            <label for="mascote_id">Tartaruga que aparece no curso</label>
+                            <select id="mascote_id"><option value="">Escolher automaticamente pela área</option></select>
+                            <div id="mascoteOpcoes" class="mascot-options" aria-label="Escolha a tartaruga do curso"></div>
+                            <img id="mascotePreview" src="/imagem/Vitoruga.png" alt="Prévia do Vitoruga" width="100" height="100">
+                        </div>
+                    </div>
+                </details>
             </div>
-            <div class="form-footer">
-                <button type="button" class="btn btn-outline" onclick="fecharModal()">Cancelar</button>
-                <button type="submit" class="btn btn-primary" id="salvarCurso"><i class="bi bi-floppy" aria-hidden="true"></i> Salvar Curso</button>
-            </div>
+            <footer class="curso-form-footer">
+                <p id="erroFormularioCurso" role="alert" hidden></p>
+                <div class="curso-form-buttons">
+                    <button type="button" class="btn btn-outline" onclick="fecharModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="salvarCurso"><i class="bi bi-floppy" aria-hidden="true"></i> Salvar Curso</button>
+                </div>
+            </footer>
         </form>
     </div>
 </div>

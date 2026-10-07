@@ -3,10 +3,64 @@
     let cursosAdmin = [];
     let mascotesAdmin = [];
     const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+    const cursoDoFormulario = () => cursosAdmin.find(c => c.id === cursoEmEdicao);
+    const diaBrasilia = () => {
+        const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date());
+        const part = name => parts.find(p => p.type === name).value;
+        return `${part('year')}-${part('month')}-${part('day')}`;
+    };
+    const dataCurta = value => value ? value.split('-').reverse().join('/') : '';
+    function escolhaPublicacao() {
+        const mode = document.getElementById('publicacaoModo').value;
+        const course = cursoDoFormulario();
+        if (mode === 'manter') return { publicacao_modo: mode, status: course?.status || 'ativo', data_publicacao: course?.data_publicacao || null };
+        const value = document.getElementById('data_publicacao').value;
+        return { publicacao_modo: mode, status: mode === 'arquivado' ? 'arquivado' : mode === 'espera' ? 'esgotado' : 'ativo',
+            data_publicacao: mode === 'agendada' && value ? `${value}:00-03:00` : null };
+    }
     function atualizarPublicacao() {
-        const scheduled = document.getElementById('publicacaoModo').value === 'agendada';
+        const course = cursoDoFormulario();
+        const mode = document.getElementById('publicacaoModo').value;
+        const scheduled = mode === 'agendada';
+        const input = document.getElementById('data_publicacao');
         document.getElementById('publicacaoAgendada').hidden = !scheduled;
-        document.getElementById('data_publicacao').required = scheduled;
+        input.required = scheduled;
+        input.disabled = !scheduled;
+        document.getElementById('situacaoAtualCurso').hidden = !course;
+        document.getElementById('modoManter').hidden = !course;
+        document.getElementById('modoManter').disabled = !course;
+        if (course) {
+            document.getElementById('situacaoAtualTexto').textContent = `Situação atual: ${course.situacao === 'arquivado' ? 'Guardado sem mostrar no site' : course.situacao_label}`;
+            document.getElementById('situacaoAtualMotivo').textContent = course.situacao === 'encerrado'
+                ? `As aulas terminaram em ${course.data_termino}. Para abrir de novo, atualize o período das aulas.`
+                : course.situacao === 'agendado' ? `Aparecerá no site em ${formatarPublicacao(course.data_publicacao)} (Brasília).`
+                : course.situacao === 'esgotado' ? 'Os alunos podem entrar na lista de espera.'
+                : course.situacao === 'arquivado' ? 'O curso está guardado e não aparece para o público.'
+                : 'A situação considera as datas das aulas e as vagas disponíveis.';
+        }
+        const messages = {
+            manter: 'As escolhas anteriores serão mantidas. Se mudar o período das aulas, a situação do curso será atualizada.',
+            agora: 'Depois de salvar, o público poderá ver o curso e se inscrever.',
+            agendada: 'Escolha uma data futura. O curso fica guardado até esse momento.',
+            arquivado: 'Você poderá editar e mostrar o curso no site mais tarde.',
+            espera: 'O público poderá se cadastrar como suplente, na lista de espera.'
+        };
+        document.getElementById('avisoPublicacao').textContent = messages[mode];
+        const end = document.getElementById('data_termino').value;
+        const choice = escolhaPublicacao();
+        const ended = end && end < diaBrasilia();
+        const summary = document.getElementById('resumoPublicacao');
+        summary.dataset.encerrado = Boolean(ended && choice.status !== 'arquivado');
+        let result;
+        if (choice.status === 'arquivado') result = 'Depois de salvar: guardado, sem aparecer no site.';
+        else if (ended) result = `Depois de salvar: encerrado. O último dia de aula, ${dataCurta(end)}, já passou.`;
+        else if (!end) result = 'Preencha o período das aulas para conferir como o curso ficará.';
+        else if (scheduled && !choice.data_publicacao) result = 'Escolha o dia e a hora em que o curso deve aparecer.';
+        else if (choice.data_publicacao && Date.parse(choice.data_publicacao) > Date.now()) result = `Depois de salvar: aparecerá em ${formatarPublicacao(choice.data_publicacao)} (Brasília).`;
+        else if (choice.status === 'esgotado' || (course && Number(document.getElementById('vagas').value) <= course.inscritos)) result = 'Depois de salvar: disponível somente para lista de espera.';
+        else result = `Depois de salvar: inscrições abertas. Aulas até ${dataCurta(end)}.`;
+        summary.textContent = result;
+        document.getElementById('data_termino').min = document.getElementById('data_inicio').value;
     }
     const formatarPublicacao = value => new Date(value).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' });
     function atualizarMascotePreview() {
@@ -18,10 +72,15 @@
     function abrirModal() {
         cursoEmEdicao = null;
         document.getElementById('formCriarCurso').reset();
+        document.getElementById('publicacaoModo').value = 'agora';
+        document.getElementById('detalhesCursoOpcionais').open = false;
+        document.getElementById('erroFormularioCurso').hidden = true;
         atualizarPublicacao();
-        document.getElementById('tituloModalCurso').textContent = 'Cadastrar Novo Curso';
+        document.getElementById('tituloModalCurso').textContent = 'Novo curso';
         atualizarMascotePreview();
         document.getElementById('modalNovoCurso').classList.add('open');
+        document.querySelector('.curso-form-scroll').scrollTop = 0;
+        document.getElementById('curso').focus();
     }
     function editarCurso(id) {
         const course = cursosAdmin.find(c => c.id === id);
@@ -36,7 +95,7 @@
             const input = document.getElementById(key);
             if (input && input.closest('#formCriarCurso')) input.value = value ?? '';
         }
-        document.getElementById('publicacaoModo').value = course.data_publicacao ? 'agendada' : 'agora';
+        document.getElementById('publicacaoModo').value = 'manter';
         if (course.data_publicacao) {
             const parts = new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(course.data_publicacao));
             document.getElementById('data_publicacao').value = parts.replace(' ', 'T');
@@ -301,11 +360,26 @@
 
     async function criarCurso(e) {
         e.preventDefault();
-
+        const choice = escolhaPublicacao();
+        const end = document.getElementById('data_termino').value;
+        const error = document.getElementById('erroFormularioCurso');
+        const invalid = (message, field) => { error.textContent = message; error.hidden = false; document.getElementById(field).focus(); };
+        if (['agora', 'espera'].includes(choice.publicacao_modo) && end < diaBrasilia()) {
+            invalid('Para mostrar o curso de novo, escolha um último dia de aula que ainda não passou.', 'data_termino');
+            return;
+        }
+        if (choice.publicacao_modo === 'agendada' && (!choice.data_publicacao || Date.parse(choice.data_publicacao) <= Date.now())) {
+            invalid('Escolha um dia e horário futuros para o curso aparecer no site.', 'data_publicacao');
+            return;
+        }
+        if (choice.publicacao_modo === 'agendada' && choice.data_publicacao.slice(0, 10) > end) {
+            invalid('O curso precisa aparecer no site antes de terminar. Confira o dia escolhido.', 'data_publicacao');
+            return;
+        }
+        error.hidden = true;
         const dados = {
-            data_publicacao: document.getElementById('publicacaoModo').value === 'agendada' ? `${document.getElementById('data_publicacao').value}:00-03:00` : null,
+            ...choice,
             nome: document.getElementById('nome').value,
-            status: document.getElementById('status').value,
             mascote_id: document.getElementById('mascote_id').value || null,
             curso: document.getElementById("curso").value, // Pegando do ID "curso"
             categoria_id: document.getElementById('categoria_id').value || document.getElementById('curso').value,
@@ -339,7 +413,7 @@
             await Promise.all([carregarCursosAdmin(), carregarStats()]);
         } catch (err) {
             console.error(err);
-            if (err.message !== 'sessao-expirada') mostrarPopup(err.message || 'Erro ao salvar o curso.', 'error');
+            if (err.message !== 'sessao-expirada') { error.textContent = err.message || 'Não foi possível salvar o curso. Tente novamente.'; error.hidden = false; }
         } finally { button.disabled = false; }
     }
 
@@ -371,6 +445,9 @@
         if (end) esgotarCurso(Number(end.dataset.esgotar), cursosAdmin.find(c => c.id === Number(end.dataset.esgotar))?.nome || '');
     });
     document.getElementById('curso').addEventListener('change', event => { document.getElementById('categoria_id').value = event.target.value; });
+    document.getElementById('formCriarCurso').addEventListener('input', () => { document.getElementById('erroFormularioCurso').hidden = true; atualizarPublicacao(); });
+    document.getElementById('formCriarCurso').addEventListener('change', atualizarPublicacao);
+    document.addEventListener('keydown', event => { if (event.key === 'Escape' && document.getElementById('modalNovoCurso').classList.contains('open')) fecharModal(); });
     document.addEventListener('visibilitychange', () => { if (!document.hidden) { carregarCursosAdmin(); carregarStats(); } });
     setInterval(() => { if (!document.hidden) { carregarCursosAdmin(); carregarStats(); } }, 30000);
     carregarFiltros();

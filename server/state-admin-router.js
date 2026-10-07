@@ -64,6 +64,15 @@ function createStateAdminRouter(db, auth) {
             if (!calendarDate(b.data_publicacao)) fail(400, 'Informe uma data e hora válidas para publicação.');
             if (b.data_termino && localDay(publication) > b.data_termino) fail(400, 'A publicação precisa acontecer até o término do curso.');
         }
+        if (b.publicacao_modo) {
+            const mode = b.publicacao_modo;
+            if (!['manter', 'agora', 'agendada', 'arquivado', 'espera'].includes(mode)) fail(400, 'Escolha como o curso deve aparecer no site.');
+            const modeStatus = { agora: 'ativo', agendada: 'ativo', arquivado: 'arquivado', espera: 'esgotado' };
+            if (modeStatus[mode] && b.status !== modeStatus[mode]) fail(400, 'Confira a escolha de publicação do curso.');
+            if (['agora', 'agendada', 'espera'].includes(mode) && (!b.data_termino || b.data_termino < localDay())) fail(400, 'Para mostrar o curso, escolha um último dia de aula que ainda não passou.');
+            if (mode === 'agendada' && (!publication || Date.parse(publication) <= Date.now())) fail(400, 'Escolha um dia e horário futuros para o curso aparecer no site.');
+            if (['agora', 'arquivado', 'espera'].includes(mode) && publication) fail(400, 'Esta escolha não usa uma data de publicação.');
+        }
         const text = (key, limit = 10000) => {
             const value = String(b[key] || '').trim();
             if (value.length > limit) fail(400, 'Um dos textos excede o tamanho permitido.');

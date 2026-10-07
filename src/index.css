@@ -211,8 +211,9 @@ button, a, input, select, textarea { touch-action: manipulation; }
 
 /* Subtle separation between content surfaces, with visible hero photography. */
 .hero-photo-shade { background: linear-gradient(90deg, rgba(255,255,255,.94) 0%, rgba(249,251,255,.84) 36%, rgba(244,248,254,.60) 65%, rgba(239,244,252,.32) 100%); }
-.hero-title-main { display: block; width: min-content; max-width: 100%; text-align: justify; text-align-last: left; }
-.hero-title-city { display: block; margin-top: 16px; text-transform: lowercase; }
+.home-hero .hero-title { font-size: clamp(2rem, 3.1vw, 3.25rem); line-height: 1.14; letter-spacing: -.035em; max-width: 620px; }
+.hero-title-main { display: block; width: auto; max-width: 100%; text-align: left; text-wrap: balance; }
+.hero-title-city { display: block; margin-top: 16px; font-family: var(--font-sans); font-size: clamp(1.1rem, 1.4vw, 1.5rem); font-weight: 600; line-height: 1.4; letter-spacing: 0; }
 #cursos-section { background: #eaf0f8; border-color: #d5e0ef; }
 #cursos-list-section { background: linear-gradient(180deg, #f2f5fa, #f8fafc); }
 .card-curso { border: 1px solid #dce5f0; box-shadow: 0 6px 24px rgba(40,62,105,.07); }
