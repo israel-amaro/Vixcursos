@@ -256,10 +256,12 @@ function normalizeSql(sql) {
     return String(sql || "").replace(/\s+/g, " ").trim().toLowerCase();
 }
 
+const { calendarDate, courseState } = require('./course-state');
+
 function toDateBr(value) {
-    if (!value) return null;
-    const [year, month, day] = String(value).slice(0, 10).split("-");
-    if (!year || !month || !day) return value;
+    const normalized = calendarDate(value);
+    if (!normalized) return null;
+    const [year, month, day] = normalized.split("-");
     return `${day}/${month}/${year}`;
 }
 
@@ -296,7 +298,7 @@ function createLocalDb(initialState, options = {}) {
     const modalidadeNome = (id) => filtroModalidades.find((item) => item.id === Number(id))?.modalidade || "Não informada";
     const localNome = (id) => filtroLocais.find((item) => item.id === Number(id))?.local || "Vitória";
 
-    const titularesCurso = (cursoId) => state.preInscricoes.filter((item) => Number(item.curso_id) === Number(cursoId) && item.status_inscricao === "titular" && !['cancelado', 'desistencia', 'nao_concluido', 'desistente', 'nao_compareceu', 'concluido', 'evadido'].includes(item.status)).length;
+    const titularesCurso = (cursoId) => state.preInscricoes.filter((item) => Number(item.curso_id) === Number(cursoId) && item.status_inscricao === "titular" && !['cancelado', 'desistencia', 'nao_concluido', 'desistente', 'nao_compareceu', 'concluido', 'evadido', 'certificado_emitido'].includes(item.status)).length;
     const publicCourse = (curso) => {
         const inscritos = titularesCurso(curso.id);
         const vagasDisponiveis = Math.max(0, Number(curso.vagas || 0) - inscritos);
@@ -305,9 +307,11 @@ function createLocalDb(initialState, options = {}) {
             nome: curso.nome || cursoNome(curso.curso_id),
             vagas_totais: Number(curso.vagas || 0),
             inscritos,
+            total_inscritos: state.preInscricoes.filter(i => Number(i.curso_id) === Number(curso.id) && i.status !== 'cancelado').length,
             vagas_disponiveis: vagasDisponiveis,
             vagas: vagasDisponiveis,
             status: curso.status || "ativo",
+            ...courseState({ ...curso, vagas_disponiveis: vagasDisponiveis }),
             horario_inicio: toTime(curso.horario_inicio),
             horario_termino: toTime(curso.horario_termino),
             data_inicio: toDateBr(curso.data_inicio),

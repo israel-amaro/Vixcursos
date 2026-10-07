@@ -47,34 +47,13 @@
 </head>
 <body>
 
-<nav class="admin-sidebar">
-    <a href="menu.html" class="sidebar-brand">
-        <img class="sidebar-logo" src="/imagem/logo.png" alt="Qualifica Vix">
-        <div>
-            <span class="brand-name">Qualifica Vix</span>
-            <span class="brand-sub">Área administrativa</span>
-        </div>
-    </a>
-    <div class="sidebar-nav">
-        <div class="nav-section">Principal</div>
-        <a href="menu.html" class="nav-link"><span class="ni"><i class="bi bi-house-door-fill" aria-hidden="true"></i></span> Dashboard</a>
-        <div class="nav-section">Academia</div>
-        <a href="inscritos.html" class="nav-link active"><span class="ni"><i class="bi bi-people-fill" aria-hidden="true"></i></span> Alunos Inscritos</a>
-        <a href="interessados.html" class="nav-link"><span class="ni"><i class="bi bi-clipboard-data" aria-hidden="true"></i></span> Interessados</a>
-        <a href="cursos.html" class="nav-link"><span class="ni"><i class="bi bi-bar-chart-line-fill" aria-hidden="true"></i></span> Monitoramento</a>
-        <a href="relatorios.html" class="nav-link"><span class="ni"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i></span> Relatórios</a>
-        <div class="nav-section">Configuração</div>
-        <a href="faq.html" class="nav-link"><span class="ni"><i class="bi bi-question-circle-fill" aria-hidden="true"></i></span> Gerenciar FAQ</a>
-        <div class="sidebar-sep"></div>
-        <a href="/" class="nav-link"><span class="ni"><i class="bi bi-globe-americas" aria-hidden="true"></i></span> Ver Site</a>
-    </div>
-</nav>
+<nav class="admin-sidebar" aria-label="Navegação administrativa"></nav>
 
 <div class="admin-main">
     <div class="page-header">
         <div class="ph-left">
             <h1 id="tituloPaginaInscritos">Alunos Inscritos</h1>
-            <p id="subtituloPaginaInscritos">Selecione uma turma para ver a lista completa</p>
+            <p id="subtituloPaginaInscritos">Consulte as inscrições e acompanhe cada aluno</p>
         </div>
         <div class="ph-right" id="acoesCabecalho" style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
             <button onclick="exportarExcelCompleto()" class="btn btn-outline" style="border-color:#10b981; color:#10b981;"><i class="bi bi-file-earmark-excel" aria-hidden="true"></i> Exportar Tudo</button>
@@ -88,44 +67,22 @@
 
     <div class="page-body">
 
-        <!-- TELA 1: Lista de cursos -->
-        <div id="telaCursos">
-            <div class="card">
-                <div class="card-head"><h2><i class="bi bi-journal-bookmark-fill icon-inline" aria-hidden="true"></i>Cursos em Andamento</h2></div>
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Nome do Curso</th>
-                                <th>Local</th>
-                                <th>Vagas Restantes</th>
-                                <th>Status</th>
-                                <th>Ação</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabelaCursosBody">
-                            <tr><td colspan="5" class="empty-state">Carregando cursos...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
         <!-- TELA 2: Lista de alunos (detalhe) -->
-        <div id="telaAlunos" class="tela-oculta">
+        <div id="telaAlunos">
             <div class="card">
                 <div class="card-head">
                     <div>
-                        <h2 id="tituloCursoDetalhe">Nome do Curso</h2>
-                        <p class="text-sm text-muted" style="margin-top:4px;">
+                        <h2 id="tituloCursoDetalhe">Carregando inscrições…</h2>
+                        <p id="resumoCursoDetalhe" class="text-sm text-muted" style="margin-top:4px;">
                             <i class="bi bi-geo-alt" aria-hidden="true"></i> <span id="localCursoDetalhe">—</span> &nbsp;|&nbsp;
-                            <i class="bi bi-people" aria-hidden="true"></i> <span id="vagasCursoDetalhe">—</span>
+                            <i class="bi bi-people" aria-hidden="true"></i> <span id="vagasCursoDetalhe">—</span><br><span id="periodoCursoDetalhe"></span> <span id="statusCursoDetalhe" class="badge"></span>
                         </p>
                     </div>
                     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                        <label for="filtroTurma" class="text-sm">Turma</label><select id="filtroTurma" aria-label="Filtrar por turma" onchange="abrirListaAlunos(this.value)"><option value="">Todas as turmas</option></select>
                         <button id="btnGerarPdfInscritos" onclick="gerarPdfInscritos()" class="btn-acao btn-pdf" style="display:none;"><i class="bi bi-filetype-pdf" aria-hidden="true"></i> Gerar PDF</button>
                         <button id="btnExportarExcel" onclick="exportarExcelTurma()" class="btn-acao btn-whats" style="display:none; background:#10b981;"><i class="bi bi-file-earmark-excel" aria-hidden="true"></i> Excel Turma</button>
-                        <button onclick="voltarParaCursos()" class="btn btn-outline btn-sm"><i class="bi bi-arrow-left" aria-hidden="true"></i> Voltar</button>
+                        <button id="btnTodasInscricoes" onclick="voltarParaCursos()" class="btn btn-outline btn-sm" hidden>Todas as inscrições</button>
                     </div>
                 </div>
                 <div class="table-wrap">
@@ -133,6 +90,7 @@
                         <thead>
                             <tr>
                                 <th>Nome do Aluno</th>
+                                <th>Turma</th>
                                 <th>CPF</th>
                                 <th>Telefone</th>
                                 <th>Bairro</th>
@@ -140,7 +98,7 @@
                                 <th>Ações</th>
                             </tr>
                         </thead>
-                        <tbody id="tabelaAlunosBody"></tbody>
+                        <tbody id="tabelaAlunosBody"><tr><td colspan="7" class="empty-state">Carregando inscrições…</td></tr></tbody>
                     </table>
                 </div>
             </div>

@@ -211,7 +211,8 @@ button, a, input, select, textarea { touch-action: manipulation; }
 
 /* Subtle separation between content surfaces, with visible hero photography. */
 .hero-photo-shade { background: linear-gradient(90deg, rgba(255,255,255,.94) 0%, rgba(249,251,255,.84) 36%, rgba(244,248,254,.60) 65%, rgba(239,244,252,.32) 100%); }
-.hero-title-city { text-transform: lowercase; }
+.hero-title-main { display: block; width: min-content; max-width: 100%; text-align: justify; text-align-last: left; }
+.hero-title-city { display: block; margin-top: 16px; text-transform: lowercase; }
 #cursos-section { background: #eaf0f8; border-color: #d5e0ef; }
 #cursos-list-section { background: linear-gradient(180deg, #f2f5fa, #f8fafc); }
 .card-curso { border: 1px solid #dce5f0; box-shadow: 0 6px 24px rgba(40,62,105,.07); }
@@ -221,6 +222,7 @@ button, a, input, select, textarea { touch-action: manipulation; }
   .hero-photo-shade { background: linear-gradient(180deg, rgba(243,247,253,.96), rgba(242,247,254,.91) 45%, rgba(233,240,251,.86)); }
   .home-hero .hero-content { padding: 108px 24px 28px; gap: 0; }
   .home-hero .hero-title { font-size: clamp(1.75rem, 8vw, 2.125rem); line-height: 1.12; letter-spacing: -.035em; text-wrap: balance; }
+  .home-hero .hero-title-main { width: auto; max-width: none; text-align: left; }
   .home-hero .hero-title-city { display: block; margin-top: 12px; font-family: var(--font-sans); font-size: 1rem; font-weight: 600; line-height: 1.4; letter-spacing: 0; text-transform: none; }
   .home-hero .hero-description { margin-top: 14px; font-weight: 400; line-height: 1.65; }
   .home-hero .hero-benefits { gap: 8px; margin-top: 16px; font-size: 12px; letter-spacing: -.02em; }

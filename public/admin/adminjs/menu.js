@@ -3,6 +3,12 @@
     let cursosAdmin = [];
     let mascotesAdmin = [];
     const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+    function atualizarPublicacao() {
+        const scheduled = document.getElementById('publicacaoModo').value === 'agendada';
+        document.getElementById('publicacaoAgendada').hidden = !scheduled;
+        document.getElementById('data_publicacao').required = scheduled;
+    }
+    const formatarPublicacao = value => new Date(value).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo', dateStyle: 'short', timeStyle: 'short' });
     function atualizarMascotePreview() {
         const id = document.getElementById('mascote_id').value;
         const mascot = mascotesAdmin.find(m => m.id === id);
@@ -12,6 +18,7 @@
     function abrirModal() {
         cursoEmEdicao = null;
         document.getElementById('formCriarCurso').reset();
+        atualizarPublicacao();
         document.getElementById('tituloModalCurso').textContent = 'Cadastrar Novo Curso';
         atualizarMascotePreview();
         document.getElementById('modalNovoCurso').classList.add('open');
@@ -29,6 +36,12 @@
             const input = document.getElementById(key);
             if (input && input.closest('#formCriarCurso')) input.value = value ?? '';
         }
+        document.getElementById('publicacaoModo').value = course.data_publicacao ? 'agendada' : 'agora';
+        if (course.data_publicacao) {
+            const parts = new Intl.DateTimeFormat('sv-SE', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date(course.data_publicacao));
+            document.getElementById('data_publicacao').value = parts.replace(' ', 'T');
+        }
+        atualizarPublicacao();
         atualizarMascotePreview();
     }
     function fecharModal() {
@@ -39,11 +52,15 @@
     function abrirModalConfig(e) {
         if (e) e.preventDefault();
         document.getElementById('modalConfiguracoes').classList.add('open');
+        marcarNavegacaoAdmin(true);
+        const url = new URL(location.href); url.searchParams.set('configuracoes', '1'); history.replaceState(null, '', url);
         carregarConfiguracoes();
     }
 
     function fecharModalConfig() {
         document.getElementById('modalConfiguracoes').classList.remove('open');
+        marcarNavegacaoAdmin();
+        const url = new URL(location.href); url.searchParams.delete('configuracoes'); history.replaceState(null, '', url);
         document.getElementById('formConfiguracoes').reset();
     }
 
@@ -243,8 +260,8 @@
 
             let html = "";
             cursos.forEach(c => {
-                const badgeClass = c.status === 'ativo' ? 'badge-ativo' : 'badge-esgotado';
-                const statusTexto = c.status ? c.status.toUpperCase() : 'ATIVO';
+                const badgeClass = c.situacao === 'aberto' ? 'badge-ativo' : c.situacao === 'esgotado' ? 'badge-esgotado' : 'badge-neutro';
+                const statusTexto = escapeHtml(c.situacao_label);
 
                 // O backend (server.js) continua enviando como c.nome para facilitar o front, então deixamos c.nome aqui!
                 html += `
@@ -263,11 +280,11 @@
                         <i class="bi bi-building icon-inline" aria-hidden="true"></i>${escapeHtml(c.modalidade || '-')}
                     </td>
                     <td><strong>${c.vagas}</strong> rest.</td>
-                    <td><span class="badge ${badgeClass}">${statusTexto}</span></td>
+                    <td><span class="badge ${badgeClass}">${statusTexto}</span>${c.data_publicacao && Date.parse(c.data_publicacao) > Date.now() ? `<br><small>Agendado para ${escapeHtml(formatarPublicacao(c.data_publicacao))}</small>` : ''}</td>
                     <td class="acoes">
                         <button data-editar="${c.id}" class="btn btn-outline" title="Editar curso e tartaruga" aria-label="Editar curso"><i class="bi bi-pencil-square" aria-hidden="true"></i></button>
                         <a href="/detalhes/${c.id}" target="_blank" rel="noopener" class="btn btn-outline" title="Ver no site" aria-label="Ver no site"><i class="bi bi-globe" aria-hidden="true"></i></a>
-                        <a href="inscritos.html?curso=${c.id}" class="btn btn-outline" title="Ver Inscritos" aria-label="Ver inscritos"><i class="bi bi-people-fill" aria-hidden="true"></i></a>
+                        <a href="/admin/inscritos.html?curso=${c.id}" class="btn btn-outline" title="Ver Inscritos" aria-label="Ver inscritos"><i class="bi bi-people-fill" aria-hidden="true"></i></a>
                         ${c.status === 'ativo' 
                             ? `<button data-esgotar="${c.id}" class="btn btn-danger" title="Esgotar vagas" aria-label="Esgotar vagas"><i class="bi bi-slash-circle" aria-hidden="true"></i></button>`
                             : `<button class="btn btn-outline" disabled style="opacity: 0.5;" aria-label="Curso encerrado"><i class="bi bi-slash-circle" aria-hidden="true"></i></button>`
@@ -286,6 +303,7 @@
         e.preventDefault();
 
         const dados = {
+            data_publicacao: document.getElementById('publicacaoModo').value === 'agendada' ? `${document.getElementById('data_publicacao').value}:00-03:00` : null,
             nome: document.getElementById('nome').value,
             status: document.getElementById('status').value,
             mascote_id: document.getElementById('mascote_id').value || null,
@@ -316,7 +334,7 @@
             body: JSON.stringify(dados)
             });
             await lerJsonOuLancar(response);
-            mostrarPopup('Curso salvo. O site já usa os mesmos dados e a tartaruga selecionada.', 'success');
+            mostrarPopup('Curso salvo com sucesso.', 'success');
             fecharModal();
             await Promise.all([carregarCursosAdmin(), carregarStats()]);
         } catch (err) {
@@ -338,7 +356,7 @@
         try {
             const res = await fetch(`/cursos/esgotar/${id}`, { method: 'PUT' });
             await lerJsonOuLancar(res);
-            carregarCursosAdmin();
+            await Promise.all([carregarCursosAdmin(), carregarStats()]);
             mostrarPopup('Curso atualizado para esgotado.', 'success');
         } catch (err) {
             console.error(err);
@@ -386,3 +404,5 @@ document.addEventListener('DOMContentLoaded', async () => {
         carregarCursosAdmin();
     } catch (error) { console.error('Não foi possível carregar os mascotes.', error); }
 });
+
+document.addEventListener('DOMContentLoaded', () => { if (new URLSearchParams(location.search).has('configuracoes')) abrirModalConfig(); });

@@ -24,28 +24,7 @@
 </head>
 <body>
 
-<nav class="admin-sidebar">
-    <a href="menu.html" class="sidebar-brand">
-        <img class="sidebar-logo" src="/imagem/logo.png" alt="Qualifica Vix">
-        <div>
-            <span class="brand-name">Qualifica Vix</span>
-            <span class="brand-sub">Área administrativa</span>
-        </div>
-    </a>
-    <div class="sidebar-nav">
-        <div class="nav-section">Principal</div>
-        <a href="menu.html" class="nav-link"><span class="ni"><i class="bi bi-house-door-fill" aria-hidden="true"></i></span> Dashboard</a>
-        <div class="nav-section">Academia</div>
-        <a href="inscritos.html" class="nav-link"><span class="ni"><i class="bi bi-people-fill" aria-hidden="true"></i></span> Alunos Inscritos</a>
-        <a href="interessados.html" class="nav-link active"><span class="ni"><i class="bi bi-clipboard-data" aria-hidden="true"></i></span> Interessados</a>
-        <a href="cursos.html" class="nav-link"><span class="ni"><i class="bi bi-bar-chart-line-fill" aria-hidden="true"></i></span> Monitoramento</a>
-        <a href="relatorios.html" class="nav-link"><span class="ni"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i></span> Relatórios</a>
-        <div class="nav-section">Configuração</div>
-        <a href="faq.html" class="nav-link"><span class="ni"><i class="bi bi-question-circle-fill" aria-hidden="true"></i></span> Gerenciar FAQ</a>
-        <div class="sidebar-sep"></div>
-        <a href="/" class="nav-link"><span class="ni"><i class="bi bi-globe-americas" aria-hidden="true"></i></span> Ver Site</a>
-    </div>
-</nav>
+<nav class="admin-sidebar" aria-label="Navegação administrativa"></nav>
 
 <div class="admin-main">
     <div class="page-header">
@@ -94,7 +73,7 @@
     <div class="modal-grafico">
         <button class="fechar-modal" onclick="fecharModalGrafico()">&times;</button>
         <h2 style="text-align:center; margin-bottom:4px;"><i class="bi bi-graph-up-arrow icon-inline" aria-hidden="true"></i>Demanda por Categorias</h2>
-        <p style="text-align:center; color:var(--text-light); font-size:.85rem; margin-bottom:1.25rem;">Volume de interessados baseados no Quiz Vocacional.</p>
+        <p style="text-align:center; color:var(--text-light); font-size:.85rem; margin-bottom:1.25rem;">Interessados por área de qualificação.</p>
         <div class="controles-grafico">
             <button id="btnBarra" class="btn-toggle ativo" onclick="mudarTipoGrafico('bar')"><i class="bi bi-bar-chart-line" aria-hidden="true"></i> Em Barras</button>
             <button id="btnLinha" class="btn-toggle" onclick="mudarTipoGrafico('line')"><i class="bi bi-graph-up" aria-hidden="true"></i> Em Linhas</button>

@@ -11,29 +11,7 @@
 </head>
 <body>
 
-<nav class="admin-sidebar">
-    <a href="menu.html" class="sidebar-brand">
-        <img class="sidebar-logo" src="/imagem/logo.png" alt="Qualifica Vix">
-        <div>
-            <span class="brand-name">Qualifica Vix</span>
-            <span class="brand-sub">Área administrativa</span>
-        </div>
-    </a>
-    <div class="sidebar-nav">
-        <div class="nav-section">Principal</div>
-        <a href="menu.html" class="nav-link active"><span class="ni"><i class="bi bi-house-door-fill" aria-hidden="true"></i></span> Dashboard</a>
-        <div class="nav-section">Academia</div>
-        <a href="inscritos.html" class="nav-link"><span class="ni"><i class="bi bi-people-fill" aria-hidden="true"></i></span> Alunos Inscritos</a>
-        <a href="interessados.html" class="nav-link"><span class="ni"><i class="bi bi-clipboard-data" aria-hidden="true"></i></span> Interessados</a>
-        <a href="cursos.html" class="nav-link"><span class="ni"><i class="bi bi-bar-chart-line-fill" aria-hidden="true"></i></span> Monitoramento</a>
-        <a href="relatorios.html" class="nav-link"><span class="ni"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i></span> Relatórios</a>
-        <div class="nav-section">Configuração</div>
-        <a href="#" onclick="abrirModalConfig(event)" class="nav-link"><span class="ni"><i class="bi bi-gear-fill" aria-hidden="true"></i></span> Regras de Negócio</a>
-        <a href="faq.html" class="nav-link"><span class="ni"><i class="bi bi-question-circle-fill" aria-hidden="true"></i></span> Gerenciar FAQ</a>
-        <div class="sidebar-sep"></div>
-        <a href="/" class="nav-link"><span class="ni"><i class="bi bi-globe-americas" aria-hidden="true"></i></span> Ver Site</a>
-    </div>
-</nav>
+<nav class="admin-sidebar" aria-label="Navegação administrativa"></nav>
 
 <div class="admin-main">
     <div class="page-header">
@@ -64,7 +42,7 @@
                 <div class="kpi-sub">Total de pré-inscrições</div>
             </div>
             <div class="kpi-card red">
-                <div class="kpi-label">Leads Aguardando</div>
+                <div class="kpi-label">Interessados Aguardando</div>
                 <div class="kpi-value" id="kpiLeads">--</div>
                 <div class="kpi-sub">Interessados sem vaga</div>
             </div>
@@ -99,7 +77,6 @@
     <div class="modal-content">
         <button class="fechar-modal" onclick="fecharModal()">&times;</button>
         <p class="modal-title" id="tituloModalCurso">Cadastrar Novo Curso</p>
-        <p class="modal-desc">Os dados e a tartaruga desta turma serão exibidos no site.</p>
         <form id="formCriarCurso" onsubmit="criarCurso(event)">
             <input type="hidden" id="categoria_id">
             <div class="form-grid">
@@ -115,6 +92,15 @@
                 <div class="form-group">
                     <label for="status">Situação no site</label>
                     <select id="status"><option value="ativo">Ativo — aparece no site</option><option value="esgotado">Esgotado — somente lista de espera</option><option value="arquivado">Arquivado — oculto no site</option></select>
+                </div>
+                <div class="form-group">
+                    <label for="publicacaoModo">Publicação</label>
+                    <select id="publicacaoModo" onchange="atualizarPublicacao()"><option value="agora">Publicar agora</option><option value="agendada">Agendar publicação</option></select>
+                </div>
+                <div class="form-group" id="publicacaoAgendada" hidden>
+                    <label for="data_publicacao">Data e hora de publicação</label>
+                    <input type="datetime-local" id="data_publicacao">
+                    <small>Horário de Brasília. O curso aparecerá automaticamente no horário escolhido.</small>
                 </div>
                 <div class="form-group">
                     <label>Local / Polo</label>

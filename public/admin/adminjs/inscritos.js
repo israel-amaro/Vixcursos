@@ -5,6 +5,7 @@
 let cursosGlobais = []; 
 let cursoAbertoAtual = null; 
 let alunosGlobais = []; // NOVO: Guarda a lista de alunos daquele curso
+let requisicaoLista = 0;
 
 function mostrarPopup(mensagem, tipo = 'info') {
     const icones = {
@@ -93,16 +94,14 @@ async function lerJsonOuLancar(res) {
         throw new Error('sessao-expirada');
     }
 
-    if (!res.ok) {
-        throw new Error(`http-${res.status}`);
-    }
-
     const tipo = String(res.headers.get('content-type') || '').toLowerCase();
     if (!tipo.includes('application/json')) {
         throw new Error('resposta-nao-json');
     }
 
-    return res.json();
+    const data = await res.json();
+    if (!res.ok) throw Object.assign(new Error(data.error || 'Não foi possível concluir a operação.'), { status: res.status });
+    return data;
 }
 
 function escapeHtml(valor) {
@@ -173,85 +172,83 @@ function formatarDataBr(dataIso) {
     if (!dataIso) return '-';
     const data = new Date(dataIso);
     if (Number.isNaN(data.getTime())) return dataIso;
-    return data.toLocaleString('pt-BR');
+    return data.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 }
 
 /* =========================================================
    1. FUNÇÃO PARA BUSCAR E DESENHAR OS CURSOS (TELA 1)
 ========================================================= */
 async function carregarCursos() {
+    const id = new URLSearchParams(location.search).get('curso') || '';
+    const sequencia = ++requisicaoLista;
     try {
-        const res = await fetch('/cursos'); 
-        cursosGlobais = await lerJsonOuLancar(res);
-
-        const tbody = document.getElementById('tabelaCursosBody');
-        tbody.innerHTML = '';
-
-        if (cursosGlobais.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px;">Nenhum curso cadastrado.</td></tr>`;
-            return;
-        }
-
-        cursosGlobais.forEach(curso => {
-            const estaEsgotado = (curso.status === 'esgotado');
-            const statusHtml = estaEsgotado 
-                ? '<span class="badge esgotado">ESGOTADO</span>' 
-                : '<span class="badge aberto">ABERTO</span>';
-
-            tbody.innerHTML += `
-                <tr>
-                    <td><strong>${curso.nome}</strong></td>
-                    <td>${curso.local}</td>
-                    <td>${curso.vagas} restantes</td>
-                    <td>${statusHtml}</td>
-                    <td>
-                        <button onclick="abrirListaAlunos(${curso.id})" class="btn-acao btn-ver"><i class="bi bi-people-fill" aria-hidden="true"></i> Ver Lista</button>
-                    </td>
-                </tr>
-            `;
-        });
+        const list = await lerJsonOuLancar(await fetch('/cursos', { cache: 'no-store' }));
+        if (sequencia !== requisicaoLista) return;
+        cursosGlobais = list;
+        const select = document.getElementById('filtroTurma');
+        select.innerHTML = '<option value="">Todas as turmas</option>' + list.map(c =>
+            '<option value="' + c.id + '">#' + c.id + ' — ' + escapeHtml(c.nome) + '</option>').join('');
+        await abrirListaAlunos(id);
     } catch (err) {
-        console.error("Erro ao carregar cursos:", err);
-        document.getElementById('tabelaCursosBody').innerHTML = `<tr><td colspan="5" style="color: red; text-align: center;">Sessão expirada ou erro ao carregar dados do servidor.</td></tr>`;
+        if (sequencia !== requisicaoLista || err.message === 'sessao-expirada') return;
+        document.getElementById('tabelaAlunosBody').innerHTML = '<tr><td colspan="7" class="empty-state">Não foi possível carregar as inscrições. <button class="btn btn-outline" onclick="carregarCursos()">Tentar novamente</button></td></tr>';
     }
 }
 
-/* =========================================================
-   2. FUNÇÃO PARA BUSCAR E DESENHAR OS ALUNOS (TELA 2)
-========================================================= */
-async function abrirListaAlunos(idCurso) {
+async function abrirListaAlunos(idCurso = '') {
     fecharAcoesMenu();
-    cursoAbertoAtual = cursosGlobais.find(c => c.id === idCurso);
+    const sequencia = ++requisicaoLista;
+    const curso = idCurso ? cursosGlobais.find(c => String(c.id) === String(idCurso)) : null;
+    const tbody = document.getElementById('tabelaAlunosBody');
+    cursoAbertoAtual = curso;
+    tbody.closest('table').classList.toggle('por-turma', Boolean(curso));
+    alunosGlobais = [];
     const btnPdf = document.getElementById('btnGerarPdfInscritos');
     const btnExcel = document.getElementById('btnExportarExcel');
-
-    document.getElementById('tituloCursoDetalhe').innerText = cursoAbertoAtual.nome;
-    document.getElementById('localCursoDetalhe').innerText = cursoAbertoAtual.local;
-    document.getElementById('vagasCursoDetalhe').innerText = `${cursoAbertoAtual.vagas} vagas restantes`;
-
-    const tbody = document.getElementById('tabelaAlunosBody');
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">Buscando alunos... 🐢</td></tr>`;
-
-    document.getElementById('telaCursos').classList.add('tela-oculta');
-    document.getElementById('telaAlunos').classList.remove('tela-oculta');
-
+    btnPdf.style.display = 'none'; btnExcel.style.display = 'none';
+    document.getElementById('btnTodasInscricoes').hidden = !idCurso;
+    const url = new URL(location.href);
+    if (idCurso) url.searchParams.set('curso', idCurso); else url.searchParams.delete('curso');
+    history.replaceState(null, '', url);
+    document.getElementById('filtroTurma').value = idCurso;
+    document.getElementById('resumoCursoDetalhe').hidden = !curso;
+    if (idCurso && !curso) {
+        document.getElementById('tituloPaginaInscritos').textContent = 'Turma não encontrada';
+        document.getElementById('subtituloPaginaInscritos').textContent = 'Confira a turma solicitada ou consulte todas as inscrições.';
+        document.getElementById('tituloCursoDetalhe').textContent = 'Turma indisponível';
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Turma não encontrada. Selecione outra turma ou clique em Todas as inscrições.</td></tr>';
+        return;
+    }
+    document.getElementById('tituloPaginaInscritos').textContent = curso ? 'Inscritos — ' + curso.nome : 'Alunos Inscritos';
+    document.getElementById('subtituloPaginaInscritos').textContent = curso ? 'Lista de alunos da turma #' + curso.id : 'Inscrições de todas as turmas';
+    document.getElementById('tituloCursoDetalhe').textContent = curso ? '#' + curso.id + ' — ' + curso.nome : 'Todas as inscrições';
+    if (curso) {
+        document.getElementById('localCursoDetalhe').textContent = curso.local;
+        document.getElementById('vagasCursoDetalhe').textContent = curso.vagas + ' vagas restantes';
+        document.getElementById('periodoCursoDetalhe').textContent =
+            (curso.data_inicio || 'Início a definir') + ' até ' + (curso.data_termino || 'Término a definir') +
+            ' · ' + (curso.horario_inicio || 'Horário a definir') + (curso.horario_termino ? ' às ' + curso.horario_termino : '');
+        document.getElementById('statusCursoDetalhe').textContent = curso.situacao_label;
+    }
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Carregando alunos…</td></tr>';
     try {
-        const res = await fetch(`/inscritos/${idCurso}`);
-        alunosGlobais = await lerJsonOuLancar(res); // Salva os alunos na memória para a ficha
-        if (btnPdf) btnPdf.style.display = 'inline-flex';
-        if (btnExcel) btnExcel.style.display = 'inline-flex';
-
-        tbody.innerHTML = ''; 
+        const res = await fetch(curso ? '/inscritos/' + curso.id : '/api/admin/inscricoes', { cache: 'no-store' });
+        const lista = await lerJsonOuLancar(res);
+        if (sequencia !== requisicaoLista) return;
+        alunosGlobais = lista;
+        document.getElementById('subtituloPaginaInscritos').textContent =
+            (curso ? 'Turma #' + curso.id + ' · ' : 'Todas as turmas · ') + lista.length + ' inscrição(ões)';
+        if (curso) { btnPdf.style.display = 'inline-flex'; btnExcel.style.display = 'inline-flex'; }
+        tbody.innerHTML = '';
 
         if (alunosGlobais.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align: center;">Nenhum aluno inscrito ainda.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center;">Nenhum aluno inscrito ainda.</td></tr>`;
         } else {
             alunosGlobais.forEach(aluno => {
                 const bairroAluno = aluno.bairro || 'Não informado';
                 const foneLimpo = (aluno.telefone || '').replace(/\D/g, '');
                 const linkWhats = foneLimpo ? `https://wa.me/55${foneLimpo}` : '#';
-                const nomeEscapadoJs = String(aluno.nome || '').replace(/'/g, "\\'");
-                const matriculaConfirmada = Number(aluno.matricula_confirmada) === 1;
+                const nomeEscapadoJs = escapeHtml(JSON.stringify(String(aluno.nome || '')));
                 const possuiNecessidadeEspecial = String(aluno.possui_necessidade_especial || '').toLowerCase() === 'sim';
                 const tipoNecessidadeEspecial = possuiNecessidadeEspecial
                     ? (aluno.tipo_necessidade_especial || 'Não informado')
@@ -260,26 +257,27 @@ async function abrirListaAlunos(idCurso) {
                     ? `<span class="badge-necessidade sim"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i> ${escapeHtml(tipoNecessidadeEspecial)}</span>`
                     : '<span class="badge-necessidade nao"><i class="bi bi-check-circle-fill" aria-hidden="true"></i> Não</span>';
 
-                const statusSelecionado = String(aluno.status || '').toLowerCase();
+                const statusSelecionado = String(aluno.status || 'inscrito').toLowerCase();
                 const selectStatus = `
-                    <select onchange="atualizarStatusAluno(${aluno.id}, this.value, '${nomeEscapadoJs}')" class="admin-status-select" style="background:#ffffff; color:#24365a; border:1px solid #dde5ef; padding:6px 10px; border-radius:6px; font-size:0.75rem; font-weight:600; outline:none; cursor:pointer;">
-                        <option value="inscrito" ${statusSelecionado === 'inscrito' ? 'selected' : ''}>Pré-inscrito</option>
+                    <select aria-label="Situação de ${escapeHtml(aluno.nome)}" onchange="atualizarStatusAluno(${aluno.id}, this.value, ${nomeEscapadoJs})" class="admin-status-select" style="background:#ffffff; color:#24365a; border:1px solid #dde5ef; padding:6px 10px; border-radius:6px; font-size:0.75rem; font-weight:600; outline:none; cursor:pointer;">
+                        <option value="inscrito" ${['inscrito', 'pendente_validacao'].includes(statusSelecionado) ? 'selected' : ''}>Pré-inscrito</option>
                         <option value="titular" ${statusSelecionado === 'titular' ? 'selected' : ''}>Classificado (Titular)</option>
                         <option value="suplente" ${statusSelecionado === 'suplente' ? 'selected' : ''}>Suplente</option>
                         <option value="matriculado" ${statusSelecionado === 'matriculado' ? 'selected' : ''}>Matriculado</option>
                         <option value="desistente" ${['desistente', 'desistencia'].includes(statusSelecionado) ? 'selected' : ''}>Desistente</option>
-                        <option value="não compareceu" ${['não compareceu', 'nao_compareceu'].includes(statusSelecionado) ? 'selected' : ''}>Não Compareceu</option>
-                        <option value="concluído" ${['concluído', 'concluido'].includes(statusSelecionado) ? 'selected' : ''}>Concluído</option>
-                        <option value="não concluído" ${['não concluído', 'nao_concluido'].includes(statusSelecionado) ? 'selected' : ''}>Não Concluído</option>
-                        <option value="certificado emitido" ${['certificado emitido', 'certificado_emitido'].includes(statusSelecionado) ? 'selected' : ''}>Certificado Emitido</option>
+                        <option value="nao_compareceu" ${['não compareceu', 'nao_compareceu'].includes(statusSelecionado) ? 'selected' : ''}>Não Compareceu</option>
+                        <option value="concluido" ${['concluído', 'concluido'].includes(statusSelecionado) ? 'selected' : ''}>Concluído</option>
+                        <option value="nao_concluido" ${['não concluído', 'nao_concluido'].includes(statusSelecionado) ? 'selected' : ''}>Não Concluído</option>
+                        <option value="certificado_emitido" ${['certificado emitido', 'certificado_emitido'].includes(statusSelecionado) ? 'selected' : ''}>Certificado Emitido</option>
                     </select>
                 `;
 
                 tbody.innerHTML += `
                     <tr class="${possuiNecessidadeEspecial ? 'aluno-necessidade' : ''}">
-                        <td><strong>${escapeHtml(aluno.nome)}</strong></td>
+                        <td><strong>${escapeHtml(aluno.nome)}</strong><br><small>${aluno.status_inscricao === "suplente" ? "Suplente" : "Titular"}</small></td>
+                        <td>#${aluno.curso_id} — ${escapeHtml(aluno.curso_nome)}</td>
                         <td>${escapeHtml(formatarCpf(aluno.cpf))}</td>
-                        <td>${aluno.telefone || '-'}</td>
+                        <td>${escapeHtml(aluno.telefone || '-')}</td>
                         <td>${escapeHtml(bairroAluno)}</td>
                         <td>${badgeNecessidade}</td>
                         <td>
@@ -291,7 +289,7 @@ async function abrirListaAlunos(idCurso) {
                                     <div class="acoes-dropdown" data-aluno-id="${aluno.id}" role="menu" aria-label="Ações do aluno">
                                         <button role="menuitem" onclick="abrirFichaAluno(${aluno.id})"><i class="bi bi-file-earmark-text" aria-hidden="true"></i> Ver ficha completa</button>
                                         <a role="menuitem" href="${linkWhats}" target="_blank" rel="noopener noreferrer" ${foneLimpo ? '' : 'aria-disabled="true" tabindex="-1" style="pointer-events:none;opacity:.55;"'}><i class="bi bi-whatsapp" aria-hidden="true"></i> Conversar no WhatsApp</a>
-                                        <button role="menuitem" class="acao-excluir" onclick="excluirAluno(${aluno.id}, '${nomeEscapadoJs}')"><i class="bi bi-trash" aria-hidden="true"></i> Excluir inscrição</button>
+                                        <button role="menuitem" class="acao-excluir" onclick="excluirAluno(${aluno.id}, ${nomeEscapadoJs})"><i class="bi bi-trash" aria-hidden="true"></i> Excluir inscrição</button>
                                     </div>
                                 </div>
                             </div>
@@ -301,8 +299,9 @@ async function abrirListaAlunos(idCurso) {
             });
         }
     } catch (err) {
+        if (sequencia !== requisicaoLista || err.message === 'sessao-expirada') return;
         console.error("Erro ao buscar alunos:", err);
-        tbody.innerHTML = `<tr><td colspan="6" style="color: red; text-align: center;">Erro ao carregar lista de alunos.</td></tr>`;
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Não foi possível carregar os alunos. <button class="btn btn-outline" onclick="carregarCursos()">Tentar novamente</button></td></tr>';
     }
 }
 
@@ -342,7 +341,7 @@ async function carregarFichaCpf(cpf) {
         document.getElementById('resumoFicha').textContent = 'Não foi possível abrir este cadastro.';
         const area = document.getElementById('conteudoDetalhes');
         area.innerHTML = '<div class="ficha-mensagem" role="alert"><p></p><button class="btn btn-primary" type="button">Tentar novamente</button></div>';
-        area.querySelector('p').textContent = err.message === 'http-404' ? 'Nenhum cadastro foi encontrado para este CPF. Confira o número informado.' : 'O carregamento da ficha falhou. Tente novamente em alguns instantes.';
+        area.querySelector('p').textContent = err.status === 404 ? 'Nenhum cadastro foi encontrado para este CPF. Confira o número informado.' : 'O carregamento da ficha falhou. Tente novamente em alguns instantes.';
         area.querySelector('button').addEventListener('click', () => carregarFichaCpf(cpf));
     }
 }
@@ -615,15 +614,7 @@ document.getElementById('modalDetalhes').addEventListener('keydown', event => {
 /* =========================================================
    4. VOLTAR PARA CURSOS E EXCLUIR
 ========================================================= */
-function voltarParaCursos() {
-    fecharAcoesMenu();
-    const btnPdf = document.getElementById('btnGerarPdfInscritos');
-    if (btnPdf) btnPdf.style.display = 'none';
-
-    document.getElementById('telaAlunos').classList.add('tela-oculta');
-    document.getElementById('telaCursos').classList.remove('tela-oculta');
-    carregarCursos();
-}
+function voltarParaCursos() { abrirListaAlunos(''); }
 
 function gerarPdfInscritos() {
     if (!cursoAbertoAtual) {
@@ -679,7 +670,7 @@ function gerarPdfInscritos() {
 async function excluirAluno(idAluno, nomeAluno) {
     const confirmacao2 = await confirmarPopup({
         titulo: 'Excluir inscrição',
-        mensagem: `Isso vai excluir ${nomeAluno} e liberar 1 vaga automaticamente. Deseja continuar?`,
+        mensagem: `Deseja remover a inscrição de ${nomeAluno} desta turma?`,
         textoConfirmar: 'Sim, excluir',
         textoCancelar: 'Cancelar',
         tipo: 'danger'
@@ -690,13 +681,13 @@ async function excluirAluno(idAluno, nomeAluno) {
     try {
         const res = await fetch(`/api/inscricoes/${idAluno}`, { method: 'DELETE' });
         if (res.ok) {
-            mostrarPopup('Inscrição removida. Vaga devolvida.', 'success');
-            abrirListaAlunos(cursoAbertoAtual.id);
+            mostrarPopup('Inscrição removida da lista.', 'success');
+            await carregarCursos();
         } else {
-            mostrarPopup('Erro ao tentar excluir no banco de dados.', 'error');
+            await lerJsonOuLancar(res);
         }
     } catch (err) {
-        mostrarPopup('Falha na comunicação com o servidor.', 'error');
+        if (err.message !== 'sessao-expirada') mostrarPopup(err.message || 'Não foi possível remover a inscrição.', 'error');
     }
 }
 
@@ -712,7 +703,7 @@ async function confirmarMatricula(idAluno, nomeAluno) {
 
     try {
         const res = await fetch(`/api/inscricoes/${idAluno}/confirmar`, { method: 'PUT' });
-        const data = await res.json();
+        const data = await lerJsonOuLancar(res);
 
         if (!res.ok) {
             mostrarPopup(data.error || 'Erro ao confirmar matrícula.', 'error');
@@ -724,13 +715,15 @@ async function confirmarMatricula(idAluno, nomeAluno) {
         } else if (data.email === 'falhou') {
             const detalhe = data.email_erro ? ` Motivo: ${data.email_erro}` : '';
             mostrarPopup(`Matrícula confirmada, mas o e-mail não foi enviado.${detalhe}`, 'warning');
-        } else {
+        } else if (data.email === 'enviado') {
             mostrarPopup('Matrícula confirmada e e-mail enviado!', 'success');
+        } else {
+            mostrarPopup('Matrícula confirmada com sucesso.', 'success');
         }
 
-        abrirListaAlunos(cursoAbertoAtual.id);
+        await carregarCursos();
     } catch (err) {
-        mostrarPopup('Falha na comunicação com o servidor.', 'error');
+        if (err.message !== 'sessao-expirada') mostrarPopup(err.message || 'Não foi possível confirmar a matrícula.', 'error');
     }
 }
 
@@ -743,7 +736,7 @@ async function atualizarStatusAluno(idAluno, novoStatus, nomeAluno) {
         tipo: 'info'
     });
     if (!ok) {
-        abrirListaAlunos(cursoAbertoAtual.id);
+        carregarCursos();
         return;
     }
 
@@ -753,17 +746,17 @@ async function atualizarStatusAluno(idAluno, novoStatus, nomeAluno) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: novoStatus })
         });
-        const data = await res.json();
+        const data = await lerJsonOuLancar(res);
 
         if (!res.ok) {
             mostrarPopup(data.error || 'Erro ao alterar status.', 'error');
         } else {
             mostrarPopup('Status alterado com sucesso!', 'success');
         }
-        abrirListaAlunos(cursoAbertoAtual.id);
+        await carregarCursos();
     } catch (err) {
-        mostrarPopup('Falha na comunicação com o servidor.', 'error');
-        abrirListaAlunos(cursoAbertoAtual.id);
+        if (err.message !== 'sessao-expirada') mostrarPopup(err.message || 'Não foi possível alterar a situação.', 'error');
+        carregarCursos();
     }
 }
 
@@ -776,3 +769,10 @@ document.getElementById('btnImprimirFicha')?.addEventListener('click', () => {
 });
 
 carregarCursos();
+function atualizarListaVisivel() {
+    if (!document.hidden && !menuAcoesAtivo && !document.querySelector('.admin-confirm-overlay') && document.getElementById('modalDetalhes').style.display !== 'flex' && !document.activeElement?.matches('.admin-status-select')) carregarCursos();
+}
+document.addEventListener('visibilitychange', atualizarListaVisivel);
+setInterval(atualizarListaVisivel, 30000);
+
+window.addEventListener('popstate', carregarCursos);

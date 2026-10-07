@@ -15,6 +15,7 @@ const fixture = cpf => ({
 });
 
 async function exercise(db) {
+    await db.mutate(s => { s.cursos.forEach(c => Object.assign(c, { data_inicio: '2099-01-01', data_termino: '2099-12-31' })); });
     const codes = [];
     const app = express(); app.use(express.json()); app.use(createCitizenRouter(db, { sendCode: async (_email, code) => codes.push(code) }));
     app.use(createStateAdminRouter(db, (req, res, next) => req.headers.authorization === 'Bearer test-admin' ? next() : res.status(401).json({ error: 'Não autorizado' })));
@@ -41,6 +42,9 @@ async function exercise(db) {
         assert.equal((await db.readState()).usuarios.length, 0);
         const registrations = await Promise.all([request('/inscricao', fixture('52998224725')), request('/inscricao', { ...fixture('11144477735'), cep: '29010001', municipio: 'Vitória', mora_vitoria: 'sim', trabalha_vitoria: '' })]);
         assert.ok(registrations.every(r => r.status === 200), JSON.stringify(registrations));
+        const firstSession = registrations[0].data.sessionToken;
+        assert.equal(typeof firstSession, 'string');
+        assert.equal((await request('/api/cidadaos/me', null, firstSession, 'GET')).data.data.cpf, '52998224725');
         assert.deepEqual(registrations.map(r => r.data.status_inscricao).sort(), ['suplente', 'titular']);
         const state = await db.readState();
         assert.equal(state.usuarios.length, 2); assert.equal(state.preInscricoes.length, 2);

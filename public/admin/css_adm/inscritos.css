@@ -1,4 +1,10 @@
 .acoes-container { gap: 8px; }
+#telaAlunos table { min-width: 1120px; }
+#telaAlunos table.por-turma { min-width: 1000px; }
+#telaAlunos table.por-turma th:nth-child(2), #telaAlunos table.por-turma td:nth-child(2) { display: none; }
+#telaAlunos td:first-child { min-width: 185px; max-width: 300px; overflow-wrap: anywhere; }
+#telaAlunos td:nth-child(2) { min-width: 155px; }
+#telaAlunos td:nth-child(3), #telaAlunos td:nth-child(4) { white-space: nowrap; }
 .btn-ficha, .acoes-toggle { min-height: 42px; border-radius: 9px; flex-shrink: 0; }
 .btn-ficha { display: inline-flex; align-items: center; gap: 7px; padding: 10px 13px; background: #edf3ff; color: #284d8c; border: 1px solid #cfddf4; font: inherit; font-size: .82rem; font-weight: 650; cursor: pointer; white-space: nowrap; }
 .btn-ficha:hover { background: #deeaff; }

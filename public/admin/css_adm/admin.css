@@ -153,6 +153,12 @@ body::after {
     line-height: 1;
 }
 
+button.nav-link { font-family: inherit; text-align: left; cursor: pointer; background: transparent; width: 100%; }
+.admin-main { min-width: 0; }
+.badge-neutro { color: var(--text-light); background: var(--surface-2); }
+#filtroTurma { max-width: min(320px, 100%); padding: 8px; border: 1px solid var(--border); border-radius: 8px; background: white; color: var(--text); }
+[hidden] { display: none !important; }
+
 .icon-inline {
     display: inline-flex;
     align-items: center;
@@ -1031,3 +1037,4 @@ input, select, textarea { color: var(--text); background-color: #fff; accent-col
 .card, .kpi-card { box-shadow: 0 6px 22px rgba(40,62,105,.055); }
 .sidebar-brand { background: rgba(255,255,255,.38); }
 .page-header, .admin-header { box-shadow: 0 2px 14px rgba(40,62,105,.035); }
+[hidden] { display: none !important; }

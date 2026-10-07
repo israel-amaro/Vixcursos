@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const express = require('express');
 const mascots = require('../public/mascotes.json');
+const { courseState } = require('./course-state');
 
 const PROFILE_FIELDS = [
     'nome', 'email', 'telefone', 'telefone_alternativo', 'rg', 'data_nascimento', 'genero', 'raca_cor',
@@ -9,7 +10,7 @@ const PROFILE_FIELDS = [
     'responsavel_nome', 'responsavel_cpf', 'responsavel_parentesco', 'responsavel_telefone', 'responsavel_email',
     'responsavel_autorizacao', 'objetivo', 'mascote_preferido',
 ];
-const inactive = new Set(['cancelado', 'desistencia', 'nao_concluido', 'desistente', 'nao_compareceu', 'concluido']);
+const inactive = new Set(['cancelado', 'desistencia', 'nao_concluido', 'desistente', 'nao_compareceu', 'concluido', 'evadido', 'certificado_emitido']);
 const digest = text => crypto.createHash('sha256').update(String(text)).digest('hex');
 const normalizeCpf = value => String(value || '').replace(/\D/g, '');
 function validCpf(value) {
@@ -74,7 +75,10 @@ function enroll(state, body, req, now = Date.now()) {
     validateEligibility(body);
     const course = state.cursos.find(c => c.id === Number(body.curso_id));
     if (!course) throw error(404, 'Curso não encontrado.');
+    if (course.data_publicacao && Date.parse(course.data_publicacao) > now) throw error(400, 'Este curso ainda não foi publicado.');
     if (!['ativo', 'esgotado'].includes(course.status)) throw error(400, 'Este curso não está recebendo pré-inscrições.');
+    const current = courseState(course, now);
+    if (!current.aceita_inscricoes) throw error(400, `Este curso não está recebendo pré-inscrições: ${current.situacao_label.toLowerCase()}.`);
     if (state.preInscricoes.some(i => i.cpf === cpf && i.curso_id === course.id)) throw error(409, 'Você já possui pré-inscrição neste curso.');
     const existing = state.usuarios.find(u => u.cpf === cpf);
     if (existing) sessionFor(state, req, cpf);
@@ -141,7 +145,7 @@ function createCitizenRouter(db, { sendCode, notifyEnrollment = async () => ({})
             await db.mutate(s => { if (s.otp?.[digest(cpf)]?.nonce === nonce) s.otp[digest(cpf)].delivered = true; });
         } catch {
             await db.mutate(s => { if (s.otp?.[digest(cpf)]?.nonce === nonce) delete s.otp[digest(cpf)]; });
-            throw error(503, 'Não foi possível enviar o código. Confira a configuração de e-mail do serviço.');
+            throw error(503, 'Não foi possível enviar o código. Tente novamente em alguns instantes.');
         }
         res.json({ sucesso: true, canal: 'email' });
     }));
@@ -192,10 +196,18 @@ function createCitizenRouter(db, { sendCode, notifyEnrollment = async () => ({})
     }));
     router.post('/inscricao', handler(async (req, res) => {
         const now = Date.now();
-        const saved = await db.mutate(state => enroll(state, req.body, req, now));
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = now + 900000;
+        const saved = await db.mutate(state => {
+            const saved = enroll(state, req.body, req, now);
+            state.sessions ||= {};
+            for (const [key, session] of Object.entries(state.sessions)) if (session.expiresAt < now) delete state.sessions[key];
+            state.sessions[digest(token)] = { cpf: normalizeCpf(req.body.cpf), expiresAt };
+            return saved;
+        });
         let notifications;
         try { notifications = await notifyEnrollment(saved); } catch { notifications = { email: 'falhou' }; }
-        res.json({ status: 'ok', protocolo: `QV-${saved.enrollment.id.toString().padStart(6, '0')}`, status_inscricao: saved.enrollment.status_inscricao, notificacoes: notifications });
+        res.json({ status: 'ok', protocolo: `QV-${saved.enrollment.id.toString().padStart(6, '0')}`, status_inscricao: saved.enrollment.status_inscricao, notificacoes: notifications, sessionToken: token, expiresAt });
     }));
     return router;
 }

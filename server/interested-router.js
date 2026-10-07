@@ -32,7 +32,7 @@ function createInterestedRouter(db, auth) {
         const region = String(b.regiao || '').trim().slice(0, 120);
         const source = ['site_curso', 'site', 'chat_quiz'].includes(b.origem) ? b.origem : 'site';
         await db.mutate(state => {
-            if (cursoId && !state.cursos.some(c => c.id === cursoId && ['ativo', 'esgotado'].includes(c.status))) fail(404, 'Curso não encontrado.');
+            if (cursoId && !state.cursos.some(c => c.id === cursoId && ['ativo', 'esgotado'].includes(c.status) && (!c.data_publicacao || Date.parse(c.data_publicacao) <= Date.now()))) fail(404, 'Curso não encontrado.');
             const previous = state.interessados.find(lead =>
                 ((whatsapp && lead.whatsapp === whatsapp) || (email && lead.email === email)) &&
                 lead.perfil_curso === perfil && (lead.curso_id || null) === cursoId);

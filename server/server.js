@@ -84,7 +84,7 @@ async function createApp(options = {}) {
 
     function responderErroBanco(res, erro, mensagem) {
         console.error('[db]', erro.code || 'indisponível');
-        return res.status(erro.status || 503).json({ error: 'Não foi possível acessar os dados no Firebase. Verifique a configuração do servidor.' });
+        return res.status(erro.status || 503).json({ error: 'Não foi possível carregar os dados. Tente novamente em alguns instantes.' });
     }
 
     // Servir frontend

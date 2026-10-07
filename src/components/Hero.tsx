@@ -16,7 +16,7 @@ const heroImages = [
 ];
 
 export default function Hero({ onOpenQuiz }: HeroProps) {
-  const { courses } = usePublicCourses<{ status: string; vagas_disponiveis: number; data_inicio: string; criado_em?: string }>();
+  const { courses } = usePublicCourses<{ status: string; aceita_inscricoes?: boolean; vagas_disponiveis: number; data_inicio: string; criado_em?: string }>();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [stats, setStats] = useState({
     cursosAbertos: 0,
@@ -35,7 +35,7 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
   }, []);
 
   useEffect(() => {
-          const abertos = courses.filter(c => c.status !== 'esgotado' && c.vagas_disponiveis > 0);
+          const abertos = courses.filter(c => c.aceita_inscricoes !== false && c.status !== 'esgotado' && c.vagas_disponiveis > 0);
           const totalVagas = abertos.reduce((sum, c) => sum + (c.vagas_disponiveis || 0), 0);
           
           setStats({
@@ -101,7 +101,7 @@ export default function Hero({ onOpenQuiz }: HeroProps) {
           className="flex flex-col items-start text-left max-w-2xl w-full"
         >
           <h1 className="hero-title text-[1.875rem] sm:text-4xl md:text-5xl lg:text-6xl font-display font-extrabold leading-[1.1] sm:leading-[1.05] tracking-tight text-primary">
-            <span>Cursos de qualificação profissional</span>{' '}<span className="hero-title-city">Prefeitura de Vitória</span>
+            <span className="hero-title-main">Cursos de qualificação profissional</span>{' '}<span className="hero-title-city">Prefeitura de Vitória</span>
           </h1>
           
           <p className="hero-description text-sm sm:text-sm md:text-base text-slate-600 max-w-xl mt-2.5 sm:mt-4 leading-relaxed font-medium">

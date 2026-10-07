@@ -10,6 +10,9 @@ export interface CourseModalData {
   inscritos: number;
   vagas_disponiveis: number;
   status: string;
+  situacao?: string;
+  situacao_label?: string;
+  aceita_inscricoes?: boolean;
   horario_inicio: string;
   horario_termino: string;
   data_inicio: string;
@@ -137,7 +140,7 @@ export default function CourseModal({ course, isOpen, onClose, triggerRef, onInt
                   <Clock className="w-3 h-3 text-accent" /> Carga Horária
                 </span>
                 <span className="font-extrabold text-slate-900 text-sm mt-0.5">
-                  {course.carga_horaria || 40} horas
+                  {course.carga_horaria ? `${course.carga_horaria} horas` : 'A definir'}
                 </span>
               </div>
 
@@ -146,7 +149,7 @@ export default function CourseModal({ course, isOpen, onClose, triggerRef, onInt
                   <Users className="w-3 h-3 text-accent" /> Faixa Etária
                 </span>
                 <span className="font-extrabold text-slate-900 text-sm mt-0.5">
-                  {course.idade_min || 16} a {course.idade_max || 80} anos
+                  {course.idade_min || 'A definir'} a {course.idade_max || 'A definir'} anos
                 </span>
               </div>
 
@@ -219,11 +222,11 @@ export default function CourseModal({ course, isOpen, onClose, triggerRef, onInt
               <div className="flex flex-wrap gap-4 text-slate-600 font-medium">
                 <span className="flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                  Período: {course.data_inicio || 'Imediato'} a {course.data_termino || 'A definir'}
+                  Período: {course.data_inicio || 'A definir'} a {course.data_termino || 'A definir'}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-slate-400" />
-                  Horário: {course.horario_inicio || '08:00'} às {course.horario_termino || '12:00'}
+                  Horário: {course.horario_inicio || 'A definir'} às {course.horario_termino || 'A definir'}
                 </span>
               </div>
             </div>
@@ -249,11 +252,12 @@ export default function CourseModal({ course, isOpen, onClose, triggerRef, onInt
                 onClose();
                 navigate(`/pre-inscricao/${course.id}`);
               }}
+              disabled={course.aceita_inscricoes === false}
               className={`w-full sm:w-auto px-8 py-3.5 rounded-xl font-extrabold text-xs uppercase tracking-wider text-white transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 ${
                 isEsgotado ? 'bg-orange-500 hover:bg-orange-600' : 'bg-accent hover:bg-accent/90'
               }`}
             >
-              {isEsgotado ? 'Entrar na Lista de Espera' : 'Fazer Pré-Inscrição Agora'}
+              {course.aceita_inscricoes === false ? course.situacao_label : isEsgotado ? 'Entrar na Lista de Espera' : 'Fazer Pré-Inscrição Agora'}
             </button>
           </div>
         </motion.div>

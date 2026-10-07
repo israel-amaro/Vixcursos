@@ -1,4 +1,5 @@
 import DOMPurify from 'dompurify';
+import { readCitizenSession, saveCitizenSession } from '../lib/citizenSession';
 import MascotPicker from '../components/MascotPicker';
 import { getMascot, useMascotPreference, saveMascotPreference } from '../lib/mascots';
 import { useSmallScreen } from '../lib/useSmallScreen';
@@ -442,6 +443,7 @@ export default function PreInscricao() {
         setCursoLocal(dadosCurso.local);
 
         const resVagas = await fetch(`/api/cursos-public/${cursoId}/vagas`);
+        if (!resVagas.ok) throw new Error('Não foi possível consultar a disponibilidade.');
         const dadosVagas = await resVagas.json();
 
         setVagasInfo({
@@ -450,7 +452,7 @@ export default function PreInscricao() {
         });
         // Permitir inscrição como suplente se o curso estiver esgotado ou ativo.
         // Bloquear apenas se estiver 'encerrado', 'oculto' ou 'rascunho'.
-        const isClosed = ['encerrado', 'oculto', 'rascunho'].includes(dadosVagas.status);
+        const isClosed = dadosVagas.aceita_inscricoes === false || ['encerrado', 'oculto', 'rascunho'].includes(dadosVagas.status);
         setCursoDisponivel(!isClosed);
         setVagasVerificadas(true);
 
@@ -674,11 +676,15 @@ export default function PreInscricao() {
           return;
         }
         setProtocoloGerado(responseData.protocolo);
+        if (responseData.sessionToken) {
+          setSessionToken(responseData.sessionToken);
+          saveCitizenSession(responseData.sessionToken, responseData.expiresAt);
+        }
         setDadosSalvosExito(true);
 
         const statusLabel = responseData.status_inscricao === 'suplente' ? 'SUPLENTE (Lista de espera)' : 'TITULAR';
         await addBotMessage(
-          `🎉 <strong>INSCRIÇÃO REALIZADA!</strong><br/><br/>Seu número de protocolo é: <strong>${responseData.protocolo}</strong>.<br/>Classificação: <strong>${statusLabel}</strong>.<br/><br/>Daremos o retorno no seu e-mail e celular assim que as vagas forem validadas.`,
+          `🎉 <strong>INSCRIÇÃO REALIZADA!</strong><br/><br/>Seu número de protocolo é: <strong>${responseData.protocolo}</strong>.<br/>Classificação: <strong>${statusLabel}</strong>.<br/><br/>Sua pré-inscrição está registrada. A matrícula será confirmada após a validação pela instituição.`,
           1500
         );
 
@@ -812,6 +818,23 @@ export default function PreInscricao() {
       // Query database securely via masked localization endpoint
       try {
         setIsTyping(true);
+        const savedToken = readCitizenSession();
+        if (savedToken) {
+          const profileResponse = await fetch('/api/cidadaos/me', { headers: { Authorization: `Bearer ${savedToken}` }, signal: AbortSignal.timeout(15000) });
+          if (profileResponse.ok) {
+            const profile = await profileResponse.json();
+            if (String(profile.data?.cpf || '').replace(/\D/g, '') === valorNormalizado) {
+              setSessionToken(savedToken);
+              setDadosSalvos(profile.data);
+              aplicarDadosAutopreenchimento(profile.data);
+              setInscricoesAtivas((profile.historico || []).filter((h: any) => !['concluido', 'cancelado', 'evadido', 'desistente', 'desistencia', 'nao_compareceu', 'nao_concluido'].includes(h.situacao_final)).length);
+              setAguardandoEscolhaCpf(true);
+              setIsTyping(false);
+              await addBotMessage('Seus dados já estão disponíveis nesta sessão. Confira as informações para continuar.', 600);
+              return;
+            }
+          }
+        }
         const response = await fetch('/api/cidadaos/localizar', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1332,6 +1355,7 @@ export default function PreInscricao() {
               {roteiro[etapaAtual].opcoes?.map((opt) => (
                 <button
                   key={opt.valor}
+                  disabled={isTyping}
                   onClick={() => prosseguirEtapa(opt.valor, opt.texto)}
                   className="bg-white border border-accent/40 text-accent hover:bg-accent hover:text-white font-semibold text-xs py-2.5 px-4 rounded-xl shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer"
                 >
@@ -1368,6 +1392,7 @@ export default function PreInscricao() {
                 ?.map((opt) => (
                   <button
                     key={opt.valor}
+                  disabled={isTyping}
                     onClick={() => prosseguirEtapa(opt.valor, opt.texto)}
                     className="bg-white border border-accent/40 text-accent hover:bg-accent hover:text-white font-semibold text-xs py-2.5 px-4 rounded-xl shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer"
                   >
@@ -1377,6 +1402,7 @@ export default function PreInscricao() {
               }
               <button
                 onClick={() => prosseguirEtapa('prosseguir', 'Apenas esta')}
+                disabled={isTyping}
                 className="bg-accent text-white hover:bg-accent/90 font-bold text-xs py-2.5 px-5 rounded-xl shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer"
               >
                 Confirmar (Somente 1)
@@ -1412,6 +1438,7 @@ export default function PreInscricao() {
                 <button
                   type="button"
                   onClick={() => prosseguirEtapa('', 'Pular')}
+                  disabled={isTyping}
                   className="bg-blue-50 text-primary border border-slate-200 px-4 py-3 rounded-full hover:bg-primary/10 transition-all font-bold text-xs"
                 >
                   Pular
@@ -1444,6 +1471,7 @@ export default function PreInscricao() {
           onVerified={async (authenticatedProfile, token) => {
             setIsOtpModalOpen(false);
             setSessionToken(token);
+            saveCitizenSession(token);
             if (authenticatedProfile.data?.mascote_preferido) saveMascotPreference(authenticatedProfile.data.mascote_preferido);
 
             if (authenticatedProfile && authenticatedProfile.data) {

@@ -17,7 +17,7 @@ function renderizarInteressados() {
     const query = clean(document.getElementById('buscaInteressados').value);
     const status = document.getElementById('statusInteressados').value;
     const list = interessados.filter(lead => (!status || lead.status === status) && clean([lead.nome, lead.email, lead.whatsapp, lead.perfil_curso, lead.curso_nome].join(' ')).includes(query));
-    document.getElementById('resumoInteressados').textContent = `${list.length} de ${interessados.length} interessados • Dados atualizados do site`;
+    document.getElementById('resumoInteressados').textContent = `${list.length} de ${interessados.length} interessados`;
     const tbody = document.querySelector('.tabela-admin tbody');
     if (!list.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Nenhum interessado encontrado.</td></tr>'; return; }
     tbody.innerHTML = list.map(lead => {

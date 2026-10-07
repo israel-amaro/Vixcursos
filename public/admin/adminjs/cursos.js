@@ -28,11 +28,11 @@ async function carregarMonitoramento() {
         const cursos = await lerJsonOuLancar(resCursos);
 
         // ── KPIs ──────────────────────────────────────────
-        const totalInscritos = cursos.reduce((acc, c) => acc + (c.inscritos || 0), 0);
-        const totalVagas = cursos.reduce((acc, c) => acc + (c.vagas_restantes || 0), 0);
-        const esgotadas = cursos.filter(c => c.status === 'esgotado').length;
+        const totalInscritos = stats.inscritos;
+        const totalVagas = cursos.filter(c => c.situacao === 'aberto').reduce((acc, c) => acc + (c.vagas_disponiveis || 0), 0);
+        const esgotadas = cursos.filter(c => c.situacao === 'esgotado').length;
 
-        document.getElementById('kpiTotal').textContent = cursos.length;
+        document.getElementById('kpiTotal').textContent = stats.total;
         document.getElementById('kpiVagas').textContent = totalVagas;
         document.getElementById('kpiInscritos').textContent = totalInscritos;
         document.getElementById('kpiEsgotadas').textContent = esgotadas;
@@ -43,15 +43,13 @@ async function carregarMonitoramento() {
             tbody.innerHTML = '<tr><td colspan="5" class="empty-state">Nenhuma turma cadastrada.</td></tr>';
         } else {
             tbody.innerHTML = cursos.map(c => {
-                const badge = c.status === 'esgotado'
-                    ? '<span class="badge badge-esgotado">ESGOTADO</span>'
-                    : '<span class="badge badge-ativo">ATIVO</span>';
+                const badge = '<span class="badge">' + escapeHtml(c.situacao_label) + '</span>';
                 return `
                 <tr>
-                    <td><strong>${c.nome}</strong></td>
-                    <td class="text-sm text-muted">${c.local}</td>
-                    <td><strong>${c.inscritos}</strong></td>
-                    <td>${c.vagas_restantes}</td>
+                    <td><strong>${escapeHtml(c.nome)}</strong><br><small>${c.data_inicio || "A definir"} até ${c.data_termino || "A definir"}</small><br><a href="/admin/inscritos.html?curso=${c.id}">Ver inscritos</a></td>
+                    <td class="text-sm text-muted">${escapeHtml(c.local)}</td>
+                    <td><strong>${c.total_inscritos}</strong><br><small>${c.inscritos} vagas ocupadas</small></td>
+                    <td>${c.vagas_disponiveis}</td>
                     <td>${badge}</td>
                 </tr>`;
             }).join('');
@@ -65,7 +63,7 @@ async function carregarMonitoramento() {
         }
 
         listaProgresso.innerHTML = cursos.map(c => {
-            const total = (c.inscritos || 0) + (c.vagas_restantes || 0);
+            const total = c.vagas_totais || 0;
             const taxa = total > 0 ? Math.round((c.inscritos / total) * 100) : 0;
             let cor = 'var(--success)';
             if (taxa >= 90) cor = 'var(--danger)';
@@ -74,7 +72,7 @@ async function carregarMonitoramento() {
             return `
             <div class="progresso-item">
                 <div class="progresso-header">
-                    <span class="fw-600">${c.nome}</span>
+                    <span class="fw-600">${escapeHtml(c.nome)}</span>
                     <span style="color:${cor}">${taxa}%</span>
                 </div>
                 <div class="barra-fundo">
@@ -90,4 +88,9 @@ async function carregarMonitoramento() {
     }
 }
 
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+}
 carregarMonitoramento();
+document.addEventListener('visibilitychange', () => { if (!document.hidden) carregarMonitoramento(); });
+setInterval(() => { if (!document.hidden) carregarMonitoramento(); }, 30000);

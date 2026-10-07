@@ -6,21 +6,9 @@ const COOKIE = 'qualifica_vix_admin_session';
 const EXPIRY = 8 * 60 * 60 * 1000;
 
 function firebaseUnavailable(error) {
-    const messages = {
-        'config/firebase-account-missing': 'Configure FIREBASE_SERVICE_ACCOUNT_JSON na Vercel para Production e faça um novo deploy.',
-        'config/firebase-invalid-json': 'O valor de FIREBASE_SERVICE_ACCOUNT_JSON não é um JSON válido. Cole o conteúdo completo do arquivo e faça um novo deploy.',
-        'config/firebase-invalid-account': 'FIREBASE_SERVICE_ACCOUNT_JSON precisa conter o JSON completo de uma conta de serviço Firebase.',
-        'config/firebase-invalid-key': 'A chave privada da conta de serviço está inválida. Use um novo arquivo JSON gerado no Firebase e faça um novo deploy.',
-        'auth/invalid-credential': 'A credencial do servidor não foi aceita pelo Firebase. Confira a conta de serviço configurada na Vercel.',
-        'app/invalid-credential': 'A credencial do servidor não foi aceita pelo Firebase. Confira a conta de serviço configurada na Vercel.',
-        'auth/insufficient-permission': 'A conta de serviço não tem permissão para gerenciar sessões no Firebase Authentication. Confira as permissões no Google Cloud.',
-        'MODULE_NOT_FOUND': 'Uma dependência da autenticação está ausente no servidor. É necessário corrigir o deploy do portal.',
-        'ERR_MODULE_NOT_FOUND': 'Uma dependência da autenticação está ausente no servidor. É necessário corrigir o deploy do portal.',
-        'ERR_REQUIRE_ESM': 'Uma dependência da autenticação é incompatível com o servidor. É necessário atualizar o deploy do portal.',
-    };
     // Never return/log the SDK message: parsing and credential errors may contain secrets.
     const code = typeof error?.code === 'string' && /^[a-zA-Z0-9_/-]{1,80}$/.test(error.code) ? error.code : 'firebase/unavailable';
-    return { code, error: messages[code] || `Não foi possível validar o acesso no Firebase (${code}). Verifique os Logs do servidor na Vercel.` };
+    return { code, error: 'O acesso está temporariamente indisponível. Tente novamente mais tarde.' };
 }
 
 function createAdminAuth(options = {}) {
@@ -49,7 +37,7 @@ function createAdminAuth(options = {}) {
     const requireAuth = async (req, res, next) => {
         try {
             const user = await verify(req);
-            if (!user) return res.status(401).json({ error: 'Entre com sua conta administrativa do Firebase.' });
+            if (!user) return res.status(401).json({ error: 'Sua sessão expirou. Entre novamente.' });
             req.admin = user;
             next();
         } catch (error) { unavailable(res, error); }
@@ -68,18 +56,18 @@ function createAdminAuth(options = {}) {
     router.post('/api/admin/login', async (req, res) => {
         const origin = req.get('origin');
         if (origin && origin !== `${req.protocol}://${req.get('host')}` && origin !== `https://${req.get('host')}`) return res.status(403).json({ error: 'Origem de acesso inválida.' });
-        if (typeof req.body?.idToken !== 'string' || !req.body.idToken) return res.status(400).json({ error: 'Entre com e-mail e senha pelo Firebase Authentication.' });
+        if (typeof req.body?.idToken !== 'string' || !req.body.idToken) return res.status(400).json({ error: 'Informe seu e-mail e sua senha para entrar.' });
         try {
             const service = auth();
             const user = await withTimeout(service.verifyIdToken(req.body.idToken, true));
-            if (!permitted(user)) return res.status(403).json({ error: 'Sua conta Firebase não está autorizada a acessar o painel administrativo.' });
+            if (!permitted(user)) return res.status(403).json({ error: 'Sua conta não tem permissão para acessar o painel.' });
             if (!user.auth_time || Date.now() / 1000 - user.auth_time > 300) return res.status(401).json({ error: 'Entre novamente para iniciar uma sessão administrativa.' });
             const session = await withTimeout(service.createSessionCookie(req.body.idToken, { expiresIn: EXPIRY }));
             res.setHeader('Set-Cookie', cookie(session));
             res.json({ ok: true });
         } catch (error) {
             const invalid = ['auth/argument-error', 'auth/id-token-expired', 'auth/id-token-revoked', 'auth/user-disabled', 'auth/invalid-id-token'].includes(error.code);
-            if (invalid) return res.status(401).json({ error: 'Sua sessão Firebase não é válida. Entre novamente.' });
+            if (invalid) return res.status(401).json({ error: 'Sua sessão não é válida. Entre novamente.' });
             console.error('[admin-auth] Falha ao validar sessão Firebase:', firebaseUnavailable(error).code);
             unavailable(res, error);
         }

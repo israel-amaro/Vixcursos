@@ -24,15 +24,15 @@ const bounded = async <T>(promise: Promise<T>): Promise<T> => {
 };
 
 const messages: Record<string, string> = {
-  'auth/invalid-credential': 'Confira o e-mail e a senha cadastrados no Firebase Authentication.',
-  'auth/user-not-found': 'Confira o e-mail e a senha cadastrados no Firebase Authentication.',
-  'auth/wrong-password': 'Confira o e-mail e a senha cadastrados no Firebase Authentication.',
+  'auth/invalid-credential': 'Confira o e-mail e a senha e tente novamente.',
+  'auth/user-not-found': 'Confira o e-mail e a senha e tente novamente.',
+  'auth/wrong-password': 'Confira o e-mail e a senha e tente novamente.',
   'auth/invalid-email': 'Informe um e-mail válido.',
   'auth/user-disabled': 'Esta conta foi desativada. Procure o administrador.',
-  'auth/operation-not-allowed': 'Ative o provedor E-mail/Senha no Firebase Authentication.',
-  'auth/configuration-not-found': 'Ative o Firebase Authentication e o provedor E-mail/Senha.',
+  'auth/operation-not-allowed': 'O acesso está indisponível. Tente novamente mais tarde.',
+  'auth/configuration-not-found': 'O acesso está indisponível. Tente novamente mais tarde.',
   'auth/too-many-requests': 'Muitas tentativas de acesso. Aguarde um pouco e tente novamente.',
-  'auth/network-request-failed': 'Não foi possível conectar ao Firebase. Confira sua conexão.',
+  'auth/network-request-failed': 'Não foi possível conectar. Confira sua conexão e tente novamente.',
 };
 
 form.addEventListener('submit', async event => {
@@ -40,7 +40,7 @@ form.addEventListener('submit', async event => {
   if (submitting) return;
   submitting = true;
   button.disabled = true;
-  show('Validando acesso no Firebase…');
+  show('Entrando…');
   try {
     await setPersistence(auth, inMemoryPersistence);
     const credential = await bounded(signInWithEmailAndPassword(auth, email.value.trim(), password.value));
@@ -55,7 +55,7 @@ form.addEventListener('submit', async event => {
     window.location.replace('/admin/menu.html');
   } catch (error) {
     const failure = error as Error & { code?: string };
-    show(messages[failure.code || ''] || (['AbortError', 'TimeoutError'].includes(failure.name) ? 'O servidor não respondeu. Verifique a configuração do Firebase na Vercel e tente novamente.' : failure.message || 'Não foi possível entrar.'), 'error');
+    show(messages[failure.code || ''] || (['AbortError', 'TimeoutError'].includes(failure.name) ? 'A conexão demorou mais que o esperado. Tente novamente.' : failure.code ? 'Não foi possível entrar. Tente novamente mais tarde.' : failure.message || 'Não foi possível entrar.'), 'error');
   } finally {
     password.value = '';
     await signOut(auth).catch(() => {});

@@ -7,6 +7,7 @@ const { importExistingCourses } = require('../server/catalog-import');
 async function exercise(db) {
     assert.deepEqual(await importExistingCourses(db), { imported: 5, existing: 0 });
     assert.deepEqual(await importExistingCourses(db), { imported: 0, existing: 5 });
+    await db.mutate(s => { s.cursos.forEach(c => Object.assign(c, { data_inicio: '2099-01-01', data_termino: '2099-12-31' })); });
     const createApp = require('../server/server');
     const app = await createApp({ db, adminAuth: { getAuth: () => ({ verifySessionCookie: async () => ({ uid: 'test-admin' }) }), allowedUids: ['test-admin'] } });
     const server = app.listen(0, '127.0.0.1'); await once(server, 'listening');

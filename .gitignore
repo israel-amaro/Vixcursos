@@ -49,6 +49,8 @@ pids/
 
 # Build outputs
 coverage/
+playwright-report/
+test-results/
 dist/
 build/
 

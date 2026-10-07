@@ -19,31 +19,12 @@
 </head>
 <body>
 
-<nav class="admin-sidebar">
-    <a href="menu.html" class="sidebar-brand">
-        <img class="sidebar-logo" src="/imagem/logo.png" alt="Qualifica Vix">
-        <div>
-            <span class="brand-name">Qualifica Vix</span>
-            <span class="brand-sub">Área administrativa</span>
-        </div>
-    </a>
-
-    <nav class="sidebar-menu" aria-label="Navegação administrativa">
-        <a href="menu.html" class="sidebar-link"><i class="bi bi-grid-1x2-fill" aria-hidden="true"></i> <span>Dashboard</span></a>
-        <a href="cursos.html" class="sidebar-link"><i class="bi bi-book-fill" aria-hidden="true"></i> <span>Cursos</span></a>
-        <a href="inscritos.html" class="sidebar-link"><i class="bi bi-people-fill" aria-hidden="true"></i> <span>Inscritos</span></a>
-        <a href="relatorios.html" class="sidebar-link"><i class="bi bi-bar-chart-fill" aria-hidden="true"></i> <span>Relatórios</span></a>
-        <a href="interessados.html" class="sidebar-link"><i class="bi bi-person-lines-fill" aria-hidden="true"></i> <span>Interessados</span></a>
-        <a href="faq.html" class="sidebar-link active" aria-current="page"><i class="bi bi-question-circle-fill" aria-hidden="true"></i> <span>Gerenciar FAQ</span></a>
-        <div class="sidebar-divider"></div>
-        <a href="#" onclick="logout(); return false;" class="sidebar-link sidebar-link-danger"><i class="bi bi-box-arrow-right" aria-hidden="true"></i> <span>Sair</span></a>
-    </nav>
-</nav>
+<nav class="admin-sidebar" aria-label="Navegação administrativa"></nav>
 
 <main class="admin-main">
-    <header class="admin-header">
-        <div>
-            <h1 class="admin-title"><i class="bi bi-question-circle-fill" aria-hidden="true"></i> Gerenciamento de FAQ</h1>
+    <header class="page-header">
+        <div class="ph-left">
+            <h1><i class="bi bi-question-circle-fill" aria-hidden="true"></i> Gerenciamento de FAQ</h1>
             <p>Adicione, edite ou remova as perguntas frequentes do portal Qualifica Vix</p>
         </div>
         <div class="ph-right">
@@ -111,6 +92,7 @@
 
 <script>
     let faqsGlobais = [];
+    const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
 
     function mostrarPopup(mensagem, tipo = 'info') {
         const icones = { success: 'OK', error: '!', warning: '!', info: 'i' };
@@ -147,6 +129,7 @@
                 </div>
             `;
             const fechar = (res) => { overlay.remove(); resolve(res); };
+            overlay.appendChild(modal);
             overlay.querySelector('.cancel-btn').onclick = () => fechar(false);
             overlay.querySelector('.confirm-btn').onclick = () => fechar(true);
             document.body.appendChild(overlay);
@@ -158,8 +141,9 @@
             window.location.href = '/admin/login.html';
             throw new Error('sessao-expirada');
         }
-        if (!res.ok) throw new Error(`http-${res.status}`);
-        return res.json();
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Não foi possível concluir a operação.');
+        return data;
     }
 
     function abrirModalFaq(idFaq = null) {
@@ -205,8 +189,8 @@
                 tbody.innerHTML += `
                     <tr>
                         <td><strong>${faq.ordem}</strong></td>
-                        <td>${faq.pergunta}</td>
-                        <td title="${faq.resposta}">${faq.resposta}</td>
+                        <td>${escapeHtml(faq.pergunta)}</td>
+                        <td title="${escapeHtml(faq.resposta)}">${escapeHtml(faq.resposta)}</td>
                         <td>
                             <div style="display: flex; gap: 8px;">
                                 <button onclick="abrirModalFaq(${faq.id})" class="btn btn-outline btn-sm"><i class="bi bi-pencil" aria-hidden="true"></i> Editar</button>
@@ -218,6 +202,7 @@
             });
         } catch (err) {
             console.error(err);
+            document.getElementById('tabelaFaqBody').innerHTML = '<tr><td colspan="4" class="empty-state">Não foi possível carregar as perguntas. Recarregue a página para tentar novamente.</td></tr>';
         }
     }
 
@@ -245,7 +230,7 @@
             carregarFaqs();
         } catch (err) {
             console.error(err);
-            mostrarPopup('Erro ao salvar FAQ.', 'error');
+            mostrarPopup(err.message === 'sessao-expirada' ? 'Sua sessão expirou. Entre novamente.' : err.message, 'error');
         }
     }
 

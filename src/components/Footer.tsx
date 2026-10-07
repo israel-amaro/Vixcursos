@@ -152,18 +152,6 @@ export default function Footer({ onOpenSurvey }: FooterProps) {
             <span className="text-[10px] text-slate-600 tracking-wider font-mono">
               Desenvolvido para a comunidade capixaba 💙
             </span>
-            <span className="text-slate-600 hidden sm:inline">|</span>
-            <a
-              href="/admin/login.html"
-              className="text-[10px] text-slate-600 hover:text-slate-600 hover:bg-white/[0.02] px-2 py-1 rounded transition-all duration-300 font-mono flex items-center gap-1.5 select-none border border-transparent hover:border-slate-200"
-              title="Painel de Administração"
-            >
-              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-              </svg>
-              Acesso Restrito
-            </a>
           </div>
         </div>
 

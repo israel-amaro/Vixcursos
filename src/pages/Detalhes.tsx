@@ -12,6 +12,9 @@ interface CourseDetails {
   vagas_disponiveis: number;
   vagas: number;
   status: string;
+  situacao?: string;
+  situacao_label?: string;
+  aceita_inscricoes?: boolean;
   horario_inicio: string;
   horario_termino: string;
   data_inicio: string;
@@ -150,6 +153,7 @@ export default function Detalhes() {
   const imageSrc = imagensCursos[course.categoria] || imagensCursos[course.nome] || '/imagem/proficao/proficao.png';
 
   const getStatusDisplay = (vagas: number) => {
+    if (course.aceita_inscricoes === false) return { label: course.situacao_label || 'Inscrições indisponíveis', class: 'text-slate-600 bg-slate-100 border-slate-200', icon: <XCircle className="w-4 h-4" /> };
     if (isEsgotado) {
       return {
         label: "Vagas Esgotadas",
@@ -215,6 +219,7 @@ export default function Detalhes() {
             {/* Inscription Action Button */}
             <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto">
               <button
+                disabled={course.aceita_inscricoes === false}
                 onClick={() => navigate(`/pre-inscricao/${course.id}`)}
                 className={`px-10 py-4 rounded-xl text-xs font-bold uppercase tracking-widest text-white transition-all duration-300 transform hover:scale-[1.02] shadow-lg cursor-pointer ${
                   isEsgotado 
@@ -222,7 +227,7 @@ export default function Detalhes() {
                     : 'bg-primary hover:bg-primary/95'
                 }`}
               >
-                {isEsgotado ? 'Entrar em Fila de Espera' : 'Fazer Pré-inscrição'}
+                {course.aceita_inscricoes === false ? course.situacao_label : isEsgotado ? 'Entrar em Fila de Espera' : 'Fazer Pré-inscrição'}
               </button>
             </div>
           </div>
@@ -268,25 +273,6 @@ export default function Detalhes() {
               </p>
             </div>
 
-            {/* Oportunidade de Mercado & Média Salarial (Item 7 Requirement) */}
-            <div className="mt-4 p-5 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-emerald-600 text-white rounded-xl font-extrabold text-base shadow-sm">
-                  💰
-                </div>
-                <div>
-                  <h4 className="font-bold text-slate-800 text-sm">
-                    Possibilidades Profissionais & Remuneração
-                  </h4>
-                  <p className="text-xs text-slate-600 mt-0.5">
-                    Formação voltada tanto para <strong>Carteira Assinada (CLT)</strong> quanto para <strong>Empreendedorismo/Autônomo</strong>.
-                  </p>
-                </div>
-              </div>
-              <div className="px-4 py-2 rounded-xl bg-white border border-emerald-200 text-emerald-800 font-extrabold text-xs whitespace-nowrap shadow-xs">
-                Média Salarial ES: R$ 2.200 a R$ 4.500/mês
-              </div>
-            </div>
           </div>
 
           {/* Box 2: Quick Infos */}

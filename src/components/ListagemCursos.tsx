@@ -1,7 +1,7 @@
 import { getMascot } from '../lib/mascots';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, BookX, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, XCircle, Clock, Calendar, BookmarkPlus, TrendingUp, DollarSign, Tag, BookOpen } from 'lucide-react';
+import { MapPin, BookX, ChevronLeft, ChevronRight, CheckCircle2, AlertTriangle, XCircle, Clock, Calendar, BookmarkPlus, TrendingUp, Tag, BookOpen } from 'lucide-react';
 import { FilterState } from './FiltroBusca';
 import CourseModal, { CourseModalData } from './CourseModal';
 import InterestModal from './InterestModal';
@@ -36,17 +36,6 @@ const getCourseImage = (categoria: string, nome: string): string => {
   return imagensCursos[categoria] || 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=800';
 };
 
-const getSalaryExpectation = (categoria: string): string => {
-  const cat = (categoria || '').toLowerCase();
-  if (cat.includes('beleza')) return 'R$ 2.200 — R$ 4.500/mês (autônomo ou salão)';
-  if (cat.includes('gastronomia')) return 'R$ 1.900 — R$ 3.800/mês (restaurantes ou negócios)';
-  if (cat.includes('informática') || cat.includes('tecnologia')) return 'R$ 2.500 — R$ 5.500/mês (suporte ou TI)';
-  if (cat.includes('energia') || cat.includes('elétrica')) return 'R$ 2.800 — R$ 4.800/mês (instalações e serviços)';
-  if (cat.includes('confecção')) return 'R$ 1.800 — R$ 3.500/mês (ateliês ou marca própria)';
-  if (cat.includes('construção')) return 'R$ 2.400 — R$ 4.200/mês (obras e reformas)';
-  return 'R$ 2.000 — R$ 3.800/mês (mercado regional ES)';
-};
-
 const getIdealForTags = (_categoria: string, nome: string): string[] => {
   const nm = (nome || '').toLowerCase();
   if (nm.includes('barbeiro') || nm.includes('confeitaria') || nm.includes('costura')) {
@@ -65,6 +54,9 @@ interface Course {
   inscritos: number;
   vagas_disponiveis: number;
   status: string;
+  situacao?: string;
+  situacao_label?: string;
+  aceita_inscricoes?: boolean;
   horario_inicio: string;
   horario_termino: string;
   data_inicio: string;
@@ -199,10 +191,11 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
   const currentCourses = filteredCourses.slice(indexOfFirstCourse, indexOfLastCourse);
   const totalPages = Math.ceil(filteredCourses.length / itemsPerPage);
 
-  const getStatusConfig = (vagas: number, status: string) => {
+  const getStatusConfig = (vagas: number, status: string, course: Course) => {
+    if (course.aceita_inscricoes === false) return { label: course.situacao_label || 'Inscrições indisponíveis', class: 'bg-slate-100 text-slate-600 border border-slate-200', icon: <XCircle className="w-3.5 h-3.5" /> };
     if (status === 'esgotado' || vagas <= 0) {
       return {
-        label: "Encerrado (Suplência)",
+        label: "Lista de espera",
         class: "bg-red-100 text-red-700 border border-red-200",
         icon: <XCircle className="w-3.5 h-3.5" />
       };
@@ -319,10 +312,10 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
         {filteredCourses.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8">
             {currentCourses.map((course) => {
-              const status = getStatusConfig(course.vagas_disponiveis, course.status);
+              const status = getStatusConfig(course.vagas_disponiveis, course.status, course);
               const isEsgotado = course.status === 'esgotado' || course.vagas_disponiveis <= 0;
               const imgSrc = getCourseImage(course.categoria, course.nome);
-              const salary = getSalaryExpectation(course.categoria);
+
               const idealTags = getIdealForTags(course.categoria, course.nome);
 
               return (
@@ -375,7 +368,7 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
                       {/* DATA DE INÍCIO DAS AULAS (Item 7 Requirement) */}
                       <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-100 border border-slate-200 mb-3 text-xs font-bold text-slate-700">
                         <Calendar className="w-4 h-4 text-accent flex-shrink-0" />
-                        <span>Início das aulas: <strong className="text-slate-900">{course.data_inicio || 'Imediato'}</strong></span>
+                        <span>Início das aulas: <strong className="text-slate-900">{course.data_inicio || 'A definir'}</strong></span>
                       </div>
 
                       {/* Resumo curto + Mercado e Média Salarial */}
@@ -383,10 +376,7 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
                         {course.descricao || "Capacitação profissional presencial gratuita com foco prático e certificação para o mercado de Vitória."}
                       </p>
 
-                      <div className="flex items-start gap-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 p-2 rounded-lg mb-4">
-                        <DollarSign className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                        <span><strong>Média Salarial na Área:</strong> {salary}</span>
-                      </div>
+
 
                       {/* BLOCO "IDEAL PARA:" TAGS (Item 7 Requirement) */}
                       <div className="mb-4">
@@ -411,7 +401,7 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
                       <div className="flex flex-col gap-1.5 text-xs text-slate-500 pt-3 border-t border-slate-100">
                         <div className="flex items-center gap-2">
                           <Clock className="w-3.5 h-3.5 text-slate-400" />
-                          <span>Carga Horária: {course.carga_horaria || 40}h</span>
+                          <span>Carga Horária: {course.carga_horaria ? `${course.carga_horaria}h` : 'A definir'}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <MapPin className="w-3.5 h-3.5 text-slate-400" />
@@ -442,6 +432,7 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
                       </button>
 
                       <button
+                        disabled={course.aceita_inscricoes === false}
                         onClick={() => navigate(`/pre-inscricao/${course.id}`)}
                         className={`w-full py-3 rounded-xl text-xs font-extrabold uppercase tracking-widest text-white transition-all duration-300 cursor-pointer text-center shadow-md transform hover:scale-[1.02] ${
                           isEsgotado
@@ -449,7 +440,7 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
                             : 'bg-accent hover:bg-accent/90'
                         }`}
                       >
-                        {isEsgotado ? 'Entrar na Lista de Espera' : 'Quero me Inscrever'}
+                        {course.aceita_inscricoes === false ? course.situacao_label : isEsgotado ? 'Entrar na Lista de Espera' : 'Quero me Inscrever'}
                       </button>
                     </div>
                   </div>
