@@ -59,10 +59,10 @@ export default function InterestModal({ course, onClose }: { course?: InterestCo
           <label className="block text-sm font-semibold">Nome completo<input name="nome" required minLength={3} maxLength={160} autoComplete="name" className="mt-1 w-full border border-slate-300 rounded-xl p-3 text-base" /></label>
           <label className="block text-sm font-semibold">WhatsApp com DDD<input name="whatsapp" type="tel" maxLength={20} autoComplete="tel" placeholder="(27) 99999-9999" className="mt-1 w-full border border-slate-300 rounded-xl p-3 text-base" /></label>
           <label className="block text-sm font-semibold">E-mail<input name="email" type="email" maxLength={254} autoComplete="email" className="mt-1 w-full border border-slate-300 rounded-xl p-3 text-base" /></label>
-          <p className="text-xs text-slate-500">Informe pelo menos um telefone ou e-mail.</p>
+          <p className="text-sm text-slate-500">Informe pelo menos um telefone ou e-mail.</p>
           {!course && <label className="block text-sm font-semibold">Área de interesse<select name="perfil" required className="mt-1 w-full border border-slate-300 rounded-xl p-3 text-base"><option value="">Selecione uma área</option>{areas.length ? areas.map(area => <option key={area.id}>{area.categoria}</option>) : mascots.filter(m => m.id !== 'vitoruga').map(m => <option key={m.id}>{m.profissao}</option>)}</select></label>}
           <label className="block text-sm font-semibold">Cidade ou bairro (opcional)<input name="regiao" maxLength={120} autoComplete="address-level2" className="mt-1 w-full border border-slate-300 rounded-xl p-3 text-base" /></label>
-          <label className="flex items-start gap-3 text-xs leading-relaxed py-2"><input name="autoriza_contato" type="checkbox" required className="mt-1 w-4 h-4 shrink-0" /><span>Autorizo o uso destes dados pela equipe do Qualifica Vix para contato sobre cursos e oportunidades de qualificação.</span></label>
+          <label className="flex items-start gap-3 text-sm leading-relaxed py-2"><input name="autoriza_contato" type="checkbox" required className="mt-1 w-4 h-4 shrink-0" /><span>Autorizo o uso destes dados pela equipe do Qualifica Vix para contato sobre cursos e oportunidades de qualificação.</span></label>
           {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
           <button disabled={sending} className="w-full rounded-xl bg-accent text-white p-3.5 font-bold disabled:opacity-50">{sending ? 'Salvando…' : 'Registrar meu interesse'}</button>
         </form>

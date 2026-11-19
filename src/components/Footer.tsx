@@ -35,7 +35,7 @@ export default function Footer({ onOpenSurvey }: FooterProps) {
             {onOpenSurvey && (
               <button
                 onClick={onOpenSurvey}
-                className="mt-6 px-4 py-2.5 bg-accent/20 hover:bg-accent/30 border border-accent/40 rounded-xl text-accent text-xs font-bold flex items-center gap-2 transition-all cursor-pointer shadow-sm group"
+                className="mt-6 px-4 py-2.5 bg-accent/20 hover:bg-accent/30 border border-accent/40 rounded-xl text-accent text-sm font-bold flex items-center gap-2 transition-all cursor-pointer shadow-sm group"
               >
                 <MessageSquareHeart className="w-4 h-4 group-hover:scale-110 transition-transform" />
                 <span>Responder Pesquisa de Satisfação</span>
@@ -76,7 +76,7 @@ export default function Footer({ onOpenSurvey }: FooterProps) {
 
           {/* Column 2: Navigation Links */}
           <div className="flex flex-col items-start md:pl-10">
-            <h4 className="text-xs font-bold tracking-[0.2em] uppercase text-slate-600 mb-6">
+            <h4 className="text-sm font-bold tracking-[0.2em] uppercase text-slate-600 mb-6">
               Navegação
             </h4>
             <nav className="flex flex-col gap-3 text-sm">
@@ -111,7 +111,7 @@ export default function Footer({ onOpenSurvey }: FooterProps) {
 
           {/* Column 3: Contact */}
           <div className="flex flex-col items-start">
-            <h4 className="text-xs font-bold tracking-[0.2em] uppercase text-slate-600 mb-6">
+            <h4 className="text-sm font-bold tracking-[0.2em] uppercase text-slate-600 mb-6">
               Contato
             </h4>
 
@@ -145,11 +145,11 @@ export default function Footer({ onOpenSurvey }: FooterProps) {
 
         {/* Bottom footer */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-center">
-          <span className="text-[10px] text-slate-600 tracking-wider font-mono">
+          <span className="text-sm text-slate-600 tracking-normal font-sans tabular-nums">
             © 2026 Qualifica Vix — Prefeitura Municipal de Vitória. Todos os direitos reservados.
           </span>
           <div className="flex flex-col sm:flex-row items-center gap-3 justify-center md:justify-end select-none">
-            <span className="text-[10px] text-slate-600 tracking-wider font-mono">
+            <span className="text-sm text-slate-600 tracking-normal font-sans tabular-nums">
               Desenvolvido para a comunidade capixaba 💙
             </span>
           </div>

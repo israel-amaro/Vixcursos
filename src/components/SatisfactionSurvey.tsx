@@ -40,7 +40,7 @@ export default function SatisfactionSurvey({ isOpen, onClose }: SatisfactionSurv
     },
     {
       id: 6,
-      question: "6. Você acha importante conhecer sua colocação na pré-inscrição, dentro das vagas ou na suplência?",
+      question: "6. Você acha importante conhecer sua colocação na pré-inscrição, dentro das vagas ou na lista de espera?",
       options: ["Sim", "Não"]
     },
     {
@@ -126,7 +126,7 @@ export default function SatisfactionSurvey({ isOpen, onClose }: SatisfactionSurv
                 <h3 className="font-display font-extrabold text-slate-800 text-lg">
                   Pesquisa de Satisfação
                 </h3>
-                <p className="text-xs text-slate-400 font-medium">
+                <p className="text-sm text-slate-400 font-medium">
                   Sua opinião ajuda a melhorar os serviços da PMV
                 </p>
               </div>
@@ -150,7 +150,7 @@ export default function SatisfactionSurvey({ isOpen, onClose }: SatisfactionSurv
                 />
               </div>
 
-              <div className="flex items-center justify-between text-xs text-slate-400 font-bold uppercase mb-3">
+              <div className="flex items-center justify-between text-sm text-slate-400 font-bold uppercase mb-3">
                 <span>Pergunta {currentStep + 1} de {questions.length}</span>
                 {currentStep > 0 && (
                   <button
@@ -171,14 +171,14 @@ export default function SatisfactionSurvey({ isOpen, onClose }: SatisfactionSurv
                   <button
                     key={idx}
                     onClick={() => handleSelectOption(opt)}
-                    className={`w-full p-4 rounded-xl border text-left font-semibold text-xs transition-all duration-200 cursor-pointer flex items-center justify-between hover:border-accent hover:bg-accent/5 ${
+                    className={`w-full p-4 rounded-xl border text-left font-semibold text-sm transition-all duration-200 cursor-pointer flex items-center justify-between hover:border-accent hover:bg-accent/5 ${
                       answers[currentStep] === opt
                         ? 'border-accent bg-accent/10 text-accent font-bold'
                         : 'border-slate-200 bg-white text-slate-700'
                     }`}
                   >
                     <span>{opt}</span>
-                    <span className="w-5 h-5 rounded-full border border-slate-300 flex items-center justify-center text-xs">
+                    <span className="w-5 h-5 rounded-full border border-slate-300 flex items-center justify-center text-sm">
                       {answers[currentStep] === opt ? '✓' : ''}
                     </span>
                   </button>
@@ -193,7 +193,7 @@ export default function SatisfactionSurvey({ isOpen, onClose }: SatisfactionSurv
               <h4 className="text-xl font-display font-extrabold text-slate-800">
                 Obrigado por participar!
               </h4>
-              <p className="text-xs text-slate-500 max-w-sm leading-relaxed">
+              <p className="text-sm text-slate-500 max-w-sm leading-relaxed">
                 Sua avaliação foi registrada com sucesso e orientará as próximas melhorias no portal Qualifica Vix.
               </p>
               <button
@@ -201,7 +201,7 @@ export default function SatisfactionSurvey({ isOpen, onClose }: SatisfactionSurv
                   handleReset();
                   onClose();
                 }}
-                className="mt-4 px-8 py-3 bg-primary hover:bg-primary-dark text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                className="mt-4 px-8 py-3 bg-primary hover:bg-primary-dark text-white rounded-xl text-sm font-bold uppercase tracking-normal transition-colors cursor-pointer"
               >
                 Concluir
               </button>

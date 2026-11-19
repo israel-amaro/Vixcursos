@@ -1,3 +1,4 @@
+import { startLabel } from '../lib/images';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import Header from '../components/Header';
@@ -36,10 +37,10 @@ const imagensCursos: { [key: string]: string } = {
   'Administração': '/imagem/proficao/administracao.jpg',
   'Artesanato': '/imagem/proficao/artesanato.jpg',
   'AUTOMAÇÃO INDUSTRIAL': '/imagem/proficao/automacao.jpg',
-  'Beleza': '/imagem/proficao/proficao.png',
+  'Beleza': '/imagem/proficao/proficao.webp',
   'Cinema': '/imagem/proficao/cinema.jpg',
   'Comércio / Gestão Empresarial': '/imagem/proficao/comercio.jpg',
-  'Confecção': '/imagem/proficao/proficao2.png',
+  'Confecção': '/imagem/proficao/proficao2.webp',
   'Construção Civil / Serviço': '/imagem/proficao/construcao.jpg',
   'Cultura': '/imagem/proficao/cultura.jpg',
   'Dança': '/imagem/proficao/danca.jpg',
@@ -51,7 +52,7 @@ const imagensCursos: { [key: string]: string } = {
   'Estética': '/imagem/proficao/estetica.jpg',
   'Eventos': '/imagem/proficao/eventos.jpg',
   'Fotografia': '/imagem/proficao/fotografia.jpg',
-  'Gastronomia': '/imagem/proficao/proficao3.png',
+  'Gastronomia': '/imagem/proficao/proficao3.webp',
   'Gestão': '/imagem/proficao/gestao.jpg',
   'Idiomas': '/imagem/proficao/idiomas.jpg',
   'Informática / Tecnologia': '/imagem/proficao/informatica.jpg',
@@ -71,8 +72,8 @@ const imagensCursos: { [key: string]: string } = {
   'Soldagem': '/imagem/proficao/soldagem.jpg',
   'Turismo / Hotelaria': '/imagem/proficao/turismo.jpg',
   'Vendas / Marketing': '/imagem/proficao/marketing.jpg',
-  'Veículos': '/imagem/proficao/proficao4.png',
-  'Humanas': '/imagem/proficao/proficao.png'
+  'Veículos': '/imagem/proficao/proficao4.webp',
+  'Humanas': '/imagem/proficao/proficao.webp'
 };
 
 export default function Detalhes() {
@@ -130,7 +131,7 @@ export default function Detalhes() {
             </p>
             <Link
               to="/"
-              className="inline-flex items-center gap-2 mt-6 px-6 py-2.5 bg-primary text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:opacity-95"
+              className="inline-flex items-center gap-2 mt-6 px-6 py-2.5 bg-primary text-white rounded-xl text-sm font-bold uppercase tracking-normal hover:opacity-95"
             >
               <ArrowLeft className="w-3.5 h-3.5" /> Voltar ao Início
             </Link>
@@ -150,7 +151,7 @@ export default function Detalhes() {
   };
 
   // Get image path
-  const imageSrc = imagensCursos[course.categoria] || imagensCursos[course.nome] || '/imagem/proficao/proficao.png';
+  const imageSrc = imagensCursos[course.categoria] || imagensCursos[course.nome] || '/imagem/proficao/proficao.webp';
 
   const getStatusDisplay = (vagas: number) => {
     if (course.aceita_inscricoes === false) return { label: course.situacao_label || 'Inscrições indisponíveis', class: 'text-slate-600 bg-slate-100 border-slate-200', icon: <XCircle className="w-4 h-4" /> };
@@ -187,7 +188,7 @@ export default function Detalhes() {
         <div className="flex items-center justify-start mt-2">
           <Link
             to="/"
-            className="flex items-center gap-1 text-xs font-bold text-gray-400 uppercase tracking-widest hover:text-primary transition-colors"
+            className="flex items-center gap-1 text-sm font-bold text-gray-400 uppercase tracking-normal hover:text-primary transition-colors"
           >
             <ArrowLeft className="w-4 h-4" /> Voltar para Cursos
           </Link>
@@ -199,19 +200,21 @@ export default function Detalhes() {
 
           {/* Left Block: Course Details & Text */}
           <div className="lg:col-span-7 flex flex-col items-start text-left justify-center">
-            <span className="px-4 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-bold uppercase tracking-wider mb-6">
+            <span className="px-4 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-bold uppercase tracking-normal mb-6">
               {course.categoria}
             </span>
             <h1 className="text-3xl md:text-5xl font-display font-extrabold text-slate-800 leading-tight tracking-tight">
               {course.nome}
             </h1>
+            <p className="mt-3 text-base">{startLabel(course.data_inicio)}</p>
+
             
             <p className="text-slate-500 text-sm md:text-base mt-4 leading-relaxed">
               O curso de <b>{course.nome}</b> no portal <b>Qualifica Vix</b> está com inscrições abertas! 
               Aulas no formato <b>{course.modalidade}</b> na região de <b>{course.local}</b>.
             </p>
 
-            <div className={`mt-6 inline-flex items-center gap-2 px-4 py-2 border rounded-xl text-xs font-extrabold uppercase tracking-wide ${statusDisplay.class}`}>
+            <div className={`mt-6 inline-flex items-center gap-2 px-4 py-2 border rounded-xl text-sm font-extrabold uppercase tracking-wide ${statusDisplay.class}`}>
               {statusDisplay.icon}
               {statusDisplay.label}
             </div>
@@ -221,7 +224,7 @@ export default function Detalhes() {
               <button
                 disabled={course.aceita_inscricoes === false}
                 onClick={() => navigate(`/pre-inscricao/${course.id}`)}
-                className={`px-10 py-4 rounded-xl text-xs font-bold uppercase tracking-widest text-white transition-all duration-300 transform hover:scale-[1.02] shadow-lg cursor-pointer ${
+                className={`px-10 py-4 rounded-xl text-sm font-bold uppercase tracking-normal text-white transition-all duration-300 transform hover:scale-[1.02] shadow-lg cursor-pointer ${
                   isEsgotado 
                     ? 'bg-orange-500 hover:bg-orange-600' 
                     : 'bg-primary hover:bg-primary/95'
@@ -277,17 +280,22 @@ export default function Detalhes() {
 
           {/* Box 2: Quick Infos */}
           <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between gap-6">
-            <h3 className="font-display font-bold text-slate-800 text-base uppercase tracking-wider border-b border-slate-100 pb-3">
+            <h3 className="font-display font-bold text-slate-800 text-base uppercase tracking-normal border-b border-slate-100 pb-3">
               Informações Gerais
             </h3>
 
+            <button className="min-h-12 mb-4 px-6 bg-primary text-white rounded-xl" onClick={async () => {
+              const data = { title: course.nome, url: window.location.href };
+              if (navigator.share) { try { await navigator.share(data); } catch (e) { if ((e as Error).name !== 'AbortError') window.open(`https://wa.me/?text=${encodeURIComponent(data.title + ' ' + data.url)}`, '_blank', 'noopener'); } }
+              else window.open(`https://wa.me/?text=${encodeURIComponent(data.title + ' ' + data.url)}`, '_blank', 'noopener');
+            }}>Compartilhar</button>
             <div className="flex flex-col gap-4">
               {/* Info: Local */}
               <div className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
                 <div className="flex flex-col text-left">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Localidade</span>
-                  <span className="text-xs font-semibold text-slate-700 mt-0.5 leading-snug">{course.local}</span>
+                  <span className="text-sm font-bold text-gray-400 uppercase tracking-normal">Localidade</span>
+                  <span className="text-sm font-semibold text-slate-700 mt-0.5 leading-snug">{course.local}</span>
                 </div>
               </div>
 
@@ -295,8 +303,8 @@ export default function Detalhes() {
               <div className="flex items-start gap-3">
                 <Calendar className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
                 <div className="flex flex-col text-left">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Período Letivo</span>
-                  <span className="text-xs font-mono font-bold text-slate-700 mt-0.5">
+                  <span className="text-sm font-bold text-gray-400 uppercase tracking-normal">Período Letivo</span>
+                  <span className="text-sm font-sans tabular-nums font-bold text-slate-700 mt-0.5">
                     De {course.data_inicio} até {course.data_termino}
                   </span>
                 </div>
@@ -306,8 +314,8 @@ export default function Detalhes() {
               <div className="flex items-start gap-3">
                 <Clock className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
                 <div className="flex flex-col text-left">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Horário das Aulas</span>
-                  <span className="text-xs font-semibold text-slate-700 mt-0.5">
+                  <span className="text-sm font-bold text-gray-400 uppercase tracking-normal">Horário das Aulas</span>
+                  <span className="text-sm font-semibold text-slate-700 mt-0.5">
                     {course.horario_inicio} às {course.horario_termino}
                   </span>
                 </div>
@@ -317,15 +325,15 @@ export default function Detalhes() {
               <div className="flex items-start gap-3">
                 <GraduationCap className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
                 <div className="flex flex-col text-left">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Faixa Etária</span>
-                  <span className="text-xs font-semibold text-slate-700 mt-0.5">
+                  <span className="text-sm font-bold text-gray-400 uppercase tracking-normal">Faixa Etária</span>
+                  <span className="text-sm font-semibold text-slate-700 mt-0.5">
                     {course.idade_min} a {course.idade_max} anos
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="text-[10px] text-gray-400 font-medium leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-100">
+            <div className="text-sm text-gray-400 font-medium leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-100">
               * Menores de idade deverão estar acompanhados pelo responsável legal no momento da confirmação presencial da matrícula.
             </div>
           </div>

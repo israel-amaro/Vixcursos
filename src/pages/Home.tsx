@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { useState, useEffect, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import IntroVideo, { INTRO_SESSION_KEY, shouldShowIntro } from '../components/IntroVideo';
@@ -6,12 +7,13 @@ import FiltroBusca, { FilterState } from '../components/FiltroBusca';
 import ListagemCursos from '../components/ListagemCursos';
 import Depoimentos from '../components/Depoimentos';
 import Footer from '../components/Footer';
-import CourseQuizModal from '../components/CourseQuizModal';
+const CourseQuizModal = lazy(() => import('../components/CourseQuizModal'));
 import SatisfactionSurvey from '../components/SatisfactionSurvey';
 import { useLocation } from 'react-router-dom';
 
 export default function Home() {
   const location = useLocation();
+  const [resultCount, setResultCount] = useState(0);
   const [filters, setFilters] = useState<FilterState>({
     idade: '',
     categoria: '',
@@ -62,10 +64,10 @@ export default function Home() {
         <Hero onOpenQuiz={() => setIsQuizOpen(true)} />
 
         {/* 2. Filtros de Busca Avançados e Busca Inteligente por IA */}
-        <FiltroBusca onFilterChange={setFilters} />
+        <FiltroBusca onFilterChange={setFilters} resultCount={resultCount} />
 
         {/* 3. Listagem de Cursos (Mais Procurados, Novas Inscrições, Cards com Início e Média Salarial) */}
-        <ListagemCursos filters={filters} onClearFilters={handleClearFilters} />
+        <ListagemCursos onResultCount={setResultCount} filters={filters} onClearFilters={handleClearFilters} />
 
         {/* 4. Depoimentos dos Alunos */}
         <Depoimentos />
@@ -74,11 +76,11 @@ export default function Home() {
         <Footer onOpenSurvey={() => setIsSurveyOpen(true)} />
 
         {/* Interactive Modals */}
-        <CourseQuizModal
+        {isQuizOpen && <Suspense fallback={null}><CourseQuizModal
           isOpen={isQuizOpen}
           onClose={() => setIsQuizOpen(false)}
           onSelectCategory={handleSelectCategoryFromGrid}
-        />
+        /></Suspense>}
 
         <SatisfactionSurvey
           isOpen={isSurveyOpen}

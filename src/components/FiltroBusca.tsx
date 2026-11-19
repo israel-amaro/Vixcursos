@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ChevronDown, Search } from 'lucide-react';
 
 export interface FilterState {
@@ -13,6 +13,7 @@ export interface FilterState {
 }
 
 interface FiltroBuscaProps {
+  resultCount: number;
   onFilterChange: (filters: FilterState) => void;
 }
 
@@ -47,7 +48,7 @@ const semanticMap: { [key: string]: { category?: string; keywords?: string[] } }
   idoso: { category: 'Enfermagem / Saúde', keywords: ['cuidador', 'idoso', 'saúde'] },
 };
 
-export default function FiltroBusca({ onFilterChange }: FiltroBuscaProps) {
+export default function FiltroBusca({ onFilterChange, resultCount }: FiltroBuscaProps) {
   const [filters, setFilters] = useState<FilterState>({
     idade: '',
     categoria: '',
@@ -59,6 +60,15 @@ export default function FiltroBusca({ onFilterChange }: FiltroBuscaProps) {
     somenteDisponiveis: false,
   });
 
+  const [open, setOpen] = useState(false);
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const modal = dialog.current;
+    if (!modal) return;
+    if (open && !modal.open) modal.showModal();
+    else if (!open && modal.open) modal.close();
+  }, [open]);
+  const activeCount = Object.entries(filters).filter(([key, value]) => key !== 'buscaInteligente' && Boolean(value)).length;
   const [categories, setCategories] = useState<string[]>([]);
   const [locals, setLocals] = useState<string[]>([]);
 
@@ -142,11 +152,17 @@ export default function FiltroBusca({ onFilterChange }: FiltroBuscaProps) {
         <label className="block mb-4 text-sm font-bold text-slate-600">Buscar curso ou profissão
         <input value={filters.buscaInteligente} onChange={handleSearchInputChange} placeholder="Ex.: gastronomia, informática, costura" className="mt-2 block w-full rounded-xl border border-slate-200 bg-white p-3 text-slate-900" />
       </label>
+      <div className="flex gap-2 overflow-x-auto pb-3 sm:hidden" aria-label="Categorias">
+        {['', ...categories].map(category => <button key={category} aria-pressed={filters.categoria === category} onClick={() => { const next = { ...filters, categoria: category }; setFilters(next); onFilterChange(next); }} className="min-h-11 shrink-0 rounded-full border px-4 bg-white text-primary">{category || 'Todas'}</button>)}
+      </div>
+      <button onClick={() => setOpen(true)} className="sm:hidden min-h-12 px-5 bg-primary text-white rounded-xl">Filtrar ({activeCount})</button>
+      <dialog ref={dialog} onClose={() => setOpen(false)} onCancel={() => setOpen(false)} aria-label="Filtrar cursos" className="filter-sheet rounded-t-3xl p-5 w-full max-h-[85vh] overflow-y-auto backdrop:bg-black/50">
+      <h3 className="sm:hidden text-xl font-bold mb-4">Filtrar cursos</h3>
       <div className="grid grid-cols-1 min-[360px]:grid-cols-2 lg:grid-cols-5 gap-4">
           
           {/* Filtro 1: Faixa Etária (14+, 16+, 18+, 60+) */}
           <div className="flex min-w-0 flex-col last:col-span-1 min-[360px]:last:col-span-2 lg:last:col-span-1">
-            <label htmlFor="filtro-idade" className="text-primary font-semibold text-xs tracking-wider uppercase mb-2 min-[360px]:min-h-8 lg:min-h-0">
+            <label htmlFor="filtro-idade" className="text-primary font-semibold text-sm tracking-normal uppercase mb-2 min-[360px]:min-h-8 lg:min-h-0">
               Faixa Etária:
             </label>
             <div className="relative">
@@ -155,7 +171,7 @@ export default function FiltroBusca({ onFilterChange }: FiltroBuscaProps) {
                 name="idade"
                 value={filters.idade}
                 onChange={handleSelectChange}
-                className="w-full bg-white text-gray-800 rounded-xl px-3 sm:px-4 py-3 text-sm sm:text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-accent appearance-none cursor-pointer pr-9"
+                className="w-full bg-white text-gray-800 rounded-xl px-3 sm:px-4 py-3 text-sm sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-accent appearance-none cursor-pointer pr-9"
               >
                 <option value="">Todas as idades</option>
                 <option value="14+">14+ anos (Adolescentes e Jovens)</option>
@@ -169,7 +185,7 @@ export default function FiltroBusca({ onFilterChange }: FiltroBuscaProps) {
 
           {/* Filtro 2: Turno (Manhã, Tarde, Noite) */}
           <div className="flex min-w-0 flex-col last:col-span-1 min-[360px]:last:col-span-2 lg:last:col-span-1">
-            <label htmlFor="filtro-turno" className="text-primary font-semibold text-xs tracking-wider uppercase mb-2 min-[360px]:min-h-8 lg:min-h-0">
+            <label htmlFor="filtro-turno" className="text-primary font-semibold text-sm tracking-normal uppercase mb-2 min-[360px]:min-h-8 lg:min-h-0">
               Turno:
             </label>
             <div className="relative">
@@ -178,7 +194,7 @@ export default function FiltroBusca({ onFilterChange }: FiltroBuscaProps) {
                 name="turno"
                 value={filters.turno}
                 onChange={handleSelectChange}
-                className="w-full bg-white text-gray-800 rounded-xl px-3 sm:px-4 py-3 text-sm sm:text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-accent appearance-none cursor-pointer pr-9"
+                className="w-full bg-white text-gray-800 rounded-xl px-3 sm:px-4 py-3 text-sm sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-accent appearance-none cursor-pointer pr-9"
               >
                 <option value="">Todos os turnos</option>
                 <option value="Manhã">Manhã</option>
@@ -191,7 +207,7 @@ export default function FiltroBusca({ onFilterChange }: FiltroBuscaProps) {
 
           {/* Filtro 3: Situação da Vaga */}
           <div className="flex min-w-0 flex-col last:col-span-1 min-[360px]:last:col-span-2 lg:last:col-span-1">
-            <label htmlFor="filtro-situacao" className="text-primary font-semibold text-xs tracking-wider uppercase mb-2 min-[360px]:min-h-8 lg:min-h-0">
+            <label htmlFor="filtro-situacao" className="text-primary font-semibold text-sm tracking-normal uppercase mb-2 min-[360px]:min-h-8 lg:min-h-0">
               Situação da Vaga:
             </label>
             <div className="relative">
@@ -200,7 +216,7 @@ export default function FiltroBusca({ onFilterChange }: FiltroBuscaProps) {
                 name="situacao"
                 value={filters.situacao}
                 onChange={handleSelectChange}
-                className="w-full bg-white text-gray-800 rounded-xl px-3 sm:px-4 py-3 text-sm sm:text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-accent appearance-none cursor-pointer pr-9"
+                className="w-full bg-white text-gray-800 rounded-xl px-3 sm:px-4 py-3 text-sm sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-accent appearance-none cursor-pointer pr-9"
               >
                 <option value="">Todas as situações</option>
                 <option value="abertas">Inscrições Abertas</option>
@@ -213,7 +229,7 @@ export default function FiltroBusca({ onFilterChange }: FiltroBuscaProps) {
 
           {/* Filtro 4: Categoria */}
           <div className="flex min-w-0 flex-col last:col-span-1 min-[360px]:last:col-span-2 lg:last:col-span-1">
-            <label htmlFor="filtro-categoria" className="text-primary font-semibold text-xs tracking-wider uppercase mb-2 min-[360px]:min-h-8 lg:min-h-0">
+            <label htmlFor="filtro-categoria" className="text-primary font-semibold text-sm tracking-normal uppercase mb-2 min-[360px]:min-h-8 lg:min-h-0">
               Categoria:
             </label>
             <div className="relative">
@@ -222,7 +238,7 @@ export default function FiltroBusca({ onFilterChange }: FiltroBuscaProps) {
                 name="categoria"
                 value={filters.categoria}
                 onChange={handleSelectChange}
-                className="w-full bg-white text-gray-800 rounded-xl px-3 sm:px-4 py-3 text-sm sm:text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-accent appearance-none cursor-pointer pr-9"
+                className="w-full bg-white text-gray-800 rounded-xl px-3 sm:px-4 py-3 text-sm sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-accent appearance-none cursor-pointer pr-9"
               >
                 <option value="">Todas as categorias</option>
                 {categories.map((cat) => (
@@ -237,7 +253,7 @@ export default function FiltroBusca({ onFilterChange }: FiltroBuscaProps) {
 
           {/* Filtro 5: Local */}
           <div className="flex min-w-0 flex-col last:col-span-1 min-[360px]:last:col-span-2 lg:last:col-span-1">
-            <label htmlFor="filtro-local" className="text-primary font-semibold text-xs tracking-wider uppercase mb-2 min-[360px]:min-h-8 lg:min-h-0">
+            <label htmlFor="filtro-local" className="text-primary font-semibold text-sm tracking-normal uppercase mb-2 min-[360px]:min-h-8 lg:min-h-0">
               Local em Vitória:
             </label>
             <div className="relative">
@@ -246,7 +262,7 @@ export default function FiltroBusca({ onFilterChange }: FiltroBuscaProps) {
                 name="local"
                 value={filters.local}
                 onChange={handleSelectChange}
-                className="w-full bg-white text-gray-800 rounded-xl px-3 sm:px-4 py-3 text-sm sm:text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-accent appearance-none cursor-pointer pr-9"
+                className="w-full bg-white text-gray-800 rounded-xl px-3 sm:px-4 py-3 text-sm sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-accent appearance-none cursor-pointer pr-9"
               >
                 <option value="">Todos os locais</option>
                 {locals.map((loc) => (
@@ -272,20 +288,21 @@ export default function FiltroBusca({ onFilterChange }: FiltroBuscaProps) {
               onChange={handleCheckboxChange}
               className="w-4 h-4 rounded text-accent accent-accent border-gray-300 focus:ring-accent cursor-pointer"
             />
-            <label htmlFor="somenteDisponiveis" className="text-primary text-xs font-medium cursor-pointer select-none">
+            <label htmlFor="somenteDisponiveis" className="text-primary text-sm font-medium cursor-pointer select-none min-h-11 inline-flex items-center">
               Exibir somente turmas com vagas abertas no momento
             </label>
           </div>
 
           <button
-            onClick={triggerSearch}
-            className="w-full sm:w-auto justify-center px-6 py-3 bg-accent hover:bg-accent/90 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition-all duration-300 cursor-pointer shadow-md flex items-center gap-2"
+            onClick={() => { setOpen(false); triggerSearch(); }}
+            className="w-full sm:w-auto justify-center px-6 py-3 bg-accent hover:bg-accent/90 text-white font-bold rounded-xl text-sm uppercase tracking-normal transition-all duration-300 cursor-pointer shadow-md flex items-center gap-2"
           >
             <Search className="w-3.5 h-3.5" />
-            Buscar Cursos
+            {open ? `Ver ${resultCount} cursos` : 'Buscar Cursos'}
           </button>
         </div>
 
+      </dialog>
       </div>
     </section>
   );

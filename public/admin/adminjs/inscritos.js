@@ -495,7 +495,7 @@ function exibirFichaCompleta(aluno, historico) {
             
             let certLink = '-';
             if (h.situacao_final === 'concluido') {
-                certLink = `<a href="/certificado/${h.id}" target="_blank" style="color:#f9c852; font-weight:bold; text-decoration:underline;"><i class="bi bi-award-fill" aria-hidden="true"></i> Baixar</a>`;
+                certLink = `<a href="#" data-certificado="${Number(h.id)}" target="_blank" style="color:#f9c852; font-weight:bold; text-decoration:underline;"><i class="bi bi-award-fill" aria-hidden="true"></i> Baixar</a>`;
             }
 
             html += `
@@ -776,3 +776,16 @@ document.addEventListener('visibilitychange', atualizarListaVisivel);
 setInterval(atualizarListaVisivel, 30000);
 
 window.addEventListener('popstate', carregarCursos);
+
+
+document.addEventListener('click', async event => {
+    const link = event.target.closest('[data-certificado]');
+    if (!link) return;
+    event.preventDefault();
+    try {
+        const response = await fetch(`/api/admin/inscricoes/${link.dataset.certificado}/links`, { method: 'POST' });
+        if (!response.ok) throw new Error();
+        const links = await response.json();
+        window.open(links.certificado, '_blank', 'noopener');
+    } catch { alert('Não foi possível gerar o link. Tente novamente.'); }
+});

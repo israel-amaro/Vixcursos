@@ -73,11 +73,11 @@
             transform: translateY(-1px);
         }
     </style>
-    <link rel="icon" type="image/png" href="/imagem/logo.png">
+    <link rel="icon" type="image/png" href="/imagem/logo.webp">
 </head>
 <body>
     <div class="survey-card">
-        <img src="/imagem/logo.png" alt="Qualifica Vix" style="display:block; width:180px; height:100px; object-fit:contain; margin:0 auto 8px;">
+        <img src="/imagem/logo.webp" alt="Qualifica Vix" style="display:block; width:180px; height:100px; object-fit:contain; margin:0 auto 8px;">
         <h1>Pesquisa de Satisfação</h1>
         <p style="text-align: center; font-size: 0.8rem; color: #5f6f86; margin-bottom: 25px;">Sua opinião é muito importante para melhorarmos nossos cursos!</p>
         <form id="satisfactionForm" onsubmit="enviarSatisfacao(event)">
@@ -158,7 +158,7 @@
             };
 
             try {
-                const res = await fetch(`/api/pre-inscricoes/${id}/pesquisa-satisfacao`, {
+                const res = await fetch(`/api/pre-inscricoes/${id}/pesquisa-satisfacao?token=${encodeURIComponent(new URLSearchParams(location.search).get('token') || '')}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)

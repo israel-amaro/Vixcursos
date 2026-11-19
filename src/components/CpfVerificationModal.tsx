@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ShieldCheck, ArrowRight, RefreshCw, KeyRound, AlertCircle } from 'lucide-react';
 
 interface MaskedIdentity {
-  nome: string;
   email: string;
-  telefone: string;
 }
 
 interface CpfVerificationModalProps {
@@ -131,7 +129,7 @@ export default function CpfVerificationModal({
             <h3 className="font-display font-bold text-primary text-lg leading-snug">
               Recuperar meu cadastro
             </h3>
-            <p className="text-xs text-slate-600">
+            <p className="text-sm text-slate-600">
               Proteção de dados do cidadão — Qualifica Vix
             </p>
           </div>
@@ -140,28 +138,22 @@ export default function CpfVerificationModal({
         {/* Content Step 1: Prompt */}
         {step === 'prompt' && (
           <div className="flex flex-col gap-4">
-            <p className="text-xs text-slate-600 leading-relaxed">
+            <p className="text-sm text-slate-600 leading-relaxed">
               Encontramos um cadastro existente vinculado ao CPF informado. Por razões de privacidade (LGPD), precisamos confirmar sua identidade antes de preencher seus dados:
             </p>
 
             {/* Masked Info Card */}
-            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col gap-2 font-mono text-xs text-slate-600">
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col gap-2 font-sans tabular-nums text-sm text-slate-600">
+
               <div>
-                <span className="text-slate-600 uppercase text-[10px] block font-sans">Nome</span>
-                <strong>{maskedIdentity.nome}</strong>
-              </div>
-              <div>
-                <span className="text-slate-600 uppercase text-[10px] block font-sans">E-mail</span>
+                <span className="text-slate-600 uppercase text-sm block font-sans">E-mail</span>
                 <strong>{maskedIdentity.email}</strong>
               </div>
-              <div>
-                <span className="text-slate-600 uppercase text-[10px] block font-sans">Celular</span>
-                <strong>{maskedIdentity.telefone}</strong>
-              </div>
+
             </div>
 
             {errorMsg && (
-              <div className="p-3 rounded-xl bg-red-500/15 border border-red-500/30 text-red-300 text-xs flex items-center gap-2">
+              <div className="p-3 rounded-xl bg-red-500/15 border border-red-500/30 text-red-300 text-sm flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span>{errorMsg}</span>
               </div>
@@ -172,7 +164,7 @@ export default function CpfVerificationModal({
                 type="button"
                 onClick={handleSendCode}
                 disabled={loading}
-                className="w-full py-3.5 bg-accent hover:bg-accent/90 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="w-full py-3.5 bg-accent hover:bg-accent/90 text-white font-extrabold text-sm uppercase tracking-normal rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {loading ? (
                   <RefreshCw className="w-4 h-4 animate-spin" />
@@ -186,7 +178,7 @@ export default function CpfVerificationModal({
               <button
                 type="button"
                 onClick={onStartFromScratch}
-                className="w-full py-2.5 bg-transparent hover:bg-primary/5 text-slate-600 hover:text-primary font-semibold text-xs rounded-xl transition-all text-center cursor-pointer"
+                className="w-full py-2.5 bg-transparent hover:bg-primary/5 text-slate-600 hover:text-primary font-semibold text-sm rounded-xl transition-all text-center cursor-pointer"
               >
                 Não reconheço esses dados (Preencher do zero)
               </button>
@@ -197,12 +189,12 @@ export default function CpfVerificationModal({
         {/* Content Step 2: Code Input */}
         {step === 'code' && (
           <form onSubmit={handleVerifyCode} className="flex flex-col gap-4">
-            <p className="text-xs text-slate-600 leading-relaxed">
+            <p className="text-sm text-slate-600 leading-relaxed">
               Enviamos um código de 6 dígitos para o e-mail <strong>{maskedIdentity.email}</strong>. Digite-o abaixo:
             </p>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+              <label className="text-sm font-bold text-slate-600 uppercase tracking-normal">
                 Código de 6 dígitos
               </label>
               <input
@@ -214,20 +206,20 @@ export default function CpfVerificationModal({
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
                 placeholder="000000"
-                className="w-full py-3 px-4 rounded-xl bg-slate-50 border border-accent/40 text-center font-mono font-extrabold text-2xl tracking-[0.5em] text-primary focus:outline-none focus:border-accent"
+                className="w-full py-3 px-4 rounded-xl bg-slate-50 border border-accent/40 text-center font-sans tabular-nums font-extrabold text-2xl tracking-[0.5em] text-primary focus:outline-none focus:border-accent"
                 autoFocus
               />
             </div>
 
-            <div className="flex items-center justify-between text-xs text-slate-600">
+            <div className="flex items-center justify-between text-sm text-slate-600">
               <span>Validade do código:</span>
-              <span className={`font-mono font-bold ${timeLeft < 60 ? 'text-red-400' : 'text-accent'}`}>
+              <span className={`font-sans tabular-nums font-bold ${timeLeft < 60 ? 'text-red-400' : 'text-accent'}`}>
                 {formatTime(timeLeft)}
               </span>
             </div>
 
             {errorMsg && (
-              <div className="p-3 rounded-xl bg-red-500/15 border border-red-500/30 text-red-300 text-xs flex items-center gap-2">
+              <div className="p-3 rounded-xl bg-red-500/15 border border-red-500/30 text-red-300 text-sm flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span>{errorMsg}</span>
               </div>
@@ -237,7 +229,7 @@ export default function CpfVerificationModal({
               <button
                 type="submit"
                 disabled={loading || code.length !== 6}
-                className="w-full py-3.5 bg-accent hover:bg-accent/90 disabled:opacity-40 disabled:cursor-not-allowed text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-3.5 bg-accent hover:bg-accent/90 disabled:opacity-40 disabled:cursor-not-allowed text-white font-extrabold text-sm uppercase tracking-normal rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 {loading ? (
                   <RefreshCw className="w-4 h-4 animate-spin" />
@@ -252,7 +244,7 @@ export default function CpfVerificationModal({
                 type="button"
                 onClick={handleSendCode}
                 disabled={loading || timeLeft > 240}
-                className="w-full py-2 bg-transparent text-slate-600 hover:text-primary text-xs text-center cursor-pointer disabled:opacity-30"
+                className="w-full py-2 bg-transparent text-slate-600 hover:text-primary text-sm text-center cursor-pointer disabled:opacity-30"
               >
                 Reenviar novo código
               </button>

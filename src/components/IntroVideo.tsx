@@ -6,6 +6,8 @@ export const INTRO_VIDEO_URL = 'https://res.cloudinary.com/j35zooeo/video/upload
 
 export function shouldShowIntro() {
   if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+  const connection = (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection;
+  if (connection?.saveData || /2g|3g/.test(connection?.effectiveType || '')) return false;
   try { return sessionStorage.getItem(INTRO_SESSION_KEY) !== 'true'; }
   catch { return true; }
 }
@@ -16,13 +18,13 @@ export default function IntroVideo({ onFinish }: { onFinish: () => void }) {
     const previousFocus = document.activeElement as HTMLElement | null;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    overlay.current?.focus();
+    overlay.current?.querySelector('button')?.focus();
     const keyboard = (event: KeyboardEvent) => {
-      if (event.key === 'Tab') { event.preventDefault(); overlay.current?.focus(); }
+      if (event.key === 'Escape') onFinish();
     };
     document.addEventListener('keydown', keyboard);
     // A failed player or a slow connection must never prevent access to courses.
-    const timeout = window.setTimeout(onFinish, 15000);
+    const timeout = window.setTimeout(onFinish, 3800);
     return () => {
       window.clearTimeout(timeout);
       document.body.style.overflow = previousOverflow;
@@ -35,7 +37,8 @@ export default function IntroVideo({ onFinish }: { onFinish: () => void }) {
     className="intro-video fixed inset-0 z-[10010] flex items-center justify-center overflow-hidden bg-white outline-none"
     initial={{ opacity: 1, filter: 'blur(0px)', scale: 1 }}
     exit={{ opacity: 0, filter: 'blur(22px)', scale: 1.015 }}
-    transition={{ duration: 1.3, ease: [0.22, 1, 0.36, 1] }}>
+    transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}>
+    <button autoFocus onClick={onFinish} className="absolute top-6 right-6 z-10 min-h-12 px-6 bg-primary text-white rounded-xl text-lg font-bold">Pular abertura</button>
     <video src={INTRO_VIDEO_URL} autoPlay muted playsInline preload="auto"
       aria-label="Abertura da Prefeitura de Vitória" className="h-full w-full object-contain"
       onEnded={onFinish} onError={onFinish} />

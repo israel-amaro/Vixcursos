@@ -1,3 +1,4 @@
+import { startLabel } from '../lib/images';
 import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Calendar, Clock, MapPin, Award, BookOpen, CheckCircle2, Users, FileText, ArrowRight } from 'lucide-react';
@@ -89,7 +90,7 @@ export default function CourseModal({ course, isOpen, onClose, triggerRef, onInt
   if (!isOpen || !course) return null;
 
   const isEsgotado = course.status === 'esgotado' || course.vagas_disponiveis <= 0;
-  const ementaTexto = course.ementa || course.competencias || "Ementa ainda não informada pela instituição.";
+  const ementaTexto = course.ementa || course.competencias || "Conteúdo ainda não informado pela instituição.";
   const requisitosTexto = course.pre_requisitos || "Nenhum pré-requisito adicional informado";
 
   return (
@@ -113,7 +114,7 @@ export default function CourseModal({ course, isOpen, onClose, triggerRef, onInt
           {/* Header */}
           <div className="p-4 sm:p-6 shrink-0 border-b border-slate-100 bg-primary text-white flex items-start justify-between relative">
             <div>
-              <span className="inline-block px-3 py-1 bg-accent/20 border border-accent/40 text-accent rounded-full text-[10px] font-extrabold uppercase tracking-wider mb-2">
+              <span className="inline-block px-3 py-1 bg-accent/20 border border-accent/40 text-accent rounded-full text-sm font-extrabold uppercase tracking-normal mb-2">
                 {course.categoria} • {course.modalidade}
               </span>
               <h2 id="course-modal-title" className="text-xl sm:text-2xl font-display font-extrabold text-white leading-tight">
@@ -136,7 +137,7 @@ export default function CourseModal({ course, isOpen, onClose, triggerRef, onInt
             {/* Quick Metrics Badges */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                <span className="text-sm font-bold text-slate-400 uppercase tracking-normal flex items-center gap-1">
                   <Clock className="w-3 h-3 text-accent" /> Carga Horária
                 </span>
                 <span className="font-extrabold text-slate-900 text-sm mt-0.5">
@@ -145,7 +146,7 @@ export default function CourseModal({ course, isOpen, onClose, triggerRef, onInt
               </div>
 
               <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                <span className="text-sm font-bold text-slate-400 uppercase tracking-normal flex items-center gap-1">
                   <Users className="w-3 h-3 text-accent" /> Faixa Etária
                 </span>
                 <span className="font-extrabold text-slate-900 text-sm mt-0.5">
@@ -154,16 +155,16 @@ export default function CourseModal({ course, isOpen, onClose, triggerRef, onInt
               </div>
 
               <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                <span className="text-sm font-bold text-slate-400 uppercase tracking-normal flex items-center gap-1">
                   <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Vagas Livres
                 </span>
                 <span className="font-extrabold text-slate-900 text-sm mt-0.5">
-                  {course.vagas_disponiveis} / {course.vagas_totais}
+                  {course.vagas_disponiveis} vagas livres de {course.vagas_totais}
                 </span>
               </div>
 
               <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                <span className="text-sm font-bold text-slate-400 uppercase tracking-normal flex items-center gap-1">
                   <MapPin className="w-3 h-3 text-accent" /> Modalidade
                 </span>
                 <span className="font-extrabold text-slate-900 text-sm mt-0.5 truncate">
@@ -174,7 +175,7 @@ export default function CourseModal({ course, isOpen, onClose, triggerRef, onInt
 
             {/* Description */}
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
+              <h3 className="text-sm font-bold uppercase tracking-normal text-slate-400 mb-2 flex items-center gap-1.5">
                 <FileText className="w-4 h-4 text-accent" /> Descrição Completa
               </h3>
               <p className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-slate-700 leading-relaxed font-medium">
@@ -184,8 +185,8 @@ export default function CourseModal({ course, isOpen, onClose, triggerRef, onInt
 
             {/* Syllabus (Ementa) */}
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
-                <BookOpen className="w-4 h-4 text-accent" /> Ementa do Curso
+              <h3 className="text-sm font-bold uppercase tracking-normal text-slate-400 mb-2 flex items-center gap-1.5">
+                <BookOpen className="w-4 h-4 text-accent" /> O que você vai aprender
               </h3>
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-slate-700 leading-relaxed font-medium whitespace-pre-line">
                 {ementaTexto}
@@ -195,26 +196,26 @@ export default function CourseModal({ course, isOpen, onClose, triggerRef, onInt
             {/* Competencies & Prerequisites */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
+                <h3 className="text-sm font-bold uppercase tracking-normal text-slate-400 mb-2 flex items-center gap-1.5">
                   <Award className="w-4 h-4 text-accent" /> Competências
                 </h3>
-                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-xs text-slate-700 font-semibold leading-normal">
+                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-sm text-slate-700 font-semibold leading-normal">
                   {course.competencias || "Desenvolvimento de habilidades técnicas específicas, postura profissional e prática supervisionada."}
                 </div>
               </div>
 
               <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
+                <h3 className="text-sm font-bold uppercase tracking-normal text-slate-400 mb-2 flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-accent" /> Pré-requisitos
                 </h3>
-                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-xs text-slate-700 font-semibold leading-normal">
+                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-sm text-slate-700 font-semibold leading-normal">
                   {requisitosTexto}
                 </div>
               </div>
             </div>
 
             {/* Logistics & Location */}
-            <div className="p-4 bg-slate-100/70 rounded-2xl border border-slate-200 space-y-2 text-xs">
+            <div className="p-4 bg-slate-100/70 rounded-2xl border border-slate-200 space-y-2 text-sm">
               <div className="flex items-center gap-2 font-bold text-slate-800">
                 <MapPin className="w-4 h-4 text-accent flex-shrink-0" />
                 <span>Local: <strong className="text-slate-900">{course.local}</strong></span>
@@ -222,7 +223,7 @@ export default function CourseModal({ course, isOpen, onClose, triggerRef, onInt
               <div className="flex flex-wrap gap-4 text-slate-600 font-medium">
                 <span className="flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                  Período: {course.data_inicio || 'A definir'} a {course.data_termino || 'A definir'}
+                  {startLabel(course.data_inicio)} a {course.data_termino || 'A definir'}
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-slate-400" />
@@ -235,13 +236,13 @@ export default function CourseModal({ course, isOpen, onClose, triggerRef, onInt
 
           {/* Footer Actions */}
           <div className="p-4 sm:p-6 shrink-0 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-3">
-            {onInterest && <button onClick={() => onInterest(course)} className="w-full sm:w-auto px-4 py-3 rounded-xl border border-accent text-accent font-bold text-xs">Tenho interesse</button>}
+            {onInterest && <button onClick={() => onInterest(course)} className="w-full sm:w-auto px-4 py-3 rounded-xl border border-accent text-accent font-bold text-sm">Tenho interesse</button>}
             <button
               onClick={() => {
                 onClose();
                 navigate(`/detalhes/${course.id}`);
               }}
-              className="w-full sm:w-auto px-5 py-3 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-200 transition-all font-bold text-xs flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full sm:w-auto px-5 py-3 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-200 transition-all font-bold text-sm flex items-center justify-center gap-2 cursor-pointer"
             >
               <span>Ver Detalhes Completos</span>
               <ArrowRight className="w-4 h-4" />
@@ -253,7 +254,7 @@ export default function CourseModal({ course, isOpen, onClose, triggerRef, onInt
                 navigate(`/pre-inscricao/${course.id}`);
               }}
               disabled={course.aceita_inscricoes === false}
-              className={`w-full sm:w-auto px-8 py-3.5 rounded-xl font-extrabold text-xs uppercase tracking-wider text-white transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 ${
+              className={`w-full sm:w-auto px-8 py-3.5 rounded-xl font-extrabold text-sm uppercase tracking-normal text-white transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 ${
                 isEsgotado ? 'bg-orange-500 hover:bg-orange-600' : 'bg-accent hover:bg-accent/90'
               }`}
             >

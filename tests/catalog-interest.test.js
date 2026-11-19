@@ -28,7 +28,7 @@ async function exercise(db) {
         assert.equal((await request('/cursos/3', body, true, 'PUT')).status, 200);
         const detail = await request('/api/cursos-public/3');
         assert.equal(detail.data.nome, body.nome); assert.equal(detail.data.mascote_id, body.mascote_id);
-        assert.equal(detail.data.ementa, body.ementa); assert.equal(detail.headers.get('cache-control'), 'no-store');
+        assert.equal(detail.data.ementa, body.ementa); assert.equal(detail.headers.get('cache-control'), 'public, s-maxage=30, stale-while-revalidate=120');
         const lead = { nome: 'Pessoa de teste', email: 'teste@example.invalid', whatsapp: '27999990000', perfil: 'Gastronomia', curso_id: 3, origem: 'site_curso', autoriza_contato: true };
         assert.equal((await request('/api/interessados', { ...lead, autoriza_contato: false })).status, 400);
         assert.equal((await request('/api/interessados', { ...lead, curso_id: 9999 })).status, 404);

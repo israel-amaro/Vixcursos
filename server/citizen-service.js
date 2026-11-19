@@ -59,13 +59,9 @@ function validateEligibility(body) {
     const resident = city === 'vitoria' && String(body.uf || '').trim().toUpperCase() === 'ES';
     if (!resident && body.trabalha_vitoria !== 'sim') throw error(400, 'Os cursos do Qualifica Vix atendem quem mora ou trabalha em Vitória. Não podemos continuar com a pré-inscrição sem esse vínculo. Se digitou o CEP por engano, você pode corrigi-lo.');
 }
-function masked(row) {
-    const email = String(row.email || '').split('@');
-    return {
-        nome: String(row.nome || '').split(/\s+/).map(p => p[0] + '***').join(' '),
-        email: `${email[0]?.[0] || '*'}***@${email[1] || '***'}`,
-        telefone: `(**) *****-${String(row.telefone || '').replace(/\D/g, '').slice(-4)}`,
-    };
+function maskedEmail(row) {
+    const [user, domain] = String(row.email || '').split('@');
+    return `${user?.[0] || '*'}***@${domain || '***'}`;
 }
 function enroll(state, body, req, now = Date.now()) {
     const cpf = normalizeCpf(body.cpf);
@@ -105,7 +101,7 @@ function enroll(state, body, req, now = Date.now()) {
         versao_termos: '2.0', timestamp_aceite_lgpd: new Date(now).toISOString(),
     };
     state.preInscricoes.push(enrollment);
-    if (classification === 'titular' && occupied + 1 >= course.vagas) course.status = 'esgotado';
+
     return { enrollment, course };
 }
 
@@ -123,7 +119,7 @@ function createCitizenRouter(db, { sendCode, notifyEnrollment = async () => ({})
         if (!validCpf(cpf)) throw error(400, 'CPF inválido.');
         const state = await db.readState();
         const row = state.usuarios.find(u => u.cpf === cpf);
-        res.json(row ? { localizou: true, id_mascarado: masked(row) } : { localizou: false });
+        res.json({ localizou: Boolean(row), email_mascarado: row ? maskedEmail(row) : null });
     }));
     router.post('/api/cidadaos/enviar-codigo', handler(async (req, res) => {
         const cpf = normalizeCpf(req.body.cpf);

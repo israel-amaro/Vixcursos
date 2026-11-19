@@ -66,7 +66,7 @@
     function atualizarMascotePreview() {
         const id = document.getElementById('mascote_id').value;
         const mascot = mascotesAdmin.find(m => m.id === id);
-        document.getElementById('mascotePreview').src = mascot?.imagem || '/imagem/Vitoruga.png';
+        document.getElementById('mascotePreview').src = mascot?.imagem || '/imagem/Vitoruga.webp';
         document.querySelectorAll('[data-mascote]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.mascote === id)));
     }
     function abrirModal() {
@@ -328,7 +328,7 @@
                     <td>
                         <strong style="color: var(--primary);">#${c.id}</strong><br>
                         <span style="font-weight: 500;">${escapeHtml(c.nome)}</span>
-                        <img class="course-mascot-thumb" src="${escapeHtml(mascotesAdmin.find(m => m.id === c.mascote_id)?.imagem || '/imagem/Vitoruga.png')}" alt="Tartaruga do curso">
+                        <img class="course-mascot-thumb" src="${escapeHtml(mascotesAdmin.find(m => m.id === c.mascote_id)?.imagem || '/imagem/Vitoruga.webp')}" alt="Tartaruga do curso">
                     </td>
                     <td style="font-size: 0.9rem;">
                         <i class="bi bi-calendar3 icon-inline" aria-hidden="true"></i>${c.data_inicio || '-'} até ${c.data_termino || '-'}<br>

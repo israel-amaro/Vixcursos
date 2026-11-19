@@ -75,7 +75,7 @@ export default function Header({ transparent = false }: HeaderProps) {
           <BrandLogo className="header-logo" />
           <div className="w-[1px] h-8 bg-slate-200 hidden sm:block" />
           <img
-            src="/imagem/prefeitura-preto-transparente.png"
+            src="/imagem/prefeitura-preto-transparente.webp"
             alt="Prefeitura de Vitória"
             className="h-10 md:h-11 w-auto max-w-[155px] object-contain hidden sm:block"
           />
@@ -85,25 +85,25 @@ export default function Header({ transparent = false }: HeaderProps) {
         <nav className="hidden lg:flex items-center gap-8">
           <Link
             to="/"
-            className="text-xs font-bold tracking-widest uppercase text-slate-600 hover:text-primary transition-colors"
+            className="text-sm font-bold tracking-normal uppercase text-slate-600 hover:text-primary transition-colors"
           >
             Início
           </Link>
           <button
             onClick={() => handleNavClick('cursos-section')}
-            className="text-xs font-bold tracking-widest uppercase text-slate-600 hover:text-primary transition-colors cursor-pointer"
+            className="text-sm font-bold tracking-normal uppercase text-slate-600 hover:text-primary transition-colors cursor-pointer"
           >
             Cursos
           </button>
           <button
             onClick={() => handleNavClick('categorias-section')}
-            className="text-xs font-bold tracking-widest uppercase text-slate-600 hover:text-primary transition-colors cursor-pointer"
+            className="text-sm font-bold tracking-normal uppercase text-slate-600 hover:text-primary transition-colors cursor-pointer"
           >
             Categorias
           </button>
           <Link
             to="/sobre"
-            className="text-xs font-bold tracking-widest uppercase text-slate-600 hover:text-primary transition-colors"
+            className="text-sm font-bold tracking-normal uppercase text-slate-600 hover:text-primary transition-colors"
           >
             Sobre
           </Link>
@@ -113,7 +113,7 @@ export default function Header({ transparent = false }: HeaderProps) {
         <div className="hidden lg:block">
           <button
             onClick={() => handleNavClick('cursos-section')}
-            className="flex items-center gap-2 px-6 py-2.5 bg-primary border border-white/10 hover:border-accent/40 rounded-full text-xs font-bold uppercase tracking-widest text-white hover:bg-accent transition-all duration-300 transform hover:scale-[1.03] shadow-md cursor-pointer"
+            className="flex items-center gap-2 px-6 py-2.5 bg-primary border border-white/10 hover:border-accent/40 rounded-full text-sm font-bold uppercase tracking-normal text-white hover:bg-accent transition-all duration-300 transform hover:scale-[1.03] shadow-md cursor-pointer"
           >
             <Search className="w-3.5 h-3.5" />
             Buscar Cursos
@@ -145,32 +145,32 @@ export default function Header({ transparent = false }: HeaderProps) {
               <Link
                 to="/"
                 onClick={() => setIsOpen(false)}
-                className="block rounded-xl px-3 py-3 text-sm font-bold tracking-widest uppercase text-slate-600 hover:text-primary"
+                className="block rounded-xl px-3 py-3 text-sm font-bold tracking-normal uppercase text-slate-600 hover:text-primary"
               >
                 Início
               </Link>
               <button
                 onClick={() => handleNavClick('cursos-section')}
-                className="text-left block rounded-xl px-3 py-3 text-sm font-bold tracking-widest uppercase text-slate-600 hover:text-primary cursor-pointer"
+                className="text-left block rounded-xl px-3 py-3 text-sm font-bold tracking-normal uppercase text-slate-600 hover:text-primary cursor-pointer"
               >
                 Cursos
               </button>
               <button
                 onClick={() => handleNavClick('categorias-section')}
-                className="text-left block rounded-xl px-3 py-3 text-sm font-bold tracking-widest uppercase text-slate-600 hover:text-primary cursor-pointer"
+                className="text-left block rounded-xl px-3 py-3 text-sm font-bold tracking-normal uppercase text-slate-600 hover:text-primary cursor-pointer"
               >
                 Categorias
               </button>
               <Link
                 to="/sobre"
                 onClick={() => setIsOpen(false)}
-                className="block rounded-xl px-3 py-3 text-sm font-bold tracking-widest uppercase text-slate-600 hover:text-primary"
+                className="block rounded-xl px-3 py-3 text-sm font-bold tracking-normal uppercase text-slate-600 hover:text-primary"
               >
                 Sobre
               </Link>
               <button
                 onClick={() => handleNavClick('cursos-section')}
-                className="flex items-center justify-center gap-2 w-full py-3 bg-primary border border-white/10 hover:border-accent/40 rounded-full text-xs font-bold uppercase tracking-widest text-white hover:bg-accent transition-all cursor-pointer"
+                className="flex items-center justify-center gap-2 w-full py-3 bg-primary border border-white/10 hover:border-accent/40 rounded-full text-sm font-bold uppercase tracking-normal text-white hover:bg-accent transition-all cursor-pointer"
               >
                 <Search className="w-3.5 h-3.5" />
                 Buscar Cursos
