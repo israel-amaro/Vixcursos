@@ -89,7 +89,7 @@ export default function PreInscricao() {
 
   // Secure OTP Authentication State
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
-  const [maskedIdentity, setMaskedIdentity] = useState<{ nome: string; email: string; telefone: string } | null>(null);
+  const [maskedIdentity, setMaskedIdentity] = useState<{ email: string } | null>(null);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -366,7 +366,7 @@ export default function PreInscricao() {
     }
 
     list.push({
-      pergunta: 'Você autoriza a divulgação do seu nome em listas públicas de classificados e suplentes do Qualifica Vix, conforme a LGPD? (Caso não autorize, seu nome aparecerá parcialmente oculto nas listas públicas).',
+      pergunta: 'Você autoriza a divulgação do seu nome em listas públicas de classificados e pessoas na lista de espera do Qualifica Vix, conforme a LGPD? (Caso não autorize, seu nome aparecerá parcialmente oculto nas listas públicas).',
       tipo: 'botoes',
       chave: 'autoriza_lgpd',
       opcoes: [
@@ -682,7 +682,7 @@ export default function PreInscricao() {
         }
         setDadosSalvosExito(true);
 
-        const statusLabel = responseData.status_inscricao === 'suplente' ? 'SUPLENTE (Lista de espera)' : 'TITULAR';
+        const statusLabel = responseData.status_inscricao === 'suplente' ? 'Lista de espera' : 'TITULAR';
         await addBotMessage(
           `🎉 <strong>INSCRIÇÃO REALIZADA!</strong><br/><br/>Seu número de protocolo é: <strong>${responseData.protocolo}</strong>.<br/>Classificação: <strong>${statusLabel}</strong>.<br/><br/>Sua pré-inscrição está registrada. A matrícula será confirmada após a validação pela instituição.`,
           1500
@@ -844,8 +844,8 @@ export default function PreInscricao() {
 
         if (response.ok) {
           const resJson = await response.json();
-          if (resJson.localizou && resJson.id_mascarado) {
-            setMaskedIdentity(resJson.id_mascarado);
+          if (resJson.localizou) {
+            setMaskedIdentity({ email: resJson.email_mascarado });
             setIsOtpModalOpen(true);
             return; // pauses chat flow until OTP verification or skip
           }
@@ -965,7 +965,7 @@ export default function PreInscricao() {
           if (inscricoesAtivas === 1) {
             await addBotMessage('⚠️ <strong>Atenção:</strong> Você já possui 1 inscrição ativa. Esta segunda inscrição simultânea concorrerá ao mesmo tempo no período.', 500);
           } else if (inscricoesAtivas >= 2) {
-            await addBotMessage(`⚠️ <strong>Aviso:</strong> Você já possui ${inscricoesAtivas} inscrições ativas. Esta nova inscrição entrará na fila de suplência automaticamente.`, 500);
+            await addBotMessage(`⚠️ <strong>Aviso:</strong> Você já possui ${inscricoesAtivas} inscrições ativas. Esta nova inscrição entrará na lista de espera automaticamente.`, 500);
           }
         }
 
@@ -1041,7 +1041,7 @@ export default function PreInscricao() {
   // Course sold out/closed view
   if (!cursoDisponivel && vagasVerificadas) {
     return (
-      <div className="min-h-screen bg-[linear-gradient(120deg,rgba(248,250,254,0.96),rgba(255,255,255,0.95),rgba(255,255,255,0.98)),url('https://images.unsplash.com/photo-1606761568499-6d2451b23c66?auto=format&fit=crop&q=80&w=2000')] bg-center bg-cover bg-no-repeat flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[linear-gradient(120deg,rgba(248,250,254,0.96),rgba(255,255,255,0.95),rgba(255,255,255,0.98)),url('https://images.unsplash.com/photo-1606761568499-6d2451b23c66?auto=format&fit=crop&q=80&w=600')] bg-center bg-cover bg-no-repeat flex items-center justify-center p-4">
         <div className="w-full max-w-md glass-dark rounded-3xl p-8 border border-danger/20 text-center shadow-2xl animate-float">
           <div className="w-16 h-16 bg-danger/10 border border-danger/20 rounded-2xl flex items-center justify-center mx-auto mb-6 text-danger">
             <X className="w-8 h-8" />
@@ -1052,7 +1052,7 @@ export default function PreInscricao() {
           </p>
           <Link
             to="/"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-full font-bold uppercase text-xs tracking-wider transition-all hover:scale-105 hover:bg-primary/95 shadow-lg shadow-primary/20 cursor-pointer"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-full font-bold uppercase text-sm tracking-normal transition-all hover:scale-105 hover:bg-primary/95 shadow-lg shadow-primary/20 cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" /> Voltar para Cursos
           </Link>
@@ -1062,7 +1062,7 @@ export default function PreInscricao() {
   }
 
   return (
-    <div className="registration-page min-h-screen bg-[linear-gradient(120deg,rgba(248,250,254,0.96),rgba(255,255,255,0.95),rgba(255,255,255,0.98)),url('https://images.unsplash.com/photo-1606761568499-6d2451b23c66?auto=format&fit=crop&q=80&w=2000')] bg-center bg-cover bg-no-repeat flex items-center justify-center p-4 md:p-8 select-none relative overflow-hidden">
+    <div className="registration-page min-h-screen bg-[linear-gradient(120deg,rgba(248,250,254,0.96),rgba(255,255,255,0.95),rgba(255,255,255,0.98)),url('https://images.unsplash.com/photo-1606761568499-6d2451b23c66?auto=format&fit=crop&q=80&w=600')] bg-center bg-cover bg-no-repeat flex items-center justify-center p-4 md:p-8 select-none relative overflow-hidden">
 
       {/* Background Ambient Glow */}
       <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-sky-500/10 blur-[120px] pointer-events-none" />
@@ -1086,14 +1086,14 @@ export default function PreInscricao() {
                 alt="Vitoruga"
                 className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 border-accent p-[2px] bg-white object-contain"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/imagem/Vitoruga.png';
+                  (e.target as HTMLImageElement).src = '/imagem/Vitoruga.webp';
                 }}
               />
               <span className="absolute bottom-0 right-0 w-3 h-3 bg-success rounded-full border-2 border-white animate-pulse" />
             </div>
             <div>
               <h1 className="font-display font-bold text-primary text-sm tracking-wide">Vitoruga</h1>
-              <p className="text-[11px] text-success font-semibold flex items-center gap-1">
+              <p className="text-sm text-success font-semibold flex items-center gap-1">
                 Assistente virtual do Qualifica Vix
               </p>
             </div>
@@ -1115,15 +1115,15 @@ export default function PreInscricao() {
         </header>
 
         {/* Info Strip */}
-        <div className="bg-primary/20 px-4 sm:px-6 py-2 shrink-0 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 text-slate-600 text-xs">
+        <div className="bg-primary/20 px-4 sm:px-6 py-2 shrink-0 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 text-slate-600 text-sm">
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <MapPin className="w-3.5 h-3.5 text-accent flex-shrink-0" />
             <span className="line-clamp-2 break-words">
               Turma: <strong className="text-primary">{cursoNome}</strong> no {cursoLocal || 'Senai'}
             </span>
           </div>
-          <span className="text-[10px] bg-primary/5 border border-slate-200 px-2 py-0.5 rounded-full font-mono font-bold text-accent">
-            Inscrições: {inscricoesAtivas}/{limiteInscricoes}
+          <span className="text-sm bg-primary/5 border border-slate-200 px-2 py-0.5 rounded-full font-sans tabular-nums font-bold text-accent">
+            Você pode se inscrever em até {limiteInscricoes} cursos (já tem {inscricoesAtivas})
           </span>
         </div>
 
@@ -1162,14 +1162,14 @@ export default function PreInscricao() {
           {dadosSalvosExito && (
             <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 mt-4 text-center">
               <h3 className="font-bold text-primary text-base mb-2">{profileOnly ? 'Ficha atualizada' : 'Comprovante de Pré-Inscrição'}</h3>
-              <p className="text-slate-600 text-xs mb-4">{profileOnly ? 'Seus dados foram salvos para facilitar as próximas inscrições.' : <>Sua pré-inscrição foi recebida. A instituição entrará em contato para validar a matrícula. Protocolo: <strong>{protocoloGerado}</strong>.</>}</p>
+              <p className="text-slate-600 text-sm mb-4">{profileOnly ? 'Seus dados foram salvos para facilitar as próximas inscrições.' : <>Sua pré-inscrição foi recebida. A instituição entrará em contato para validar a matrícula. Protocolo: <strong>{protocoloGerado}</strong>.</>}</p>
 
               {/* SINE Link */}
               {(respostasUsuario.objetivo?.includes('conseguir emprego') || respostasUsuario.objetivo?.includes('mudar de área')) && (
                 <div className="bg-accent/15 border border-accent/30 rounded-xl p-4 mb-4 text-left">
                   <h4 className="font-bold text-accent text-sm mb-1">Encaminhamento ao SINE Vitória</h4>
-                  <p className="text-slate-600 text-xs mb-3">Encontramos vagas alinhadas com o seu curso de qualificação! Acesse o portal SINE Vitória para candidatar-se.</p>
-                  <a href="https://trabalha.vitoria.es.gov.br" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 bg-accent text-white font-bold text-xs px-3 py-2 rounded-lg hover:scale-102 transition-all">
+                  <p className="text-slate-600 text-sm mb-3">Encontramos vagas alinhadas com o seu curso de qualificação! Acesse o portal SINE Vitória para candidatar-se.</p>
+                  <a href="https://trabalha.vitoria.es.gov.br" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 bg-accent text-white font-bold text-sm px-3 py-2 rounded-lg hover:scale-102 transition-all">
                     Ver Vagas no SINE <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 </div>
@@ -1179,8 +1179,8 @@ export default function PreInscricao() {
               {respostasUsuario.objetivo?.includes('empreender') && (
                 <div className="bg-success/15 border border-success/30 rounded-xl p-4 mb-4 text-left">
                   <h4 className="font-bold text-success text-sm mb-1">Deseja Empreender? Parceria Sebrae-ES</h4>
-                  <p className="text-slate-600 text-xs mb-3">Quer montar seu próprio negócio e formalizar como MEI? O Sebrae-ES oferece cursos e consultorias gratuitas.</p>
-                  <a href="https://www.es.sebrae.com.br" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 bg-success text-white font-bold text-xs px-3 py-2 rounded-lg hover:scale-102 transition-all">
+                  <p className="text-slate-600 text-sm mb-3">Quer montar seu próprio negócio e formalizar como MEI? O Sebrae-ES oferece cursos e consultorias gratuitas.</p>
+                  <a href="https://www.es.sebrae.com.br" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 bg-success text-white font-bold text-sm px-3 py-2 rounded-lg hover:scale-102 transition-all">
                     Acessar Sebrae-ES <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 </div>
@@ -1188,7 +1188,7 @@ export default function PreInscricao() {
 
               <Link
                 to="/"
-                className="inline-flex items-center justify-center gap-1.5 w-full py-3 bg-primary/5 border border-slate-200 hover:border-accent/40 rounded-xl text-xs font-bold uppercase tracking-wider text-primary hover:bg-blue-50 transition-all cursor-pointer"
+                className="inline-flex items-center justify-center gap-1.5 w-full py-3 bg-primary/5 border border-slate-200 hover:border-accent/40 rounded-xl text-sm font-bold uppercase tracking-normal text-primary hover:bg-blue-50 transition-all cursor-pointer"
               >
                 Voltar à página inicial
               </Link>
@@ -1205,7 +1205,7 @@ export default function PreInscricao() {
           {/* CEP fora de Vitoria prompt buttons */}
           {aguardandoConfirmacaoCepForaVitoria && !dadosSalvosExito && (
             <div className="registration-options flex flex-wrap gap-2 justify-end">
-              {!semVinculoVitoria && <button type="button" disabled={isTyping} className="bg-accent text-white rounded-xl py-2.5 px-4 text-xs font-bold disabled:opacity-50" onClick={() => {
+              {!semVinculoVitoria && <button type="button" disabled={isTyping} className="bg-accent text-white rounded-xl py-2.5 px-4 text-sm font-bold disabled:opacity-50" onClick={() => {
                 if (!dadosCepForaVitoria) return;
                 setRespostasUsuario(prev => ({ ...prev, cep: dadosCepForaVitoria.cep, rua: dadosCepForaVitoria.logradouro, bairro: dadosCepForaVitoria.bairro, municipio: dadosCepForaVitoria.localidade, uf: dadosCepForaVitoria.uf, mora_vitoria: 'nao', trabalha_vitoria: 'sim' }));
                 setEnderecoValido(true);
@@ -1213,7 +1213,7 @@ export default function PreInscricao() {
                 addUserMessage('Sim, trabalho em Vitória');
                 setEtapaAtual(roteiro.findIndex(q => q.chave === 'numero'));
               }}>Sim, trabalho em Vitória</button>}
-              {!semVinculoVitoria && <button type="button" disabled={isTyping} className="border border-slate-200 text-primary rounded-xl py-2.5 px-4 text-xs font-bold disabled:opacity-50" onClick={async () => {
+              {!semVinculoVitoria && <button type="button" disabled={isTyping} className="border border-slate-200 text-primary rounded-xl py-2.5 px-4 text-sm font-bold disabled:opacity-50" onClick={async () => {
                 setSemVinculoVitoria(true);
                 setRespostasUsuario(prev => ({ ...prev, mora_vitoria: 'nao', trabalha_vitoria: 'nao' }));
                 addUserMessage('Não trabalho em Vitória');
@@ -1232,7 +1232,7 @@ export default function PreInscricao() {
                   addUserMessage('Corrigir o CEP');
                   await addBotMessage('Tudo bem! Digite novamente o CEP do seu endereço de residência.', 600);
                 }}
-                className="bg-accent text-white hover:bg-accent/90 font-bold text-xs py-2.5 px-5 rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                className="bg-accent text-white hover:bg-accent/90 font-bold text-sm py-2.5 px-5 rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
               >
                 Corrigir o CEP
               </button>
@@ -1241,7 +1241,7 @@ export default function PreInscricao() {
                 onClick={() => {
                   navigate('/');
                 }}
-                className="bg-white border border-red-500/30 text-red-400 hover:bg-red-500/10 font-semibold text-xs py-2.5 px-4 rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
+                className="bg-white border border-red-500/30 text-red-400 hover:bg-red-500/10 font-semibold text-sm py-2.5 px-4 rounded-xl shadow-lg transition-all cursor-pointer flex items-center gap-1.5"
               >
                 Sair do Formulário
               </button>
@@ -1254,7 +1254,7 @@ export default function PreInscricao() {
 
               {/* TERMO DE CIÊNCIA E VALIDAÇÃO DE MATRÍCULA (Item 7) */}
               <div className="bg-primary/40 p-4 rounded-xl border border-slate-200">
-                <h4 className="font-bold text-accent text-xs uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <h4 className="font-bold text-accent text-sm uppercase tracking-normal mb-2 flex items-center gap-1.5">
                   <FileText className="w-4 h-4 text-accent" /> Termo de Ciência e Validação de Matrícula
                 </h4>
                 <label className="flex items-start gap-2.5 cursor-pointer select-none">
@@ -1264,7 +1264,7 @@ export default function PreInscricao() {
                     onChange={(e) => setAceitouTermosCompromisso(e.target.checked)}
                     className="w-4 h-4 rounded text-accent accent-accent mt-0.5"
                   />
-                  <span className="text-xs font-semibold text-slate-600 leading-relaxed">
+                  <span className="text-sm font-semibold text-slate-600 leading-relaxed">
                     “Confirmação da matricula no formulário somente após a instituição entrar em contato e validar as informações, não comparecendo a matricula perde a vaga pré reservada” <span className="text-accent font-bold">* (obrigatório)</span>
                   </span>
                 </label>
@@ -1273,19 +1273,19 @@ export default function PreInscricao() {
               {/* AVISO DE PRIVACIDADE E DUAL CONSENTIMENTO LGPD (Item 8) */}
               <div className="bg-primary/40 p-4 rounded-xl border border-slate-200 flex flex-col gap-3">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-emerald-400 text-xs uppercase tracking-wider flex items-center gap-1.5">
+                  <h4 className="font-bold text-emerald-400 text-sm uppercase tracking-normal flex items-center gap-1.5">
                     <Check className="w-4 h-4 text-emerald-400" /> Consentimentos e Privacidade (LGPD)
                   </h4>
                   <button
                     type="button"
                     onClick={() => setMostrarAvisoLgpdCompleto(!mostrarAvisoLgpdCompleto)}
-                    className="text-[11px] text-accent underline cursor-pointer font-semibold"
+                    className="text-sm text-accent underline cursor-pointer font-semibold"
                   >
                     {mostrarAvisoLgpdCompleto ? 'Ocultar Detalhes' : 'Leia o aviso completo'}
                   </button>
                 </div>
 
-                <div className="text-slate-600 text-xs leading-relaxed">
+                <div className="text-slate-600 text-sm leading-relaxed">
                   {mostrarAvisoLgpdCompleto ? (
                     <div className="space-y-2">
                       <p>
@@ -1316,7 +1316,7 @@ export default function PreInscricao() {
                     onChange={(e) => setAceitouAvisoLgpd(e.target.checked)}
                     className="w-4 h-4 rounded text-emerald-400 accent-emerald-400 mt-0.5"
                   />
-                  <span className="text-xs font-semibold text-slate-600 leading-snug">
+                  <span className="text-sm font-semibold text-slate-600 leading-snug">
                     Aviso de Privacidade e tratamento de dados pessoais necessários para a gestão do curso <span className="text-accent font-bold">* (obrigatório para concluir o cadastro)</span>
                   </span>
                 </label>
@@ -1329,7 +1329,7 @@ export default function PreInscricao() {
                     onChange={(e) => setAutorizaUsoImagem(e.target.checked)}
                     className="w-4 h-4 rounded text-accent accent-accent mt-0.5"
                   />
-                  <span className="text-xs font-semibold text-slate-600 leading-snug">
+                  <span className="text-sm font-semibold text-slate-600 leading-snug">
                     Autorização de uso de imagem e voz para divulgação institucional dos projetos da prefeitura <span className="text-emerald-400 font-bold">(opcional e facultativo - a recusa não impede a sua pré-inscrição)</span>
                   </span>
                 </label>
@@ -1341,7 +1341,7 @@ export default function PreInscricao() {
                   type="button"
                   disabled={!aceitouTermosCompromisso || !aceitouAvisoLgpd || isTyping}
                   onClick={() => prosseguirEtapa('sim', 'Sim, quero finalizar!')}
-                  className="w-full sm:w-auto px-8 py-3.5 bg-accent hover:bg-accent/90 disabled:opacity-40 disabled:cursor-not-allowed text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all cursor-pointer"
+                  className="w-full sm:w-auto px-8 py-3.5 bg-accent hover:bg-accent/90 disabled:opacity-40 disabled:cursor-not-allowed text-white font-extrabold text-sm uppercase tracking-normal rounded-xl shadow-lg transition-all cursor-pointer"
                 >
                   {profileOnly ? 'Salvar atualização da ficha' : 'Finalizar Pré-Inscrição'}
                 </button>
@@ -1357,7 +1357,7 @@ export default function PreInscricao() {
                   key={opt.valor}
                   disabled={isTyping}
                   onClick={() => prosseguirEtapa(opt.valor, opt.texto)}
-                  className="bg-white border border-accent/40 text-accent hover:bg-accent hover:text-white font-semibold text-xs py-2.5 px-4 rounded-xl shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer"
+                  className="bg-white border border-accent/40 text-accent hover:bg-accent hover:text-white font-semibold text-sm py-2.5 px-4 rounded-xl shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer"
                 >
                   {opt.texto}
                 </button>
@@ -1365,19 +1365,19 @@ export default function PreInscricao() {
             </div>
           )}
 
-          {aguardandoEscolhaCpf && sessionToken && <button type="button" className="text-accent text-xs underline" onClick={() => { setProfileOnly(true); setAguardandoEscolhaCpf(false); setEtapaAtual(roteiro.findIndex(q => q.chave === 'cep')); }}>Apenas atualizar minha ficha, sem inscrição neste curso</button>}
+          {aguardandoEscolhaCpf && sessionToken && <button type="button" className="text-accent text-sm underline" onClick={() => { setProfileOnly(true); setAguardandoEscolhaCpf(false); setEtapaAtual(roteiro.findIndex(q => q.chave === 'cep')); }}>Apenas atualizar minha ficha, sem inscrição neste curso</button>}
           {/* CPF Prompt (Auto fill options) */}
           {aguardandoEscolhaCpf && !dadosSalvosExito && (
             <div className="registration-options flex flex-wrap gap-2 justify-end">
               <button
                 onClick={() => prosseguirEtapa('auto', 'Auto-preencher')}
-                className="bg-accent text-white hover:bg-accent/90 font-bold text-xs py-2.5 px-5 rounded-xl shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer"
+                className="bg-accent text-white hover:bg-accent/90 font-bold text-sm py-2.5 px-5 rounded-xl shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer"
               >
                 Auto-preencher
               </button>
               <button
                 onClick={() => prosseguirEtapa('editar', 'Quero mudar algo')}
-                className="bg-white border border-slate-200 text-slate-600 hover:bg-primary/5 font-semibold text-xs py-2.5 px-4 rounded-xl shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer"
+                className="bg-white border border-slate-200 text-slate-600 hover:bg-primary/5 font-semibold text-sm py-2.5 px-4 rounded-xl shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer"
               >
                 Revisar e atualizar dados
               </button>
@@ -1394,7 +1394,7 @@ export default function PreInscricao() {
                     key={opt.valor}
                   disabled={isTyping}
                     onClick={() => prosseguirEtapa(opt.valor, opt.texto)}
-                    className="bg-white border border-accent/40 text-accent hover:bg-accent hover:text-white font-semibold text-xs py-2.5 px-4 rounded-xl shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer"
+                    className="bg-white border border-accent/40 text-accent hover:bg-accent hover:text-white font-semibold text-sm py-2.5 px-4 rounded-xl shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer"
                   >
                     + Adicionar: {opt.texto}
                   </button>
@@ -1403,7 +1403,7 @@ export default function PreInscricao() {
               <button
                 onClick={() => prosseguirEtapa('prosseguir', 'Apenas esta')}
                 disabled={isTyping}
-                className="bg-accent text-white hover:bg-accent/90 font-bold text-xs py-2.5 px-5 rounded-xl shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer"
+                className="bg-accent text-white hover:bg-accent/90 font-bold text-sm py-2.5 px-5 rounded-xl shadow-lg transition-all hover:-translate-y-0.5 cursor-pointer"
               >
                 Confirmar (Somente 1)
               </button>
@@ -1439,7 +1439,7 @@ export default function PreInscricao() {
                   type="button"
                   onClick={() => prosseguirEtapa('', 'Pular')}
                   disabled={isTyping}
-                  className="bg-blue-50 text-primary border border-slate-200 px-4 py-3 rounded-full hover:bg-primary/10 transition-all font-bold text-xs"
+                  className="bg-blue-50 text-primary border border-slate-200 px-4 py-3 rounded-full hover:bg-primary/10 transition-all font-bold text-sm"
                 >
                   Pular
                 </button>
@@ -1483,7 +1483,7 @@ export default function PreInscricao() {
               if (authenticatedProfile.historico && authenticatedProfile.historico.length > 0) {
                 histText = '<strong>Seu Histórico de Inscrições:</strong><br/>';
                 authenticatedProfile.historico.forEach((h: any) => {
-                  const classifStatus = h.status_inscricao === 'suplente' ? 'Suplente' : 'Titular';
+                  const classifStatus = h.status_inscricao === 'suplente' ? 'Lista de espera' : 'Titular';
                   histText += `• <strong>${h.curso_nome}</strong> (${h.local_nome}) — ${classifStatus}<br/>`;
                 });
               }

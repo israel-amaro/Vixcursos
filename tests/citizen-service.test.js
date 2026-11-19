@@ -54,7 +54,7 @@ async function exercise(db) {
         assert.equal(state.preInscricoes[0].cpf_documento, undefined);
         assert.equal((await request('/inscricao', fixture('52998224725'))).status, 409);
         const located = await request('/api/cidadaos/localizar', { cpf: '529.982.247-25' });
-        assert.equal(located.data.localizou, true); assert.notEqual(located.data.id_mascarado.nome, fixture().nome);
+        assert.equal(located.data.localizou, true); assert.deepEqual(Object.keys(located.data).sort(), ['email_mascarado', 'localizou']);
         assert.equal((await request('/api/cidadaos/me', null, null, 'GET')).status, 401);
         assert.equal((await request('/api/cidadaos/enviar-codigo', { cpf: '52998224725' })).status, 200);
         assert.equal((await request('/api/cidadaos/enviar-codigo', { cpf: '52998224725' })).status, 429);

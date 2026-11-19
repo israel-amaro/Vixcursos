@@ -1,3 +1,4 @@
+import { readCitizenSession } from '../lib/citizenSession';
 import DOMPurify from 'dompurify';
 import MascotPicker from './MascotPicker';
 import { getMascot, useMascotPreference } from '../lib/mascots';
@@ -138,11 +139,11 @@ export default function VitorugaChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [mascotOutfit, setMascotOutfit] = useState('/imagem/vitorugaoficial.png');
+  const [mascotOutfit, setMascotOutfit] = useState('/imagem/vitorugaoficial.webp');
   const { preference } = useMascotPreference();
   const displayedMascot = preference === 'auto' ? mascotOutfit : getMascot(preference).imagem;
   const [speechEnabled, setSpeechEnabled] = useState(false);
-  const [showTooltip, setShowTooltip] = useState(true);
+  const [showTooltip, setShowTooltip] = useState(() => { try { const seen = sessionStorage.getItem('vitoruga-dica'); sessionStorage.setItem('vitoruga-dica', '1'); return !seen; } catch { return false; } });
 
   // Drag state for movable chatbot
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
@@ -323,17 +324,17 @@ export default function VitorugaChat() {
     if (preference !== 'auto') return;
     const cleanText = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     if (/\b(gastronomia|cozinha|culinaria|padaria|confeitei|confeita|doce|bolo|chefe|chef|alimento|comida)\b/.test(cleanText)) {
-      setMascotOutfit('/imagem/Vitoruga_chef.png');
+      setMascotOutfit('/imagem/Vitoruga_chef.webp');
     } else if (/\b(tecnologia|informatica|excel|computador|ti|programac|rede|software|hardware|site|sistemas|dados)\b/.test(cleanText)) {
-      setMascotOutfit('/imagem/Vitoruga_coder.png');
+      setMascotOutfit('/imagem/Vitoruga_coder.webp');
     } else if (/\b(solda|eletricista|mecanic|energia|civil|construc|obra|ferramenta|trabalho|soldador|pedreiro|industrial)\b/.test(cleanText)) {
-      setMascotOutfit('/imagem/Vitoruga_worker.png');
+      setMascotOutfit('/imagem/Vitoruga_worker.webp');
     } else if (/\b(beleza|estetica|barbeiro|cabelo|manicure|moda|corte|costura|artesanato|maquiagem|unha|esteticista)\b/.test(cleanText)) {
-      setMascotOutfit('/imagem/Vitoruga_beauty.png');
+      setMascotOutfit('/imagem/Vitoruga_beauty.webp');
     } else if (/enferm|saude|costura|moda|admin|gestao/.test(cleanText)) {
       setMascotOutfit(getMascot(undefined, cleanText).imagem);
     } else {
-      setMascotOutfit('/imagem/Vitoruga.png');
+      setMascotOutfit('/imagem/Vitoruga.webp');
     }
   };
 
@@ -570,7 +571,7 @@ export default function VitorugaChat() {
     }
 
     try {
-      const res = await fetch(`/api/pre-inscricoes/por-cpf/${cpfLimpo}`);
+      const res = await fetch('/api/cidadaos/localizar', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ cpf: cpfLimpo }) });
       setIsTyping(false);
       if (res.status === 404) {
         const reply = "Não encontrei nenhuma inscrição vinculada a este CPF. 🐢";
@@ -594,7 +595,7 @@ export default function VitorugaChat() {
 
       const data = await res.json();
 
-      if (!data.found) {
+      if (!data.localizou) {
         const reply = "Não encontrei nenhuma inscrição vinculada a este CPF. 🐢";
         setMessages((prev) => [
           ...prev,
@@ -614,23 +615,7 @@ export default function VitorugaChat() {
         return;
       }
       
-      const nomeAluno = data.data?.nome || data.id_mascarado?.nome || 'Cidadão';
-      let reply = `Encontrei seu cadastro! Olá, **${nomeAluno}**.\n\nPor motivos de privacidade e segurança da LGPD, os dados completos do seu histórico e comprovante são exibidos com autenticação por código OTP durante a pré-inscrição.\n\n`;
-      if (data.historico && data.historico.length > 0) {
-        data.historico.forEach((h: any) => {
-          const classif = String(h.status_inscricao).toLowerCase() === 'suplente' ? 'Suplente' : 'Titular';
-          const matriculado = Number(h.matricula_confirmada) === 1 ? 'Matriculado' : 'Pendente';
-          reply += `• **${h.curso_nome}** (${h.local_nome})\n  - Classificação: **${classif}**\n  - Matrícula: **${matriculado}**\n`;
-          if (h.situacao_final === 'concluido') {
-            reply += `  - 🎓 **Concluído** — [Baixar Certificado](/certificado/${h.id})\n`;
-          } else if (h.situacao_final) {
-            reply += `  - Situação: **${h.situacao_final}**\n`;
-          }
-          reply += `\n`;
-        });
-      } else {
-        reply += "Seu cadastro está ativo na Prefeitura de Vitória! Para realizar uma nova pré-inscrição, selecione um dos cursos disponíveis.";
-      }
+      const reply = `Encontrei seu cadastro. Para consultar seu hist\u00f3rico e certificados, abra a pr\u00e9-inscri\u00e7\u00e3o de um curso e valide o c\u00f3digo enviado para ${data.email_mascarado}.`;
 
       setMessages((prev) => [
         ...prev,
@@ -751,15 +736,18 @@ export default function VitorugaChat() {
       const updatedAnswers = { ...suggestion.answers, texto: text };
       
       try {
-        await fetch('/api/pre-inscricoes/sugestoes', {
+        const token = readCitizenSession();
+        if (!token) throw new Error('Valide seu cadastro na pré-inscrição antes de enviar uma sugestão.');
+        const response = await fetch('/api/pre-inscricoes/sugestoes', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({
             cpf: updatedAnswers.cpf,
             areas_interesse: updatedAnswers.areas,
             sugestao_texto: updatedAnswers.texto
           })
         });
+        if (!response.ok) throw new Error('Não foi possível enviar a sugestão. Valide seu cadastro e tente novamente.');
 
         setIsTyping(false);
         const reply = "Obrigado! Sua sugestão de curso foi recebida com sucesso e enviada ao setor de planejamento do Qualifica Vix. 🐢💡";
@@ -778,7 +766,7 @@ export default function VitorugaChat() {
         speakText(reply);
       } catch (err) {
         setIsTyping(false);
-        const reply = "Ops! Tive um probleminha para salvar sua sugestão. Pode tentar de novo mais tarde?";
+        const reply = err instanceof Error ? err.message : 'Não foi possível salvar a sugestão. Tente novamente.';
         setMessages((prev) => [
           ...prev,
           {
@@ -928,7 +916,7 @@ export default function VitorugaChat() {
       if (cleanText.includes("como fazer inscricao") || cleanText.includes("como me inscrever") || cleanText.includes("quero me inscrever")) {
         customReply = "Para fazer sua inscrição, basta navegar pelas turmas do catálogo principal na nossa página inicial e clicar em **Pré-inscrição**. O Vitoruga te guiará no chat de inscrição! 🐢";
       } else if (cleanText.includes("status da inscricao") || cleanText.includes("status")) {
-        customReply = "Você pode consultar o status da sua inscrição digitando o seu **CPF** no início do fluxo de inscrição do curso desejado. O sistema recuperará o seu histórico completo de titular, suplente ou concluído! 📂";
+        customReply = "Você pode consultar o status da sua inscrição digitando o seu **CPF** no início do fluxo de inscrição do curso desejado. O sistema recuperará o seu histórico completo de vaga garantida, lista de espera ou concluído! 📂";
       } else if (cleanText.includes("documento") || cleanText.includes("documentos para matricula")) {
         customReply = "Os documentos necessários para confirmação da matrícula presencial são:\n• **CPF** e **RG** (original e cópia)\n• **Comprovante de residência** em Vitória\n• Menores de 18 anos devem levar os documentos do responsável legal.";
       } else if (cleanText.includes("localizacao") || cleanText.includes("onde e o curso") || cleanText.includes("polo")) {
@@ -1074,7 +1062,7 @@ export default function VitorugaChat() {
               initial={{ opacity: 0, y: 10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white/95 backdrop-blur-md border border-slate-200 text-primary rounded-2xl py-2.5 px-4 shadow-2xl mb-3 ml-2 max-w-[200px] text-xs font-semibold relative text-left"
+              className="bg-white/95 backdrop-blur-md border border-slate-200 text-primary rounded-2xl py-2.5 px-4 shadow-2xl mb-3 ml-2 max-w-[200px] text-sm font-semibold relative text-left"
             >
               <span>Precisa de ajuda para encontrar um curso? 🐢</span>
               <button 
@@ -1135,7 +1123,7 @@ export default function VitorugaChat() {
                   alt="Vitoruga Mascot"
                   className="w-[90%] h-[90%] object-contain"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/imagem/vitorugaoficial.png';
+                    (e.target as HTMLImageElement).src = '/imagem/vitorugaoficial.webp';
                   }}
                 />
                 <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-success rounded-full border-2 border-white" />
@@ -1184,15 +1172,15 @@ export default function VitorugaChat() {
                     alt="Vitoruga"
                     className="w-12 h-12 sm:w-16 sm:h-16 object-contain rounded-full border border-accent/40 p-[1px] bg-white"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/imagem/vitorugaoficial.png';
+                      (e.target as HTMLImageElement).src = '/imagem/vitorugaoficial.webp';
                     }}
                   />
                   <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-success rounded-full border border-white" />
                 </div>
                 <div>
-                  <h2 className="font-display font-bold text-primary text-sm sm:text-xs leading-snug">Vitoruga</h2>
-                  <p className="text-xs text-slate-600 leading-snug">Assistente virtual do Qualifica Vix</p>
-                  <p className="text-[10px] text-success font-semibold">Online</p>
+                  <h2 className="font-display font-bold text-primary text-sm sm:text-sm leading-snug">Vitoruga</h2>
+                  <p className="text-sm text-slate-600 leading-snug">Assistente virtual do Qualifica Vix</p>
+                  <p className="text-sm text-success font-semibold">Online</p>
                 </div>
               </div>
 
@@ -1226,7 +1214,7 @@ export default function VitorugaChat() {
               {messages.map((msg) => (
                 <div key={msg.id} className="flex flex-col gap-1.5">
                   <div
-                    className={`max-w-[92%] sm:max-w-[85%] break-words rounded-2xl px-4 py-3 text-sm sm:text-xs leading-relaxed shadow-lg ${
+                    className={`max-w-[92%] sm:max-w-[85%] break-words rounded-2xl px-4 py-3 text-sm sm:text-sm leading-relaxed shadow-lg ${
                       msg.sender === 'bot'
                         ? 'bg-blue-50 text-primary border border-slate-200 self-start rounded-tl-sm'
                         : 'bg-gradient-to-r from-coral to-accent text-white self-end rounded-tr-sm shadow-accent/5'
@@ -1247,7 +1235,7 @@ export default function VitorugaChat() {
                           setIsOpen(false);
                           navigate(`/pre-inscricao/${msg.extractedCourseId}`);
                         }}
-                        className="inline-flex items-center gap-1.5 bg-accent hover:bg-accent/95 text-white font-bold text-[10px] tracking-wider uppercase py-2 px-3 rounded-lg shadow-md cursor-pointer transition-all hover:scale-102"
+                        className="inline-flex items-center gap-1.5 bg-accent hover:bg-accent/95 text-white font-bold text-sm tracking-normal uppercase py-2 px-3 rounded-lg shadow-md cursor-pointer transition-all hover:scale-102"
                       >
                         <BookOpen className="w-3 h-3" /> Fazer Pré-Inscrição Agora
                       </button>
@@ -1275,7 +1263,7 @@ export default function VitorugaChat() {
                     key={i}
                     type="button"
                     onClick={() => handleOptionClick(opt.valor, opt.texto)}
-                    className="bg-blue-50 hover:bg-accent border border-slate-200 text-primary hover:text-white text-[10px] font-bold py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center gap-1 max-w-full text-left"
+                    className="bg-blue-50 hover:bg-accent border border-slate-200 text-primary hover:text-white text-sm font-bold py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center gap-1 max-w-full text-left"
                   >
                     {opt.texto} <ArrowRight className="w-3 h-3 flex-shrink-0" />
                   </button>
@@ -1302,7 +1290,7 @@ export default function VitorugaChat() {
                   (quiz.active && ['questions', 'ask_register', 'ask_regiao'].includes(quiz.step)) ||
                   (suggestion.active && suggestion.step === 'ask_areas')
                 }
-                className="flex-1 min-w-0 bg-primary/5 border border-slate-200 rounded-full py-3 px-4 text-base sm:text-xs text-primary focus:outline-none focus:border-accent focus:bg-slate-50 placeholder-slate-400 transition-all font-sans disabled:opacity-50"
+                className="flex-1 min-w-0 bg-primary/5 border border-slate-200 rounded-full py-3 px-4 text-base sm:text-sm text-primary focus:outline-none focus:border-accent focus:bg-slate-50 placeholder-slate-400 transition-all font-sans disabled:opacity-50"
               />
               <button
                 type="submit"

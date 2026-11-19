@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sidebar) {
         sidebar.setAttribute('aria-label', 'Navegação administrativa');
         sidebar.innerHTML = `<a href="/admin/menu.html" class="sidebar-brand">
-            <img class="sidebar-logo" src="/imagem/logo.png" alt="Qualifica Vix">
+            <img class="sidebar-logo" src="/imagem/logo.webp" alt="Qualifica Vix">
             <div><span class="brand-name">Qualifica Vix</span><span class="brand-sub">Área administrativa</span></div></a>
             <div class="sidebar-nav"><div class="nav-section">Principal</div>
             ${link('menu.html', 'house-door-fill', 'Dashboard')}

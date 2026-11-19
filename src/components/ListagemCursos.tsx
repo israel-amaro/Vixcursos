@@ -1,3 +1,4 @@
+import { startLabel, imageSrcSet } from '../lib/images';
 import { getMascot } from '../lib/mascots';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -80,10 +81,11 @@ interface Course {
 
 interface ListagemCursosProps {
   filters: FilterState;
+  onResultCount?: (count: number) => void;
   onClearFilters: () => void;
 }
 
-export default function ListagemCursos({ filters, onClearFilters }: ListagemCursosProps) {
+export default function ListagemCursos({ filters, onClearFilters, onResultCount }: ListagemCursosProps) {
   const navigate = useNavigate();
   const { courses: catalog, loading, error } = usePublicCourses<Course>();
   const courses = React.useMemo(() => catalog.map(c => ({ ...c,
@@ -183,11 +185,13 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
     }
 
     setFilteredCourses(result);
+    onResultCount?.(result.length);
     setCurrentPage(1);
   }, [courses, filters, activeTab, sortBy]);
 
   const indexOfLastCourse = currentPage * itemsPerPage;
   const indexOfFirstCourse = indexOfLastCourse - itemsPerPage;
+  useEffect(() => { window.dispatchEvent(new CustomEvent('cursos-filtrados', { detail: filteredCourses.length })); }, [filteredCourses]);
   const currentCourses = filteredCourses.slice(indexOfFirstCourse, indexOfLastCourse);
   const totalPages = Math.ceil(filteredCourses.length / itemsPerPage);
 
@@ -229,7 +233,7 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
           <div className="grid grid-cols-3 gap-1 bg-slate-200/80 p-1 rounded-2xl w-full lg:w-auto">
             <button
               onClick={() => setActiveTab('todos')}
-              className={`min-w-0 px-2 sm:px-4 py-3 rounded-xl text-[11px] sm:text-xs font-extrabold transition-all cursor-pointer ${
+              className={`min-w-0 px-2 sm:px-4 py-3 rounded-xl text-sm sm:text-sm font-extrabold transition-all cursor-pointer ${
                 activeTab === 'todos'
                   ? 'bg-white text-slate-800 shadow-md'
                   : 'text-slate-600 hover:text-slate-900'
@@ -240,7 +244,7 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
 
             <button
               onClick={() => setActiveTab('mais_procurados')}
-              className={`min-w-0 px-2 sm:px-4 py-3 rounded-xl text-[11px] sm:text-xs font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`min-w-0 px-2 sm:px-4 py-3 rounded-xl text-sm sm:text-sm font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 activeTab === 'mais_procurados'
                   ? 'bg-accent text-white shadow-md'
                   : 'text-slate-600 hover:text-slate-900'
@@ -252,7 +256,7 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
 
             <button
               onClick={() => setActiveTab('novos')}
-              className={`min-w-0 px-2 sm:px-4 py-3 rounded-xl text-[11px] sm:text-xs font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              className={`min-w-0 px-2 sm:px-4 py-3 rounded-xl text-sm sm:text-sm font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 activeTab === 'novos'
                   ? 'bg-emerald-600 text-white shadow-md'
                   : 'text-slate-600 hover:text-slate-900'
@@ -265,14 +269,14 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
 
           {/* Ordenação */}
           <div className="flex items-center gap-2 w-full lg:w-auto justify-between lg:justify-end">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <span className="text-sm font-bold text-slate-400 uppercase tracking-normal">
               Ordenar:
             </span>
             <select
               id="ordenacao"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              aria-label="Ordenar cursos" className="min-w-0 text-sm sm:text-xs border border-slate-300 rounded-xl px-3.5 py-3 sm:py-2 bg-white text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
+              aria-label="Ordenar cursos" className="min-w-0 text-sm sm:text-sm border border-slate-300 rounded-xl px-3.5 py-3 sm:py-2 bg-white text-slate-700 font-semibold focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
             >
               <option value="recentes">Mais Recentes</option>
               <option value="vagas">Mais Vagas</option>
@@ -282,7 +286,7 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
         </div>
 
         {/* Quantidade Encontrada */}
-        <div className="mb-6 flex items-center justify-between text-xs font-semibold text-slate-500">
+        <div className="mb-6 flex items-center justify-between text-sm font-semibold text-slate-500">
           <span>Mostrando {filteredCourses.length} {filteredCourses.length === 1 ? 'curso' : 'cursos'}</span>
         </div>
 
@@ -293,7 +297,7 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
             <h3 className="text-lg font-display font-bold text-slate-800">
               Nenhum curso encontrado com esses filtros
             </h3>
-            <p className="text-xs text-slate-500 max-w-sm leading-relaxed px-6">
+            <p className="text-sm text-slate-500 max-w-sm leading-relaxed px-6">
               Tente alterar os termos da busca ou limpe os filtros selecionados para visualizar todas as opções.
             </p>
             <button
@@ -301,7 +305,7 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
                 setActiveTab('todos');
                 onClearFilters();
               }}
-              className="mt-2 px-6 py-2.5 bg-primary text-white rounded-xl text-xs font-extrabold uppercase tracking-wider hover:bg-primary-dark transition-all cursor-pointer shadow-md"
+              className="mt-2 px-6 py-2.5 bg-primary text-white rounded-xl text-sm font-extrabold uppercase tracking-normal hover:bg-primary-dark transition-all cursor-pointer shadow-md"
             >
               Limpar Filtros
             </button>
@@ -326,11 +330,11 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
                   {/* Card Image Header */}
                   <div className="relative h-48 w-full overflow-hidden select-none bg-slate-900">
                     <img
-                      src={imgSrc}
+                      src={imgSrc} srcSet={imageSrcSet(imgSrc)} sizes="(max-width: 639px) 100vw, 400px"
                       alt={course.nome}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 opacity-90"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/imagem/proficao/proficao.png';
+                        (e.target as HTMLImageElement).src = '/imagem/proficao/proficao.webp';
                       }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
@@ -338,12 +342,12 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
                   <img src={getMascot(course.mascote_id, course.categoria).imagem} alt={getMascot(course.mascote_id, course.categoria).nome} className="absolute right-2 bottom-8 h-32 w-32 object-contain drop-shadow-xl transition-transform group-hover:scale-110" />
                     {/* Status & Ribbon Badges */}
                     <div className="absolute top-3 left-3 flex flex-col gap-1.5 items-start">
-                      <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] shadow-md font-extrabold ${status.class}`}>
+                      <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm shadow-md font-extrabold ${status.class}`}>
                         {status.icon}
                         {status.label}
                       </span>
                       {course.isNovo && (
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-accent text-white shadow-md animate-pulse">
+                        <span className="px-2.5 py-0.5 rounded-full text-sm font-black uppercase tracking-normal bg-accent text-white shadow-md animate-pulse">
                           NOVAS INSCRIÇÕES
                         </span>
                       )}
@@ -351,7 +355,7 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
 
                     {/* Category Label at Bottom Left */}
                     <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between text-white">
-                      <span className="text-[11px] font-mono font-bold tracking-wider uppercase text-accent bg-slate-950/70 px-2.5 py-0.5 rounded-md border border-white/10">
+                      <span className="text-sm font-sans tabular-nums font-bold tracking-normal uppercase text-accent bg-slate-950/70 px-2.5 py-0.5 rounded-md border border-white/10">
                         {course.categoria}
                       </span>
                     </div>
@@ -366,13 +370,13 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
                       </h4>
 
                       {/* DATA DE INÍCIO DAS AULAS (Item 7 Requirement) */}
-                      <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-100 border border-slate-200 mb-3 text-xs font-bold text-slate-700">
+                      <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-100 border border-slate-200 mb-3 text-sm font-bold text-slate-700">
                         <Calendar className="w-4 h-4 text-accent flex-shrink-0" />
-                        <span>Início das aulas: <strong className="text-slate-900">{course.data_inicio || 'A definir'}</strong></span>
+                        <span><strong className="text-slate-900">{startLabel(course.data_inicio)}</strong></span>
                       </div>
 
                       {/* Resumo curto + Mercado e Média Salarial */}
-                      <p className="text-slate-600 text-sm sm:text-xs leading-relaxed line-clamp-2 mb-3">
+                      <p className="text-slate-600 text-sm sm:text-sm leading-relaxed line-clamp-2 mb-3">
                         {course.descricao || "Capacitação profissional presencial gratuita com foco prático e certificação para o mercado de Vitória."}
                       </p>
 
@@ -380,12 +384,12 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
 
                       {/* BLOCO "IDEAL PARA:" TAGS (Item 7 Requirement) */}
                       <div className="mb-4">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5 flex items-center gap-1">
+                        <span className="text-sm font-bold uppercase tracking-normal text-slate-400 block mb-1.5 flex items-center gap-1">
                           <Tag className="w-3 h-3 text-slate-400" /> Ideal para:
                         </span>
                         <div className="flex flex-wrap gap-1.5">
                           {idealTags.map((tag, i) => (
-                            <span key={i} className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 text-[10px] font-bold">
+                            <span key={i} className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200 text-sm font-bold">
                               {tag}
                             </span>
                           ))}
@@ -393,12 +397,12 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
                       </div>
 
                       {/* Pre-requisites display */}
-                      <p className="text-sm sm:text-[11px] leading-relaxed font-semibold text-slate-500 mb-2">
+                      <p className="text-sm sm:text-sm leading-relaxed font-semibold text-slate-500 mb-2">
                         <strong>Pré-requisitos:</strong> {course.pre_requisitos || "Nenhum pré-requisito adicional informado"}
                       </p>
 
                       {/* Informações adicionais */}
-                      <div className="flex flex-col gap-1.5 text-xs text-slate-500 pt-3 border-t border-slate-100">
+                      <div className="flex flex-col gap-1.5 text-sm text-slate-500 pt-3 border-t border-slate-100">
                         <div className="flex items-center gap-2">
                           <Clock className="w-3.5 h-3.5 text-slate-400" />
                           <span>Carga Horária: {course.carga_horaria ? `${course.carga_horaria}h` : 'A definir'}</span>
@@ -412,10 +416,10 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
 
                     {/* Footer Vagas & Botões CTA */}
                     <div className="pt-4 border-t border-slate-100 mt-5 flex flex-col gap-2.5">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-slate-400 font-bold uppercase tracking-wider">Vagas Disponíveis</span>
-                        <span className="font-mono font-extrabold text-slate-900 text-sm">
-                          {course.vagas_disponiveis} / {course.vagas_totais}
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-slate-400 font-bold uppercase tracking-normal">Vagas Disponíveis</span>
+                        <span className="font-sans tabular-nums font-extrabold text-slate-900 text-sm">
+                          {course.vagas_disponiveis} vagas livres de {course.vagas_totais}
                         </span>
                       </div>
                       
@@ -425,16 +429,16 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
                           setSelectedCourseForModal(course);
                           setIsModalOpen(true);
                         }}
-                        className="w-full min-h-11 py-3 rounded-xl border border-slate-300 hover:border-accent/40 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                        className="w-full min-h-11 py-3 rounded-xl border border-slate-300 hover:border-accent/40 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                       >
                         <BookOpen className="w-3.5 h-3.5 text-accent" />
-                        Ver ementa e mais informações
+                        Ver o que você vai aprender e mais informações
                       </button>
 
                       <button
                         disabled={course.aceita_inscricoes === false}
                         onClick={() => navigate(`/pre-inscricao/${course.id}`)}
-                        className={`w-full py-3 rounded-xl text-xs font-extrabold uppercase tracking-widest text-white transition-all duration-300 cursor-pointer text-center shadow-md transform hover:scale-[1.02] ${
+                        className={`w-full py-3 rounded-xl text-sm font-extrabold uppercase tracking-normal text-white transition-all duration-300 cursor-pointer text-center shadow-md transform hover:scale-[1.02] ${
                           isEsgotado
                             ? 'bg-orange-500 hover:bg-orange-600'
                             : 'bg-accent hover:bg-accent/90'
@@ -465,7 +469,7 @@ export default function ListagemCursos({ filters, onClearFilters }: ListagemCurs
               <button
                 key={idx + 1}
                 onClick={() => setCurrentPage(idx + 1)}
-                className={`w-10 h-10 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
+                className={`w-10 h-10 rounded-xl text-sm font-extrabold transition-all cursor-pointer ${
                   currentPage === idx + 1
                     ? 'bg-accent text-white shadow-md'
                     : 'bg-white border border-slate-300 text-slate-700 hover:bg-slate-100'

@@ -90,7 +90,7 @@ export default function Depoimentos() {
                     <span className="font-bold text-slate-800 text-sm leading-tight">
                       {item.name}
                     </span>
-                    <span className="text-xs text-gray-400 mt-0.5 font-semibold">
+                    <span className="text-sm text-gray-400 mt-0.5 font-semibold">
                       {item.course} — concluído em {item.year} • {item.neighborhood}
                     </span>
                   </div>

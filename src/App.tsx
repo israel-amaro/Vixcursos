@@ -1,11 +1,11 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Home from './pages/Home';
-import Detalhes from './pages/Detalhes';
-import PreInscricao from './pages/PreInscricao';
-import Sobre from './pages/Sobre';
-import VitorugaChat from './components/VitorugaChat';
+const Detalhes = lazy(() => import('./pages/Detalhes'));
+const PreInscricao = lazy(() => import('./pages/PreInscricao'));
+const Sobre = lazy(() => import('./pages/Sobre'));
+const VitorugaChat = lazy(() => import('./components/VitorugaChat'));
 import Lenis from 'lenis';
 
 function ScrollToTop() {
@@ -141,7 +141,7 @@ function FloatingAssistants() {
   const { pathname } = useLocation();
   // The registration page already has its own assistant and back navigation.
   if (pathname.startsWith('/pre-inscricao/')) return null;
-  return <><VitorugaChat /><FloatingHomeButton /></>;
+  return <><Suspense fallback={null}><VitorugaChat /></Suspense><FloatingHomeButton /></>;
 }
 
 function LegacyCourseRedirect({ type }: { type: 'detalhes' | 'pre-inscricao' }) {
@@ -163,7 +163,7 @@ export default function App() {
       <ViewportSize />
       <SmoothScroll />
       <div className="min-h-screen bg-bg-light text-text-dark font-sans selection:bg-accent selection:text-white antialiased">
-        <Routes>
+        <Suspense fallback={<p role="status">Carregando...</p>}><Routes>
           <Route path="/" element={<Home />} />
           <Route path="/detalhes/:id" element={<Detalhes />} />
           <Route path="/pre-inscricao/:id" element={<PreInscricao />} />
@@ -181,7 +181,7 @@ export default function App() {
           <Route path="/vocacional" element={<Navigate to="/" replace />} />
           <Route path="/vocacional.html" element={<Navigate to="/" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        </Routes></Suspense>
         <FloatingAssistants />
       </div>
     </Router>

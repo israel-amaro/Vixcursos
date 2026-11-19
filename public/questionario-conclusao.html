@@ -73,11 +73,11 @@
             transform: translateY(-1px);
         }
     </style>
-    <link rel="icon" type="image/png" href="/imagem/logo.png">
+    <link rel="icon" type="image/png" href="/imagem/logo.webp">
 </head>
 <body>
     <div class="survey-card">
-        <img src="/imagem/logo.png" alt="Qualifica Vix" style="display:block; width:180px; height:100px; object-fit:contain; margin:0 auto 8px;">
+        <img src="/imagem/logo.webp" alt="Qualifica Vix" style="display:block; width:180px; height:100px; object-fit:contain; margin:0 auto 8px;">
         <h1>Avaliação de Conclusão</h1>
         <p style="text-align: center; font-size: 0.8rem; color: #5f6f86; margin-bottom: 25px;">Por favor, responda as perguntas abaixo para liberar o seu certificado.</p>
         <form id="surveyForm" onsubmit="enviarRespostas(event)">
@@ -136,13 +136,13 @@
             };
 
             try {
-                const res = await fetch(`/api/pre-inscricoes/${id}/pesquisa-conclusao`, {
+                const res = await fetch(`/api/pre-inscricoes/${id}/pesquisa-conclusao?token=${encodeURIComponent(new URLSearchParams(location.search).get('token') || '')}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
                 if (res.ok) {
-                    window.location.href = `/certificado/${id}`;
+                    window.location.href = `/certificado/${id}?token=${encodeURIComponent(new URLSearchParams(location.search).get('token') || '')}`;
                 } else {
                     alert('Erro ao enviar as respostas. Tente novamente.');
                 }

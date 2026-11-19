@@ -8,7 +8,7 @@ const { calendarDate, localDay } = require('./course-state');
 function createStateAdminRouter(db, auth) {
     const router = express.Router();
     const wrap = operation => async (req, res) => {
-        res.set('Cache-Control', 'no-store');
+        if (!req.path.startsWith('/api/cursos-public') && req.path !== '/api/faq') res.set('Cache-Control', 'no-store');
         try { await operation(req, res); } catch (e) { console.error('[admin]', e.code || 'unavailable'); res.status(e.status || 503).json({ error: e.status && e.status < 500 ? e.message : 'Não foi possível concluir a operação.' }); }
     };
     const fail = (status, message) => { throw Object.assign(new Error(message), { status }); };
