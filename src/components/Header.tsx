@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X, Search } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Menu, X } from 'lucide-react';
 import BrandLogo from './BrandLogo';
 
-interface HeaderProps {
-  transparent?: boolean;
-}
+const links = [
+  { label: 'Cursos', section: 'cursos-section' },
+  { label: 'Como funciona', section: 'como-funciona' },
+  { label: 'Ajuda', section: 'ajuda' },
+];
 
-export default function Header({ transparent = false }: HeaderProps) {
+export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const [pendingSection, setPendingSection] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
@@ -36,149 +36,53 @@ export default function Header({ transparent = false }: HeaderProps) {
     setPendingSection(null);
   }, [pendingSection, isOpen]);
 
-  useEffect(() => {
-    if (!transparent) return;
-
-    const handleScroll = () => {
-      if (window.scrollY > 50) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [transparent]);
-
-  const handleNavClick = (sectionId: string) => {
+  const goTo = (section: string) => {
     setIsOpen(false);
-    if (location.pathname === '/') {
-      setPendingSection(sectionId === 'categorias-section' ? 'filtro-categoria' : sectionId);
-    } else {
-      navigate('/', { state: { scrollTo: sectionId } });
-    }
+    if (location.pathname === '/') setPendingSection(section);
+    else navigate('/', { state: { scrollTo: section } });
   };
 
-
   return (
-    <header
-      className={`site-header fixed top-0 left-0 w-full z-50 transition-all duration-500 bg-white/95 backdrop-blur-md border-b border-slate-200 ${
-        scrolled
-          ? 'py-1 shadow-sm'
-          : 'py-1 sm:py-2 shadow-none'
-      }`}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 flex items-center justify-between gap-4">
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-4 select-none">
-          <BrandLogo className="header-logo" />
-          <div className="w-[1px] h-8 bg-slate-200 hidden sm:block" />
-          <img
-            src="/imagem/prefeitura-preto-transparente.webp"
-            alt="Prefeitura de Vitória"
-            className="h-10 md:h-11 w-auto max-w-[155px] object-contain hidden sm:block"
-          />
+    <header className="site-header sticky top-0 z-50 w-full bg-white/90 backdrop-blur-xl">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+        <Link to="/" aria-label="Qualifica Vix, página inicial" className="flex items-center gap-4">
+          <BrandLogo className="h-11 w-auto" />
+          <span className="hidden h-7 w-px bg-[var(--line)] sm:block" />
+          <img src="/imagem/prefeitura-preto-transparente.webp" alt="Prefeitura de Vitória" className="hidden h-9 w-auto sm:block" />
         </Link>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden lg:flex items-center gap-8">
-          <Link
-            to="/"
-            className="text-sm font-bold tracking-normal uppercase text-slate-600 hover:text-primary transition-colors"
-          >
-            Início
-          </Link>
-          <button
-            onClick={() => handleNavClick('cursos-section')}
-            className="text-sm font-bold tracking-normal uppercase text-slate-600 hover:text-primary transition-colors cursor-pointer"
-          >
-            Cursos
-          </button>
-          <button
-            onClick={() => handleNavClick('categorias-section')}
-            className="text-sm font-bold tracking-normal uppercase text-slate-600 hover:text-primary transition-colors cursor-pointer"
-          >
-            Categorias
-          </button>
-          <Link
-            to="/sobre"
-            className="text-sm font-bold tracking-normal uppercase text-slate-600 hover:text-primary transition-colors"
-          >
-            Sobre
-          </Link>
+        <nav className="hidden items-center gap-1 lg:flex" aria-label="Principal">
+          {links.map(l => (
+            <button key={l.section} onClick={() => goTo(l.section)} className="btn-quiet text-[var(--ink)]">{l.label}</button>
+          ))}
+          <Link to="/sobre" className="btn-quiet text-[var(--ink)]">Sobre</Link>
+          <button onClick={() => goTo('cursos-section')} className="btn-primary ml-3 !min-h-11 !px-5 !text-[15px]">Encontrar curso</button>
         </nav>
 
-        {/* CTA Button */}
-        <div className="hidden lg:block">
-          <button
-            onClick={() => handleNavClick('cursos-section')}
-            className="flex items-center gap-2 px-6 py-2.5 bg-primary border border-white/10 hover:border-accent/40 rounded-full text-sm font-bold uppercase tracking-normal text-white hover:bg-accent transition-all duration-300 transform hover:scale-[1.03] shadow-md cursor-pointer"
-          >
-            <Search className="w-3.5 h-3.5" />
-            Buscar Cursos
-          </button>
-        </div>
-
-        {/* Mobile Menu Button */}
         <button
           onClick={() => setIsOpen(!isOpen)}
           aria-expanded={isOpen}
-          aria-label={isOpen ? 'Fechar menu' : 'Abrir menu'}
-          className="lg:hidden p-3 rounded-xl bg-primary/5 text-primary hover:text-accent transition-colors cursor-pointer"
+          aria-controls="menu-celular"
+          className="flex min-h-11 items-center gap-2 rounded-full px-4 text-[15px] font-semibold text-[var(--ink)] hover:bg-[var(--canvas)] lg:hidden"
         >
-          {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          {isOpen ? 'Fechar' : 'Menu'}
         </button>
       </div>
 
-      {/* Mobile Dropdown Menu */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="lg:hidden w-full bg-white backdrop-blur-lg border-b border-slate-200 overflow-hidden"
-          >
-            <div className="px-4 sm:px-6 py-4 flex flex-col gap-1 max-h-[calc(100dvh-5rem)] overflow-y-auto">
-              <Link
-                to="/"
-                onClick={() => setIsOpen(false)}
-                className="block rounded-xl px-3 py-3 text-sm font-bold tracking-normal uppercase text-slate-600 hover:text-primary"
-              >
-                Início
-              </Link>
-              <button
-                onClick={() => handleNavClick('cursos-section')}
-                className="text-left block rounded-xl px-3 py-3 text-sm font-bold tracking-normal uppercase text-slate-600 hover:text-primary cursor-pointer"
-              >
-                Cursos
-              </button>
-              <button
-                onClick={() => handleNavClick('categorias-section')}
-                className="text-left block rounded-xl px-3 py-3 text-sm font-bold tracking-normal uppercase text-slate-600 hover:text-primary cursor-pointer"
-              >
-                Categorias
-              </button>
-              <Link
-                to="/sobre"
-                onClick={() => setIsOpen(false)}
-                className="block rounded-xl px-3 py-3 text-sm font-bold tracking-normal uppercase text-slate-600 hover:text-primary"
-              >
-                Sobre
-              </Link>
-              <button
-                onClick={() => handleNavClick('cursos-section')}
-                className="flex items-center justify-center gap-2 w-full py-3 bg-primary border border-white/10 hover:border-accent/40 rounded-full text-sm font-bold uppercase tracking-normal text-white hover:bg-accent transition-all cursor-pointer"
-              >
-                <Search className="w-3.5 h-3.5" />
-                Buscar Cursos
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {isOpen && (
+        <nav id="menu-celular" aria-label="Menu" className="border-t border-[var(--line)] bg-white px-4 pb-6 pt-2 lg:hidden">
+          {links.map(l => (
+            <button key={l.section} onClick={() => goTo(l.section)} className="flex min-h-14 w-full items-center border-b border-[var(--line)] text-left text-lg font-semibold text-[var(--ink)]">
+              {l.label}
+            </button>
+          ))}
+          <Link to="/sobre" onClick={() => setIsOpen(false)} className="flex min-h-14 w-full items-center border-b border-[var(--line)] text-lg font-semibold text-[var(--ink)]">
+            Sobre o programa
+          </Link>
+          <button onClick={() => goTo('cursos-section')} className="btn-primary mt-5 w-full">Encontrar meu curso</button>
+        </nav>
+      )}
     </header>
   );
 }

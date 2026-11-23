@@ -1,160 +1,39 @@
 import { Link } from 'react-router-dom';
 import BrandLogo from './BrandLogo';
-import { Phone, Mail, MapPin, Clock, MessageSquareHeart } from 'lucide-react';
 
-interface FooterProps {
-  onOpenSurvey?: () => void;
-}
+const social = [
+  { label: 'Facebook da Prefeitura de Vitória', href: 'https://facebook.com/prefeituradevitoria', path: 'M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z' },
+  { label: 'Instagram da Prefeitura de Vitória', href: 'https://instagram.com/prefeituradevitoria', path: 'M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm9 9.4A4 4 0 1 1 12.6 8a4 4 0 0 1 3.4 3.4zM17.5 6.5h0' },
+  { label: 'YouTube da Prefeitura de Vitória', href: 'https://youtube.com/prefeituradevitoria', path: 'M22.5 6.4a2.8 2.8 0 0 0-1.9-2C18.9 4 12 4 12 4s-6.9 0-8.6.5a2.8 2.8 0 0 0-1.9 2A29 29 0 0 0 1 11.8a29 29 0 0 0 .5 5.3A2.8 2.8 0 0 0 3.4 19c1.7.5 8.6.5 8.6.5s6.9 0 8.6-.5a2.8 2.8 0 0 0 1.9-2 29 29 0 0 0 .5-5.2 29 29 0 0 0-.5-5.4zM9.8 15V8.5l5.7 3.3z' },
+];
 
-export default function Footer({ onOpenSurvey }: FooterProps) {
-  const handleNavClick = (sectionId: string) => {
-    const el = document.getElementById(sectionId === 'categorias-section' ? 'filtro-categoria' : sectionId);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
+export default function Footer({ onOpenSurvey }: { onOpenSurvey?: () => void }) {
   return (
-    <footer className="w-full bg-[#e9eff7] text-slate-600 py-12 sm:py-16 px-4 sm:px-6 md:px-12 border-t border-[#d4deed] relative z-20">
-      <div className="max-w-7xl mx-auto">
-
-        {/* Main Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-
-          {/* Column 1: Identity */}
-          <div className="flex flex-col items-start">
-            <div className="flex select-none mb-2">
-              <BrandLogo className="footer-logo" />
-            </div>
-
-            <p className="text-sm text-slate-600 mt-4 max-w-xs leading-relaxed">
-              Plataforma oficial de cursos profissionalizantes gratuitos da Prefeitura Municipal de Vitória, Espírito Santo.
-            </p>
-
-            {/* Pesquisa de Satisfação Banner Trigger */}
-            {onOpenSurvey && (
-              <button
-                onClick={onOpenSurvey}
-                className="mt-6 px-4 py-2.5 bg-accent/20 hover:bg-accent/30 border border-accent/40 rounded-xl text-accent text-sm font-bold flex items-center gap-2 transition-all cursor-pointer shadow-sm group"
-              >
-                <MessageSquareHeart className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                <span>Responder Pesquisa de Satisfação</span>
-              </button>
-            )}
-
-            {/* Social Icons */}
-            <div className="flex gap-4 mt-6">
-              <a
-                href="https://facebook.com/prefeituradevitoria"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Facebook da PMV"
-                className="p-2 bg-primary/5 hover:bg-primary/5 rounded-full text-slate-600 hover:text-primary transition-all flex items-center justify-center"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-              </a>
-              <a
-                href="https://instagram.com/prefeituradevitoria"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Instagram da PMV"
-                className="p-2 bg-primary/5 hover:bg-primary/5 rounded-full text-slate-600 hover:text-primary transition-all flex items-center justify-center"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-              </a>
-              <a
-                href="https://youtube.com/prefeituradevitoria"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="YouTube da PMV"
-                className="p-2 bg-primary/5 hover:bg-primary/5 rounded-full text-slate-600 hover:text-primary transition-all flex items-center justify-center"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg>
-              </a>
-            </div>
-          </div>
-
-          {/* Column 2: Navigation Links */}
-          <div className="flex flex-col items-start md:pl-10">
-            <h4 className="text-sm font-bold tracking-[0.2em] uppercase text-slate-600 mb-6">
-              Navegação
-            </h4>
-            <nav className="flex flex-col gap-3 text-sm">
-              <Link to="/" className="text-slate-600 hover:text-primary transition-colors">
-                Início
-              </Link>
-              <button
-                onClick={() => handleNavClick('cursos-section')}
-                className="text-left text-slate-600 hover:text-primary transition-colors cursor-pointer"
-              >
-                Buscar Cursos
-              </button>
-              <button
-                onClick={() => handleNavClick('categorias-section')}
-                className="text-left text-slate-600 hover:text-primary transition-colors cursor-pointer"
-              >
-                Categorias
-              </button>
-              {onOpenSurvey && (
-                <button
-                  onClick={onOpenSurvey}
-                  className="text-left text-slate-600 hover:text-primary transition-colors cursor-pointer"
-                >
-                  Pesquisa de Satisfação
-                </button>
-              )}
-              <Link to="/sobre" className="text-slate-600 hover:text-primary transition-colors">
-                Sobre o Qualifica Vix
-              </Link>
-            </nav>
-          </div>
-
-          {/* Column 3: Contact */}
-          <div className="flex flex-col items-start">
-            <h4 className="text-sm font-bold tracking-[0.2em] uppercase text-slate-600 mb-6">
-              Contato
-            </h4>
-
-            <div className="flex flex-col gap-4 text-sm text-slate-600">
-              <div className="flex items-start gap-3">
-                <Phone className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
-                <span>(27) 3135-1000</span>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <Mail className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
-                <span className="break-all">vixcursos@vitoria.es.gov.br</span>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <MapPin className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
-                <span>Vitória, Espírito Santo — Brasil</span>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <Clock className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
-                <span>Atendimento: Seg a Sex, das 8h às 17h</span>
-              </div>
-            </div>
-          </div>
-
+    <footer className="border-t border-[var(--line)] bg-white px-4 pb-28 pt-12 sm:px-6 sm:pb-12">
+      <div className="mx-auto max-w-6xl">
+        <div className="flex items-center gap-4">
+          <BrandLogo className="h-12 w-auto" />
+          <span className="h-8 w-px bg-[var(--line)]" />
+          <img src="/imagem/prefeitura-preto-transparente.webp" alt="Prefeitura de Vitória" className="h-10 w-auto" />
         </div>
 
-        {/* Separator */}
-        <div className="w-full h-[1px] bg-primary/5 my-10" />
+        <nav aria-label="Rodapé" className="mt-8 grid grid-cols-1 text-[16px] sm:grid-cols-4">
+          <Link to="/sobre" className="flex min-h-12 items-center text-[var(--ink)] hover:text-[var(--brand)]">Sobre o programa</Link>
+          {onOpenSurvey && <button onClick={onOpenSurvey} className="flex min-h-12 items-center text-left text-[var(--ink)] hover:text-[var(--brand)]">Avaliar o Qualifica Vix</button>}
+          <a href="https://vivacidade.vitoria.es.gov.br/" target="_blank" rel="noopener noreferrer" className="flex min-h-12 items-center text-[var(--ink)] hover:text-[var(--brand)]">Esporte e cultura: VIVAcidade ↗</a>
+          <a href="tel:+552731351000" className="flex min-h-12 items-center text-[var(--ink)] hover:text-[var(--brand)]">(27) 3135-1000</a>
+        </nav>
 
-        {/* Bottom footer */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-center">
-          <span className="text-sm text-slate-600 tracking-normal font-sans tabular-nums">
-            © 2026 Qualifica Vix — Prefeitura Municipal de Vitória. Todos os direitos reservados.
-          </span>
-          <div className="flex flex-col sm:flex-row items-center gap-3 justify-center md:justify-end select-none">
-            <span className="text-sm text-slate-600 tracking-normal font-sans tabular-nums">
-              Desenvolvido para a comunidade capixaba 💙
-            </span>
+        <div className="mt-8 flex flex-col gap-6 border-t border-[var(--line)] pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-[15px] text-[var(--ink-soft)]">© 2026 Qualifica Vix · Prefeitura Municipal de Vitória</p>
+          <div className="flex gap-2">
+            {social.map(s => (
+              <a key={s.href} href={s.href} target="_blank" rel="noopener noreferrer" aria-label={s.label} className="grid h-11 w-11 place-items-center rounded-full bg-[var(--canvas)] text-[var(--ink)] hover:text-[var(--brand)]">
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={s.path} /></svg>
+              </a>
+            ))}
           </div>
         </div>
-
       </div>
     </footer>
   );

@@ -220,7 +220,7 @@ test('Agendamento é salvo, preservado ao editar e mantém curso oculto antes da
 
 test('Interesse enviado pelo site aparece no painel e no dashboard', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('button', { name: 'Quero receber avisos de cursos' }).click();
+    await page.getByRole('button', { name: /Avisar quando abrir um curso/ }).click();
     const dialog = page.getByRole('dialog', { name: 'Quero receber novidades' });
     await dialog.locator('[name="nome"]').fill('Pessoa do interesse no navegador');
     await dialog.locator('[name="email"]').fill('interesse@example.invalid');
