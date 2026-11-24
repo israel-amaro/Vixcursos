@@ -1,4 +1,4 @@
-import { ArrowUpRight } from 'lucide-react';
+import HeroAction from './HeroAction';
 import { heroImages } from '../lib/courseImages';
 
 export default function Hero({ courses }: { courses: { vagas_disponiveis: number; aceita_inscricoes?: boolean }[] }) {
@@ -6,17 +6,17 @@ export default function Hero({ courses }: { courses: { vagas_disponiveis: number
   return (
     <section aria-labelledby="hero-title" className="course-hero">
       <div className="course-hero-photos" aria-hidden="true">
-        <img src={heroImages[1].src} srcSet={heroImages[1].srcSet} sizes="50vw" alt="" fetchPriority="high" />
-        <img src={heroImages[2].src} srcSet={heroImages[2].srcSet} sizes="50vw" alt="" fetchPriority="high" />
+        <img src={heroImages[1].src} srcSet={heroImages[1].srcSet} sizes="(min-width: 810px) 25vw, 50vw" alt="" fetchPriority="high" />
+        <img src={heroImages[2].src} srcSet={heroImages[2].srcSet} sizes="(min-width: 810px) 25vw, 50vw" alt="" fetchPriority="high" />
+        <img src={heroImages[0].src} srcSet={heroImages[0].srcSet} sizes="25vw" alt="" loading="lazy" decoding="async" className="hero-extra-photo" />
+        <img src={heroImages[3].src} srcSet={heroImages[3].srcSet} sizes="25vw" alt="" loading="lazy" decoding="async" className="hero-extra-photo" />
       </div>
       <div className="course-hero-shade" />
       <div className="course-hero-content">
         <p className="course-hero-location">Qualificação profissional · Vitória, ES</p>
-        <h1 id="hero-title">Seu próximo<br />passo começa<br />aqui.</h1>
+        <h1 id="hero-title"><span className="hero-line"><span>Seu próximo</span></span><span className="hero-line"><span>passo começa</span></span><span className="hero-line"><span>aqui.</span></span></h1>
         <p className="course-hero-description">Aprenda uma profissão. Descubra novas possibilidades. Cursos gratuitos, com certificado.</p>
-        <a href="#cursos-section" className="btn-primary course-hero-action">
-          Encontrar meu curso <ArrowUpRight size={20} aria-hidden="true" />
-        </a>
+        <HeroAction />
       </div>
       <div className="course-hero-bottom">
         <span>{open.length > 0 ? `${open.length} ${open.length === 1 ? 'curso com vagas abertas' : 'cursos com vagas abertas'}` : 'Conheça as oportunidades'}</span>

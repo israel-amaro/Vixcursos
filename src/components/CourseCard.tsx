@@ -1,3 +1,4 @@
+import PhotoReveal from './PhotoReveal';
 import { CalendarDays, Clock, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { courseImage } from '../lib/courseImages';
@@ -67,9 +68,10 @@ export default function CourseCard({ course, onDetails }: { course: PublicCourse
 
   return (
     <article className="flex flex-col overflow-hidden rounded-[var(--radius-card)] bg-white shadow-[var(--shadow-card)]">
-      <div className="relative aspect-[16/10] bg-[var(--canvas)]">
+      <div className="course-card-photo relative aspect-[16/10] overflow-hidden bg-[var(--canvas)]">
         <img src={image.src} srcSet={image.srcSet} sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 380px"
           alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+        <PhotoReveal />
         <span className={`absolute left-3 top-3 rounded-full px-3 py-1.5 text-[14px] font-bold ${toneClass[status.tone]}`}>
           {status.label}
         </span>

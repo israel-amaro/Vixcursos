@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useMotionValueEvent, useScroll, useReducedMotion } from 'framer-motion';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import BrandLogo from './BrandLogo';
@@ -12,6 +13,14 @@ const links = [
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [pendingSection, setPendingSection] = useState<string | null>(null);
+  const [away, setAway] = useState(false);
+  const { scrollY } = useScroll();
+  const reduced = useReducedMotion();
+  useMotionValueEvent(scrollY, 'change', current => {
+    const delta = current - (scrollY.getPrevious() ?? current);
+    if (current < 40) setAway(false);
+    else if (Math.abs(delta) >= 6) setAway(delta > 0);
+  });
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -20,7 +29,7 @@ export default function Header() {
     const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') setIsOpen(false); };
-    const closeOnDesktop = () => { if (window.innerWidth >= 1024) setIsOpen(false); };
+    const closeOnDesktop = () => { if (window.innerWidth >= 1200) setIsOpen(false); };
     window.addEventListener('keydown', closeOnEscape);
     window.addEventListener('resize', closeOnDesktop);
     return () => {
@@ -43,7 +52,7 @@ export default function Header() {
   };
 
   return (
-    <header className="site-header sticky top-0 z-50 w-full bg-white/90 backdrop-blur-xl">
+    <header data-away={away && !isOpen && !reduced} className="site-header sticky top-0 z-50 w-full bg-white/90 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
         <Link to="/" aria-label="Qualifica Vix, página inicial" className="flex items-center gap-4">
           <BrandLogo className="h-11 w-auto" />
@@ -51,7 +60,7 @@ export default function Header() {
           <img src="/imagem/prefeitura-preto-transparente.webp" alt="Prefeitura de Vitória" className="hidden h-9 w-auto sm:block" />
         </Link>
 
-        <nav className="hidden items-center gap-1 lg:flex" aria-label="Principal">
+        <nav className="hidden items-center gap-1 min-[1200px]:flex" aria-label="Principal">
           {links.map(l => (
             <button key={l.section} onClick={() => goTo(l.section)} className="btn-quiet text-[var(--ink)]">{l.label}</button>
           ))}
@@ -63,7 +72,7 @@ export default function Header() {
           onClick={() => setIsOpen(!isOpen)}
           aria-expanded={isOpen}
           aria-controls="menu-celular"
-          className="flex min-h-11 items-center gap-2 rounded-full px-4 text-[15px] font-semibold text-[var(--ink)] hover:bg-[var(--canvas)] lg:hidden"
+          className="flex min-h-11 items-center gap-2 rounded-full px-4 text-[15px] font-semibold text-[var(--ink)] hover:bg-[var(--canvas)] min-[1200px]:hidden"
         >
           {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           {isOpen ? 'Fechar' : 'Menu'}
@@ -71,7 +80,7 @@ export default function Header() {
       </div>
 
       {isOpen && (
-        <nav id="menu-celular" aria-label="Menu" className="border-t border-[var(--line)] bg-white px-4 pb-6 pt-2 lg:hidden">
+        <nav id="menu-celular" aria-label="Menu" className="border-t border-[var(--line)] bg-white px-4 pb-6 pt-2 min-[1200px]:hidden">
           {links.map(l => (
             <button key={l.section} onClick={() => goTo(l.section)} className="flex min-h-14 w-full items-center border-b border-[var(--line)] text-left text-lg font-semibold text-[var(--ink)]">
               {l.label}

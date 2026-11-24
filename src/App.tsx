@@ -35,6 +35,18 @@ function SmoothScroll() {
       touchMultiplier: 2,
     });
 
+    const syncScrollLock = () => {
+      const locked = document.body.style.overflow === 'hidden'
+        || document.documentElement.style.overflow === 'hidden'
+        || Boolean(document.querySelector('dialog[open], [data-stop-scroll]'));
+      if (locked) lenis.stop(); else lenis.start();
+    };
+    const lockObserver = new MutationObserver(syncScrollLock);
+    lockObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['style', 'data-stop-scroll'] });
+    lockObserver.observe(document.body, { attributes: true, attributeFilter: ['style'], childList: true });
+    const dialogObserver = new MutationObserver(syncScrollLock);
+    dialogObserver.observe(document.body, { attributes: true, attributeFilter: ['open', 'data-stop-scroll'], childList: true, subtree: true });
+    syncScrollLock();
     let frameId: number;
     function raf(time: number) {
       lenis.raf(time);
@@ -44,6 +56,8 @@ function SmoothScroll() {
     frameId = requestAnimationFrame(raf);
 
     return () => {
+      lockObserver.disconnect();
+      dialogObserver.disconnect();
       cancelAnimationFrame(frameId);
       lenis.destroy();
     };

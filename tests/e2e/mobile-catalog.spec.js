@@ -25,3 +25,18 @@ test('Falha do catálogo informa indisponibilidade sem anunciar ausência de tur
     await expect(page.getByRole('alert')).toContainText('Não foi possível atualizar os cursos');
     await expect(page.getByText('Nenhum curso encontrado', { exact: true })).toHaveCount(0);
 });
+test('Movimento respeita preferência reduzida e mantém navegação mobile acessível', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/');
+    const title = page.locator('#hero-title');
+    await expect(title).toBeVisible();
+    expect(await title.locator('.hero-line > span').first().evaluate(node => getComputedStyle(node).animationName)).toBe('none');
+    await expect(page.locator('.photo-curtain')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Menu', exact: true }).click();
+    await expect(page.getByRole('navigation', { name: 'Menu', exact: true })).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('navigation', { name: 'Menu', exact: true })).toHaveCount(0);
+    expect(await page.evaluate(() => document.body.style.overflow)).not.toBe('hidden');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
