@@ -79,19 +79,17 @@ test('Agendamento orienta sobre data futura e anterior ao término', async ({ pa
     expect(await page.locator('#modalNovoCurso .modal-content').evaluate(node => node.scrollWidth <= node.clientWidth)).toBe(true);
 });
 
-test('Título legível sem espaços artificiais e Prefeitura menor no desktop e no celular', async ({ page }) => {
+test('Hero com título grande, legível e sem rolagem horizontal no desktop e no celular', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/');
     for (const [width, height] of [[1920, 1080], [1366, 768], [390, 844]]) {
         await page.setViewportSize({ width, height });
-        await expect(page.locator('.hero-title-main')).toBeVisible();
+        await expect(page.locator('#hero-title')).toBeVisible();
         await page.evaluate(() => document.fonts.ready);
-        const sizes = await page.locator('.hero-title').evaluate(node => {
-            const main = node.querySelector('.hero-title-main'), city = node.querySelector('.hero-title-city');
-            return { main: parseFloat(getComputedStyle(main).fontSize), city: parseFloat(getComputedStyle(city).fontSize), align: getComputedStyle(main).textAlign, titleRight: node.getBoundingClientRect().right, viewport: innerWidth, overflow: document.documentElement.scrollWidth > innerWidth };
-        });
-        expect(sizes.city).toBeLessThan(sizes.main); expect(sizes.align).toBe('left');
-        expect(sizes.titleRight).toBeLessThanOrEqual(sizes.viewport); expect(sizes.overflow).toBe(false);
-        await page.screenshot({ path: `test-results/titulo-${width}.png`, fullPage: false });
+        const hero = await page.locator('#hero-title').evaluate(node => ({ size: parseFloat(getComputedStyle(node).fontSize), right: node.getBoundingClientRect().right, viewport: innerWidth, overflow: document.documentElement.scrollWidth > innerWidth }));
+        expect(hero.size).toBeGreaterThanOrEqual(36);
+        expect(hero.right).toBeLessThanOrEqual(hero.viewport); expect(hero.overflow).toBe(false);
+        await expect(page.getByRole('link', { name: /Encontrar meu curso/ })).toBeVisible();
+        await page.screenshot({ path: `test-results/hero-${width}.png`, fullPage: false });
     }
 });

@@ -1,4 +1,5 @@
 import { startLabel } from '../lib/images';
+import { courseImage } from '../lib/courseImages';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import Header from '../components/Header';
@@ -33,48 +34,7 @@ interface CourseDetails {
 }
 
 
-const imagensCursos: { [key: string]: string } = {
-  'Administração': '/imagem/proficao/administracao.jpg',
-  'Artesanato': '/imagem/proficao/artesanato.jpg',
-  'AUTOMAÇÃO INDUSTRIAL': '/imagem/proficao/automacao.jpg',
-  'Beleza': '/imagem/proficao/proficao.webp',
-  'Cinema': '/imagem/proficao/cinema.jpg',
-  'Comércio / Gestão Empresarial': '/imagem/proficao/comercio.jpg',
-  'Confecção': '/imagem/proficao/proficao2.webp',
-  'Construção Civil / Serviço': '/imagem/proficao/construcao.jpg',
-  'Cultura': '/imagem/proficao/cultura.jpg',
-  'Dança': '/imagem/proficao/danca.jpg',
-  'Dança e Teatro': '/imagem/proficao/teatro.jpg',
-  'Educação': '/imagem/proficao/educacao.jpg',
-  'Eletrônica': '/imagem/proficao/eletronica.jpg',
-  'Eletricista / Energia': '/imagem/proficao/eletricista.jpg',
-  'Enfermagem / Saúde': '/imagem/proficao/enfermagem.jpg',
-  'Estética': '/imagem/proficao/estetica.jpg',
-  'Eventos': '/imagem/proficao/eventos.jpg',
-  'Fotografia': '/imagem/proficao/fotografia.jpg',
-  'Gastronomia': '/imagem/proficao/proficao3.webp',
-  'Gestão': '/imagem/proficao/gestao.jpg',
-  'Idiomas': '/imagem/proficao/idiomas.jpg',
-  'Informática / Tecnologia': '/imagem/proficao/informatica.jpg',
-  'Logística': '/imagem/proficao/logistica.jpg',
-  'Manutenção': '/imagem/proficao/manutencao.jpg',
-  'Mecânica': '/imagem/proficao/mecanica.jpg',
-  'Meio Ambiente': '/imagem/proficao/meio-ambiente.jpg',
-  'Moda': '/imagem/proficao/moda.jpg',
-  'Música': '/imagem/proficao/musica.jpg',
-  'Panificação / Confeitaria': '/imagem/proficao/panificacao.jpg',
-  'Produção Cultural': '/imagem/proficao/producao-cultural.jpg',
-  'Programação / TI': '/imagem/proficao/programacao.jpg',
-  'Recursos Humanos': '/imagem/proficao/rh.jpg',
-  'Redes / Telecom': '/imagem/proficao/redes.jpg',
-  'Segurança do Trabalho': '/imagem/proficao/seguranca-trabalho.jpg',
-  'Serviço Social': '/imagem/proficao/servico-social.jpg',
-  'Soldagem': '/imagem/proficao/soldagem.jpg',
-  'Turismo / Hotelaria': '/imagem/proficao/turismo.jpg',
-  'Vendas / Marketing': '/imagem/proficao/marketing.jpg',
-  'Veículos': '/imagem/proficao/proficao4.webp',
-  'Humanas': '/imagem/proficao/proficao.webp'
-};
+
 
 export default function Detalhes() {
   const { id } = useParams<{ id: string }>();
@@ -151,7 +111,7 @@ export default function Detalhes() {
   };
 
   // Get image path
-  const imageSrc = imagensCursos[course.categoria] || imagensCursos[course.nome] || '/imagem/proficao/proficao.webp';
+  const image = courseImage(course.categoria, course.nome);
 
   const getStatusDisplay = (vagas: number) => {
     if (course.aceita_inscricoes === false) return { label: course.situacao_label || 'Inscrições indisponíveis', class: 'text-slate-600 bg-slate-100 border-slate-200', icon: <XCircle className="w-4 h-4" /> };
@@ -182,7 +142,7 @@ export default function Detalhes() {
     <div className="min-h-screen flex flex-col justify-between bg-bg-light">
       <Header />
 
-      <main className="flex-grow pt-24 sm:pt-28 pb-16 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto w-full flex flex-col gap-8">
+      <main className="flex-grow pt-8 sm:pt-12 pb-16 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto w-full flex flex-col gap-8">
         
         {/* Back Link */}
         <div className="flex items-center justify-start mt-2">
@@ -238,12 +198,8 @@ export default function Detalhes() {
           {/* Right Block: Image showcase */}
           <div className="lg:col-span-5 flex items-center justify-center rounded-2xl overflow-hidden shadow-md max-h-72 lg:max-h-none select-none pointer-events-none">
             <img
-              src={imageSrc}
+              src={image.src} srcSet={image.srcSet} sizes="(max-width: 1023px) 100vw, 40vw"
               alt={course.nome}
-              onError={(e) => {
-                // Fallback if image doesn't exist
-                (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1606761568499-6d2451b23c66?auto=format&fit=crop&q=80&w=800';
-              }}
               className="w-full h-full object-cover min-h-[250px]"
             />
           </div>

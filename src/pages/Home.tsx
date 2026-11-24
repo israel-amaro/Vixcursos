@@ -1,92 +1,46 @@
-import { lazy, Suspense } from 'react';
-import { useState, useEffect, useCallback } from 'react';
-import { AnimatePresence } from 'framer-motion';
-import IntroVideo, { INTRO_SESSION_KEY, shouldShowIntro } from '../components/IntroVideo';
-import Hero from '../components/Hero';
-import FiltroBusca, { FilterState } from '../components/FiltroBusca';
-import ListagemCursos from '../components/ListagemCursos';
-import Depoimentos from '../components/Depoimentos';
-import Footer from '../components/Footer';
-const CourseQuizModal = lazy(() => import('../components/CourseQuizModal'));
-import SatisfactionSurvey from '../components/SatisfactionSurvey';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
+import Header from '../components/Header';
+import Hero from '../components/Hero';
+import CursosSection from '../components/CursosSection';
+import ComoFunciona from '../components/ComoFunciona';
+import AjudaSection from '../components/AjudaSection';
+import Footer from '../components/Footer';
+import SatisfactionSurvey from '../components/SatisfactionSurvey';
+import { PublicCourse } from '../components/CourseCard';
+import { usePublicCourses } from '../lib/usePublicCourses';
+const CourseQuizModal = lazy(() => import('../components/CourseQuizModal'));
 
+// Mobile-first home: photo, search, courses, how it works, help. One idea per section.
 export default function Home() {
   const location = useLocation();
-  const [resultCount, setResultCount] = useState(0);
-  const [filters, setFilters] = useState<FilterState>({
-    idade: '',
-    categoria: '',
-    modalidade: '',
-    local: '',
-    turno: '',
-    situacao: '',
-    buscaInteligente: '',
-    somenteDisponiveis: false,
-  });
-
-  const [isQuizOpen, setIsQuizOpen] = useState(false);
-  const [isSurveyOpen, setIsSurveyOpen] = useState(false);
-
-  const [showIntro, setShowIntro] = useState(shouldShowIntro);
-  const finishIntro = useCallback(() => {
-    try { sessionStorage.setItem(INTRO_SESSION_KEY, 'true'); } catch { /* Storage may be unavailable. */ }
-    setShowIntro(false);
-  }, []);
+  const { courses, loading, error } = usePublicCourses<PublicCourse>();
+  const [quizOpen, setQuizOpen] = useState(false);
+  const [surveyOpen, setSurveyOpen] = useState(false);
+  const [requestedCategory, setRequestedCategory] = useState<{ name: string; at: number } | null>(null);
 
   useEffect(() => {
     const section = location.state?.scrollTo;
-    if (section && !showIntro) document.getElementById(section === 'categorias-section' ? 'filtro-categoria' : section)?.scrollIntoView({ behavior: 'smooth' });
-  }, [location.key, showIntro]);
-
-  const handleClearFilters = () => {
-    setFilters({
-      idade: '',
-      categoria: '',
-      modalidade: '',
-      local: '',
-      turno: '',
-      situacao: '',
-      buscaInteligente: '',
-      somenteDisponiveis: false,
-    });
-  };
-
-  const handleSelectCategoryFromGrid = (categoriaName: string) => {
-    setFilters(prev => ({ ...prev, categoria: categoriaName }));
-  };
+    if (section) document.getElementById(section)?.scrollIntoView({ behavior: 'smooth' });
+  }, [location.key]);
 
   return (
-    <>
-      <AnimatePresence>{showIntro && <IntroVideo onFinish={finishIntro} />}</AnimatePresence>
-      <main inert={showIntro}>
-        {/* 1. Hero Principal com texto direto e CTA único */}
-        <Hero onOpenQuiz={() => setIsQuizOpen(true)} />
-
-        {/* 2. Filtros de Busca Avançados e Busca Inteligente por IA */}
-        <FiltroBusca onFilterChange={setFilters} resultCount={resultCount} />
-
-        {/* 3. Listagem de Cursos (Mais Procurados, Novas Inscrições, Cards com Início e Média Salarial) */}
-        <ListagemCursos onResultCount={setResultCount} filters={filters} onClearFilters={handleClearFilters} />
-
-        {/* 4. Depoimentos dos Alunos */}
-        <Depoimentos />
-
-        {/* 5. Rodapé com Link para Pesquisa de Satisfação */}
-        <Footer onOpenSurvey={() => setIsSurveyOpen(true)} />
-
-        {/* Interactive Modals */}
-        {isQuizOpen && <Suspense fallback={null}><CourseQuizModal
-          isOpen={isQuizOpen}
-          onClose={() => setIsQuizOpen(false)}
-          onSelectCategory={handleSelectCategoryFromGrid}
-        /></Suspense>}
-
-        <SatisfactionSurvey
-          isOpen={isSurveyOpen}
-          onClose={() => setIsSurveyOpen(false)}
-        />
+    <div className="course-home">
+      <Header />
+      <main>
+        <Hero courses={courses} />
+        <CursosSection courses={courses} loading={loading} error={error} requestedCategory={requestedCategory} />
+        <ComoFunciona />
+        <AjudaSection onOpenQuiz={() => setQuizOpen(true)} />
       </main>
-    </>
+      <Footer onOpenSurvey={() => setSurveyOpen(true)} />
+
+      {quizOpen && (
+        <Suspense fallback={null}>
+          <CourseQuizModal isOpen={quizOpen} onClose={() => setQuizOpen(false)} onSelectCategory={name => setRequestedCategory({ name, at: Date.now() })} />
+        </Suspense>
+      )}
+      <SatisfactionSurvey isOpen={surveyOpen} onClose={() => setSurveyOpen(false)} />
+    </div>
   );
 }

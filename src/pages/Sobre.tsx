@@ -2,6 +2,7 @@ import { imageSrcSet } from '../lib/images';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import Depoimentos from '../components/Depoimentos';
 import { CheckCircle, Truck } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -48,7 +49,7 @@ export default function Sobre() {
 
       <Header />
 
-      <main className="flex-grow pt-24 sm:pt-28 pb-16 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto w-full flex flex-col gap-16 relative z-10" style={{ isolation: 'isolate' }}>
+      <main className="flex-grow pt-8 sm:pt-12 pb-16 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto w-full flex flex-col gap-16 relative z-10" style={{ isolation: 'isolate' }}>
         
         {/* Hero Section */}
         <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center mt-4">
@@ -312,8 +313,13 @@ export default function Sobre() {
           </div>
         </section>
 
+        <section aria-labelledby="video-title" className="flex flex-col gap-4 border-t border-slate-200 pt-16">
+          <h2 id="video-title" className="text-3xl font-extrabold tracking-tight text-[var(--ink)]">Conheça o Qualifica Vix</h2>
+          <video src="https://res.cloudinary.com/j35zooeo/video/upload/f_auto,q_auto/v1791308141/1006_1_1.mp4" controls playsInline preload="none" className="w-full rounded-[var(--radius-card)] bg-black" aria-label="Vídeo de apresentação do Qualifica Vix" />
+        </section>
       </main>
 
+      <Depoimentos />
       <Footer />
     </div>
   );

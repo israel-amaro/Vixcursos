@@ -1,6 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Home from './pages/Home';
 const Detalhes = lazy(() => import('./pages/Detalhes'));
 const PreInscricao = lazy(() => import('./pages/PreInscricao'));
@@ -73,75 +72,11 @@ function ViewportSize() {
   return null;
 }
 
-function FloatingHomeButton() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const isHome = location.pathname === '/';
-  const [show, setShow] = useState(false);
-  useEffect(() => {
-    const update = () => setShow(window.scrollY > 500);
-    update();
-    window.addEventListener('scroll', update, { passive: true });
-    return () => window.removeEventListener('scroll', update);
-  }, []);
-
-  const handleClick = () => {
-    if (isHome) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      navigate('/');
-    }
-  };
-
-  if (isHome && !show) return null;
-  return (
-    <motion.button
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.8 }}
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.9 }}
-      onClick={handleClick}
-      className="floating-home fixed z-[998] p-3 sm:p-4 rounded-full bg-primary/95 backdrop-blur-md text-white border border-white/10 hover:bg-accent hover:border-accent/40 shadow-[0_8px_32px_rgba(40,62,105,0.18)] transition-all flex items-center justify-center cursor-pointer group"
-      title={isHome ? 'Voltar ao topo' : 'Voltar à tela principal'}
-      aria-label={isHome ? 'Voltar ao topo' : 'Voltar à tela principal'}
-    >
-      {isHome ? (
-        <svg
-          className="w-6 h-6 text-white group-hover:scale-105 transition-transform"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
-        </svg>
-      ) : (
-        <svg
-          className="w-6 h-6 text-white group-hover:scale-105 transition-transform"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-          />
-        </svg>
-      )}
-    </motion.button>
-  );
-}
-
 function FloatingAssistants() {
   const { pathname } = useLocation();
   // The registration page already has its own assistant and back navigation.
   if (pathname.startsWith('/pre-inscricao/')) return null;
-  return <><Suspense fallback={null}><VitorugaChat /></Suspense><FloatingHomeButton /></>;
+  return <><Suspense fallback={null}><VitorugaChat /></Suspense></>;
 }
 
 function LegacyCourseRedirect({ type }: { type: 'detalhes' | 'pre-inscricao' }) {

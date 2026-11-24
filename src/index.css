@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap');
 
 @import "tailwindcss";
 
@@ -140,25 +140,14 @@ html.lenis {
 html { scroll-padding-top: 6rem; }
 html, body { background: #f3f6fa; color: #24365a; color-scheme: light; }
 .brand-logo { object-fit: contain; flex-shrink: 0; }
-.header-logo { width: 190px; height: 84px; }
-.footer-logo { width: 210px; height: 112px; }
-.intro-video { top: var(--app-viewport-top, 0px); bottom: auto; height: var(--app-viewport-height, 100dvh); outline: none !important; }
-body:has(.intro-video) .chat-launcher, body:has(.intro-video) .floating-home { visibility: hidden; }
 button, a, input, select, textarea { touch-action: manipulation; }
-.floating-home { bottom: 1.5rem; right: 1.5rem; }
 .responsive-dialog { max-height: calc(var(--app-viewport-height, 100dvh) - 2rem); }
 .registration-controls { max-height: 50%; }
 
 @media (max-width: 639px) {
-  .header-logo { width: 156px; height: 72px; }
   html { scroll-padding-top: 5.5rem; }
   input:not([type="checkbox"]):not([type="radio"]), select, textarea { font-size: 16px; }
   button:not([aria-label^="Ir para imagem"]) { min-height: 44px; }
-  .floating-home {
-    right: auto;
-    left: max(1rem, env(safe-area-inset-left));
-    bottom: calc(1rem + env(safe-area-inset-bottom));
-  }
   .chat-launcher {
     right: max(1rem, env(safe-area-inset-right));
     bottom: calc(1rem + env(safe-area-inset-bottom));
@@ -209,65 +198,138 @@ button, a, input, select, textarea { touch-action: manipulation; }
   html { scroll-behavior: auto; }
 }
 
-/* Subtle separation between content surfaces, with visible hero photography. */
-.hero-photo-shade { background: linear-gradient(90deg, rgba(255,255,255,.94) 0%, rgba(249,251,255,.84) 36%, rgba(244,248,254,.60) 65%, rgba(239,244,252,.32) 100%); }
-.home-hero .hero-title { font-size: clamp(2rem, 3.1vw, 3.25rem); line-height: 1.14; letter-spacing: -.035em; max-width: 620px; }
-.hero-title-main { display: block; width: auto; max-width: 100%; text-align: left; text-wrap: balance; }
-.hero-title-city { display: block; margin-top: 16px; font-family: var(--font-sans); font-size: clamp(1.1rem, 1.4vw, 1.5rem); font-weight: 600; line-height: 1.4; letter-spacing: 0; }
-#cursos-section { background: #eaf0f8; border-color: #d5e0ef; }
-#cursos-list-section { background: linear-gradient(180deg, #f2f5fa, #f8fafc); }
-.card-curso { border: 1px solid #dce5f0; box-shadow: 0 6px 24px rgba(40,62,105,.07); }
-.card-curso:hover { box-shadow: 0 14px 32px rgba(40,62,105,.12); }
-.site-header { box-shadow: 0 2px 16px rgba(40,62,105,.045); }
+
+/* ============================================================
+   Design 2026 — mobile first, inspirado em Apple e fintechs:
+   foto real, tipografia grande, uma ação por bloco, muito respiro.
+   ============================================================ */
+:root {
+  --ink: #14213d;          /* títulos */
+  --ink-soft: #4a5672;     /* texto de apoio */
+  --line: #e4e9f1;         /* divisórias e bordas */
+  --surface: #ffffff;
+  --canvas: #f5f7fb;       /* fundo das seções alternadas */
+  --brand: #2e64bd;        /* ação principal */
+  --brand-press: #2453a0;
+  --open: #146844;         /* vagas abertas */
+  --open-bg: #e7f4ec;
+  --wait: #9a4b00;         /* lista de espera */
+  --wait-bg: #fdf0e1;
+  --radius-card: 20px;
+  --radius-control: 14px;
+  --shadow-card: 0 1px 2px rgba(20,33,61,.05), 0 8px 24px rgba(20,33,61,.06);
+}
+
+body { font-size: 16px; line-height: 1.5; }
+.font-mono { font-family: Inter, sans-serif; font-variant-numeric: tabular-nums; }
+.site-header { box-shadow: 0 1px 0 var(--line); }
+
+/* Botões e controles do novo layout */
+.btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; min-height: 52px; padding: 0 1.5rem; border-radius: var(--radius-control); background: var(--brand); color: #fff; font-weight: 700; font-size: 17px; letter-spacing: -.01em; transition: background .2s, transform .1s; }
+.btn-primary:hover { background: var(--brand-press); }
+.btn-primary:active { transform: scale(.98); }
+.btn-primary:disabled { background: #c9d2e1; color: #4a5672; }
+.btn-quiet { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; min-height: 48px; padding: 0 1rem; border-radius: var(--radius-control); color: var(--brand); font-weight: 600; font-size: 16px; }
+.btn-quiet:hover { background: #eef3fb; }
+.chip { flex: none; min-height: 44px; padding: 0 1.1rem; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-weight: 600; font-size: 15px; white-space: nowrap; transition: background .15s, color .15s, border-color .15s; }
+.chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Hero com foto protagonista e texto protegido só embaixo */
+.hero-photo { height: min(78svh, 620px); min-height: 480px; }
+.hero-scrim { background: linear-gradient(180deg, rgba(10,18,36,0) 30%, rgba(10,18,36,.55) 62%, rgba(10,18,36,.86) 100%); }
+@media (min-width: 1024px) { .hero-photo { height: min(80vh, 680px); } }
+
+/* Folha de filtros (celular) e diálogo (desktop) */
+.sheet { border: 0; padding: 0; margin: auto auto 0; width: 100%; max-width: 560px; max-height: 88svh; border-radius: 24px 24px 0 0; background: var(--surface); color: var(--ink); }
+.sheet::backdrop { background: rgba(10,18,36,.45); }
+@media (min-width: 640px) { .sheet { margin: auto; border-radius: 24px; } }
+
 @media (max-width: 639px) {
-  .hero-photo-shade { background: linear-gradient(180deg, rgba(243,247,253,.96), rgba(242,247,254,.91) 45%, rgba(233,240,251,.86)); }
-  .home-hero .hero-content { padding: 108px 24px 28px; gap: 0; }
-  .home-hero .hero-title { font-size: clamp(1.75rem, 8vw, 2.125rem); line-height: 1.12; letter-spacing: -.035em; text-wrap: balance; }
-  .home-hero .hero-title-main { width: auto; max-width: none; text-align: left; }
-  .home-hero .hero-title-city { display: block; margin-top: 12px; font-family: var(--font-sans); font-size: 1rem; font-weight: 600; line-height: 1.4; letter-spacing: 0; text-transform: none; }
-  .home-hero .hero-description { margin-top: 14px; font-weight: 400; line-height: 1.65; }
-  .home-hero .hero-benefits { gap: 8px; margin-top: 16px; font-size:14px; letter-spacing: -.02em; }
-  .home-hero .hero-benefits > span { padding: 5px 7px; border-color: rgba(40,62,105,.12); background: rgba(255,255,255,.64); }
-  .home-hero .hero-actions { margin-top: 22px; gap: 8px; }
-  .home-hero .hero-primary-action { min-height: 52px; font-size:14px; letter-spacing: .025em; border-radius: 14px; }
-  .home-hero .hero-quiz-action { padding: 10px 8px; font-size:14px; text-transform: none; letter-spacing: 0; font-weight: 600; border-color: transparent; background: transparent; backdrop-filter: none; box-shadow: none; }
-  .home-hero .hero-quiz-action:hover { background: rgba(255,255,255,.6); }
-  .home-hero .hero-mobile-summary { padding-right: 64px; }
+  .chat-launcher { width: 56px; height: 56px; bottom: calc(16px + env(safe-area-inset-bottom)) !important; right: 16px !important; }
+  .chat-launcher > div > button { width: 56px; height: 56px; }
+  .registration-shell [data-lenis-prevent] { font-size: 16px; }
 }
 
-/* Leitura e toque no site público. */
-body { font-size:16px; line-height:1.5; padding-bottom:96px; }
-.font-mono { font-family:Inter,sans-serif; font-variant-numeric:tabular-nums; }
-footer a { display:inline-flex; align-items:center; min-height:44px; min-width:44px; }
-#cursos-section label { text-transform:none; letter-spacing:normal; min-height:44px; }
-#cursos-section select { font-size:16px; }
-@media(max-width:639px) { p { font-size:16px; } .chat-launcher { width:56px; height:56px; } .floating-home { bottom:96px; right:20px; } }
-
-.filter-sheet[open] { position:fixed; inset:auto 0 0; margin:0; max-width:100%; }
-.filter-sheet .grid { grid-template-columns:minmax(0,1fr); }
-.filter-sheet label { text-transform:none; letter-spacing:normal; }
-
-.filter-sheet { border:0; padding:0; margin:0; width:100%; max-width:none; background:transparent; color:inherit; }
-@media(min-width:640px) { .filter-sheet:not([open]) { display:block; } }
-@media(max-width:639px) {
- .filter-sheet { position:fixed; inset:auto 0 0; margin:0; max-height:85dvh; overflow:auto; border-radius:24px 24px 0 0; padding:24px; background:#f3f6fa; }
- .filter-sheet::backdrop { background:#0008; }
- .filter-sheet .grid { grid-template-columns:1fr; }
- .filter-sheet .grid > div { grid-column:auto; }
- .filter-sheet select { white-space:normal; }
- .chat-launcher { bottom:20px!important; right:20px!important; }
+/* Catalog anchors and keyboard focus. */
+#cursos-section { scroll-margin-top: 5rem; }
+.btn-primary:focus-visible, .btn-quiet:focus-visible, .chip:focus-visible, .sheet button:focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  .btn-primary, .chip { transition: none; }
+  .animate-pulse { animation: none; }
 }
 
-@media(min-width:640px) {
-  .filter-sheet, .filter-sheet:not([open]) { display:block; position:static; margin:0; padding:0; width:100%; max-width:none; max-height:none; background:transparent; color:inherit; border:0; overflow:visible; }
-  .filter-sheet .grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
-}
-@media(min-width:1024px) { .filter-sheet .grid { grid-template-columns:repeat(5,minmax(0,1fr)); } }
-@media(max-width:639px) { .filter-sheet [class*="last:col-span"] { grid-column:span 1; } }
 
-@media(max-width:639px) {
-  .floating-home { left:auto; right:20px; bottom:96px; }
-  .chat-launcher { width:56px; height:56px; }
-  .chat-launcher > div > button { width:56px; height:56px; }
-  .registration-shell [data-lenis-prevent] { font-size:16px; }
+/* Editorial course home, inspired by the Heat reference supplied by the user. */
+.course-home {
+  --ink: #181916;
+  --ink-soft: #53564f;
+  --canvas: #f4f4ef;
+  --line: #dedfd6;
+  --brand: #b43822;
+  --brand-press: #922b19;
+  --radius-card: 12px;
+  --radius-control: 999px;
+  --shadow-card: none;
+  background: #fff;
+  color: var(--ink);
+}
+.course-home .site-header { background: #fff; backdrop-filter: none; }
+.course-home h2 {
+  font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+  font-size: clamp(42px, 6vw, 72px);
+  font-weight: 800;
+  line-height: .98;
+  letter-spacing: -.015em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+.course-hero {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: min(850px, calc(100svh - 64px));
+  background: #22261f;
+  color: white;
+  overflow: hidden;
+}
+.course-hero-photos, .course-hero-shade { position: absolute; inset: 0; z-index: -1; }
+.course-hero-photos { display: grid; grid-template-columns: 1fr 1fr; }
+.course-hero-photos img { width: 100%; height: 100%; min-width: 0; object-fit: cover; object-position: 50% 35%; }
+.course-hero-shade { background: linear-gradient(180deg, #10161005 15%, #1016105c 38%, #101610d9 100%); }
+.course-hero-content { width: 100%; max-width: 900px; margin: 0 auto; padding: 100px 24px 44px; text-align: center; }
+.course-hero-location { margin-bottom: 18px; font-size: 14px; font-weight: 600; }
+.course-hero h1 {
+  font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+  font-size: clamp(64px, 10vw, 128px);
+  line-height: .88;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -.025em;
+  text-wrap: balance;
+}
+.course-hero-description { max-width: 390px; margin: 24px auto 0; font-size: 17px; line-height: 1.55; }
+.course-hero .course-hero-action { margin-top: 28px; background: #fff; color: #181916; padding-inline: 24px; }
+.course-hero .course-hero-action:hover { background: #f0efe9; }
+.course-hero-bottom { display: flex; justify-content: space-between; align-items: center; padding: 0 24px 16px; font-size: 14px; font-weight: 600; }
+
+.course-home #cursos-section { padding-block: 64px; }
+.course-home #cursos-section article { border: 1px solid var(--line); }
+.course-home #cursos-section article h3 { font-size: 24px; letter-spacing: -.025em; }
+.course-home #cursos-section article > div:first-child { aspect-ratio: 4 / 3; }
+.course-home #como-funciona { background: #181916; --ink: #fff; --ink-soft: #c6c9bf; --canvas: #292b25; --brand: #ff987d; }
+.course-home #como-funciona ol { gap: 32px; }
+.course-home #como-funciona li > span { background: transparent; font-family: "Barlow Condensed", sans-serif; font-size: 48px; border-radius: 0; }
+.course-home #ajuda { background: #fff; }
+.course-home #ajuda li > button, .course-home #ajuda > div > a { border: 1px solid var(--line); }
+.course-home .btn-primary:focus-visible, .course-hero a:focus-visible { outline-offset: 5px; }
+@media (min-width: 768px) {
+  .course-hero-content { padding-top: 120px; padding-bottom: 64px; }
+}
+@media (max-width: 359px) {
+  .course-hero h1 { font-size: 58px; }
+  .course-hero-content { padding-inline: 16px; }
 }

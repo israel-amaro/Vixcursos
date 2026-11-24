@@ -247,8 +247,10 @@ export default function VitorugaChat() {
       setShowTooltip(false);
       startQuizFlow();
     };
+    const handleOpen = () => { setIsOpen(true); setShowTooltip(false); };
     window.addEventListener('abrir-chat-quiz', handleOpenQuiz);
-    return () => window.removeEventListener('abrir-chat-quiz', handleOpenQuiz);
+    window.addEventListener('abrir-chat', handleOpen);
+    return () => { window.removeEventListener('abrir-chat-quiz', handleOpenQuiz); window.removeEventListener('abrir-chat', handleOpen); };
   }, []);
 
   // Initialize Speech Synthesis
