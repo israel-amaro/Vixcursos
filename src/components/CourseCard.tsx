@@ -55,7 +55,7 @@ export const startText = (value: string) => {
 export function availability(c: PublicCourse) {
   if (c.aceita_inscricoes === false) return { label: c.situacao_label || 'Inscrições fechadas', tone: 'closed' as const, action: c.situacao_label || 'Inscrições fechadas' };
   if (c.status === 'esgotado' || c.vagas_disponiveis <= 0) return { label: 'Lista de espera', tone: 'wait' as const, action: 'Entrar na lista de espera' };
-  if (c.vagas_disponiveis <= 5) return { label: `Últimas ${c.vagas_disponiveis} vagas`, tone: 'wait' as const, action: 'Quero me inscrever' };
+  if (c.vagas_disponiveis <= 5) return { label: c.vagas_disponiveis === 1 ? 'Última vaga' : `Últimas ${c.vagas_disponiveis} vagas`, tone: 'wait' as const, action: 'Quero me inscrever' };
   return { label: `${c.vagas_disponiveis} vagas abertas`, tone: 'open' as const, action: 'Quero me inscrever' };
 }
 const toneClass = { open: 'bg-[var(--open-bg)] text-[var(--open)]', wait: 'bg-[var(--wait-bg)] text-[var(--wait)]', closed: 'bg-slate-100 text-slate-600' };

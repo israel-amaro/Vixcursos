@@ -39,6 +39,8 @@ export default function CursosSection({ courses, loading, error, requestedCatego
 
   useEffect(() => {
     if (!requestedCategory) return;
+    setQuery('');
+    setFilters(emptyFilters);
     setCategory(requestedCategory.name);
     document.getElementById('cursos-section')?.scrollIntoView({ behavior: 'smooth' });
   }, [requestedCategory]);
@@ -77,7 +79,7 @@ export default function CursosSection({ courses, loading, error, requestedCatego
         </h2>
 
         <div className="mt-5 flex gap-2">
-          <label className="relative flex-1">
+          <label className="relative min-w-0 flex-1">
             <span className="sr-only">Buscar curso ou profissão</span>
             <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--ink-soft)]" aria-hidden="true" />
             <input
@@ -116,7 +118,7 @@ export default function CursosSection({ courses, loading, error, requestedCatego
           <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3" aria-hidden="true">
             {[0, 1, 2].map(i => <div key={i} className="h-[420px] animate-pulse rounded-[var(--radius-card)] bg-white" />)}
           </div>
-        ) : results.length === 0 ? (
+        ) : error && !courses.length ? null : results.length === 0 ? (
           <div className="mt-4 rounded-[var(--radius-card)] bg-white p-8 text-center shadow-[var(--shadow-card)]">
             <p className="text-xl font-bold text-[var(--ink)]">Nenhum curso encontrado</p>
             <p className="mx-auto mt-2 max-w-sm text-[16px] text-[var(--ink-soft)]">

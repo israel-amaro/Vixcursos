@@ -39,3 +39,13 @@ O que saiu da home: o vídeo de abertura, o carrossel de fotos, o painel de esta
 - Primeira visita: **725 KB**. Eram 9,9 MB em 19/11 e 1,8 MB depois da fase 1.
 - Texto da home: cerca de 280 palavras. Altura da página: 5.976 px (era 7.754 px).
 - 0 textos abaixo de 14 px, 0 alvos de toque abaixo de 44 px, sem rolagem horizontal.
+
+## Direção Heat — revisão de 24/11/2026
+
+Referência explicitamente escolhida pelo usuário — https://heat-fitness-template.vercel.app/.
+
+A home foi adaptada com duas fotografias lado a lado, títulos condensados em Barlow Condensed, contraste preto/branco, destaque terracota e botões arredondados. As imagens reutilizam os arquivos WebP do projeto. A direção visual foi aplicada à home e ao catálogo.
+
+A revisão também corrige o estado de erro do catálogo, o espaço mínimo da busca em telas estreitas, a combinação de filtros ao receber uma recomendação do quiz, o texto de vaga única e o foco visível dos controles. A administração da FAQ passa a buscar dados sem cache para refletir criação, edição e exclusão imediatamente.
+
+A validação usa o servidor local de testes com dados fictícios e notificações desabilitadas. Inclui capturas em 390 e 1440 pixels e testes de catálogo em 320 pixels. As integrações externas reais dependem de suas credenciais e ambiente.

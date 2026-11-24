@@ -175,7 +175,7 @@
 
     async function carregarFaqs() {
         try {
-            const res = await fetch('/api/faq');
+            const res = await fetch('/api/faq', { cache: 'no-store' });
             faqsGlobais = await lerJsonOuLancar(res);
             const tbody = document.getElementById('tabelaFaqBody');
             tbody.innerHTML = '';

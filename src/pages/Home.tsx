@@ -25,7 +25,7 @@ export default function Home() {
   }, [location.key]);
 
   return (
-    <>
+    <div className="course-home">
       <Header />
       <main>
         <Hero courses={courses} />
@@ -41,6 +41,6 @@ export default function Home() {
         </Suspense>
       )}
       <SatisfactionSurvey isOpen={surveyOpen} onClose={() => setSurveyOpen(false)} />
-    </>
+    </div>
   );
 }

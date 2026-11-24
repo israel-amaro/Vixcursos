@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Inter:wght@400;500;600;700;800&family=Poppins:wght@600;700;800&display=swap');
 
 @import "tailwindcss";
 
@@ -250,4 +250,86 @@ body { font-size: 16px; line-height: 1.5; }
   .chat-launcher { width: 56px; height: 56px; bottom: calc(16px + env(safe-area-inset-bottom)) !important; right: 16px !important; }
   .chat-launcher > div > button { width: 56px; height: 56px; }
   .registration-shell [data-lenis-prevent] { font-size: 16px; }
+}
+
+/* Catalog anchors and keyboard focus. */
+#cursos-section { scroll-margin-top: 5rem; }
+.btn-primary:focus-visible, .btn-quiet:focus-visible, .chip:focus-visible, .sheet button:focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  .btn-primary, .chip { transition: none; }
+  .animate-pulse { animation: none; }
+}
+
+
+/* Editorial course home, inspired by the Heat reference supplied by the user. */
+.course-home {
+  --ink: #181916;
+  --ink-soft: #53564f;
+  --canvas: #f4f4ef;
+  --line: #dedfd6;
+  --brand: #b43822;
+  --brand-press: #922b19;
+  --radius-card: 12px;
+  --radius-control: 999px;
+  --shadow-card: none;
+  background: #fff;
+  color: var(--ink);
+}
+.course-home .site-header { background: #fff; backdrop-filter: none; }
+.course-home h2 {
+  font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+  font-size: clamp(42px, 6vw, 72px);
+  font-weight: 800;
+  line-height: .98;
+  letter-spacing: -.015em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+.course-hero {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: min(850px, calc(100svh - 64px));
+  background: #22261f;
+  color: white;
+  overflow: hidden;
+}
+.course-hero-photos, .course-hero-shade { position: absolute; inset: 0; z-index: -1; }
+.course-hero-photos { display: grid; grid-template-columns: 1fr 1fr; }
+.course-hero-photos img { width: 100%; height: 100%; min-width: 0; object-fit: cover; object-position: 50% 35%; }
+.course-hero-shade { background: linear-gradient(180deg, #10161005 15%, #1016105c 38%, #101610d9 100%); }
+.course-hero-content { width: 100%; max-width: 900px; margin: 0 auto; padding: 100px 24px 44px; text-align: center; }
+.course-hero-location { margin-bottom: 18px; font-size: 14px; font-weight: 600; }
+.course-hero h1 {
+  font-family: "Barlow Condensed", "Arial Narrow", sans-serif;
+  font-size: clamp(64px, 10vw, 128px);
+  line-height: .88;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: -.025em;
+  text-wrap: balance;
+}
+.course-hero-description { max-width: 390px; margin: 24px auto 0; font-size: 17px; line-height: 1.55; }
+.course-hero .course-hero-action { margin-top: 28px; background: #fff; color: #181916; padding-inline: 24px; }
+.course-hero .course-hero-action:hover { background: #f0efe9; }
+.course-hero-bottom { display: flex; justify-content: space-between; align-items: center; padding: 0 24px 16px; font-size: 14px; font-weight: 600; }
+
+.course-home #cursos-section { padding-block: 64px; }
+.course-home #cursos-section article { border: 1px solid var(--line); }
+.course-home #cursos-section article h3 { font-size: 24px; letter-spacing: -.025em; }
+.course-home #cursos-section article > div:first-child { aspect-ratio: 4 / 3; }
+.course-home #como-funciona { background: #181916; --ink: #fff; --ink-soft: #c6c9bf; --canvas: #292b25; --brand: #ff987d; }
+.course-home #como-funciona ol { gap: 32px; }
+.course-home #como-funciona li > span { background: transparent; font-family: "Barlow Condensed", sans-serif; font-size: 48px; border-radius: 0; }
+.course-home #ajuda { background: #fff; }
+.course-home #ajuda li > button, .course-home #ajuda > div > a { border: 1px solid var(--line); }
+.course-home .btn-primary:focus-visible, .course-hero a:focus-visible { outline-offset: 5px; }
+@media (min-width: 768px) {
+  .course-hero-content { padding-top: 120px; padding-bottom: 64px; }
+}
+@media (max-width: 359px) {
+  .course-hero h1 { font-size: 58px; }
+  .course-hero-content { padding-inline: 16px; }
 }
