@@ -49,3 +49,26 @@ A home foi adaptada com duas fotografias lado a lado, títulos condensados em Ba
 A revisão também corrige o estado de erro do catálogo, o espaço mínimo da busca em telas estreitas, a combinação de filtros ao receber uma recomendação do quiz, o texto de vaga única e o foco visível dos controles. A administração da FAQ passa a buscar dados sem cache para refletir criação, edição e exclusão imediatamente.
 
 A validação usa o servidor local de testes com dados fictícios e notificações desabilitadas. Inclui capturas em 390 e 1440 pixels e testes de catálogo em 320 pixels. As integrações externas reais dependem de suas credenciais e ambiente.
+
+## Identidade municipal e movimento — 24/11/2026
+
+Fontes fornecidas pelo usuário — manual_identidade_brasao.pdf (página 4, Sistema de cores) e heat-fitness-design-spec.md.
+
+O manual define CMYK/Pantone, sem HEX oficial. A renderização do PDF foi amostrada para obter aproximações digitais.
+
+| Cor | Referência do manual | Aproximação digital |
+|---|---|---|
+| Preto | Process Black C | #221e1f |
+| Bege | 7509 C | #d1ab66 |
+| Vermelho | Red 032 C | #ed1c23 |
+| Azul | 7461 C | #007dc5 |
+| Verde | 360 C | #4fb747 |
+| Cinza | Cool Gray 10 C | #6c6e70 |
+
+Os botões usam azul escurecido #006da8 para contraste com branco. A marca da Prefeitura permanece no arquivo original.
+
+Implementados na home e nos componentes compartilhados pertinentes — fotos em quatro colunas a partir de 810 px e duas no celular, entrada do título por linhas, entrada de seções, revelação das imagens em cinco faixas, zoom de imagens, CTA magnético com troca de texto e preenchimento, sublinhados, header que recolhe durante rolagem e reaparece ao subir, menu com transição, abertura de filtros, geometria de cards e campos com cantos retos e botões em pílula. Lenis pausa com menu e diálogo abertos. Movimento reduzido desativa as animações da home e os efeitos de ponteiro.
+
+A especificação foi adaptada às seções reais do portal. Palco de corrida em canvas, odômetros esportivos, planos pagos, treinadores e vídeos não foram adicionados. A navegação permanece imediatamente disponível, sem intro de espera. Esses elementos exigiriam conteúdo e funcionalidades que o portal de cursos não possui.
+
+Verificações visuais em 390 e 1440 pixels, imagens carregadas e teste de preferência por movimento reduzido. Testes de cadastro e administração usam dados locais isolados.

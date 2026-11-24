@@ -1,3 +1,4 @@
+import { useHomeMotion } from '../lib/useHomeMotion';
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import Header from '../components/Header';
@@ -13,6 +14,7 @@ const CourseQuizModal = lazy(() => import('../components/CourseQuizModal'));
 
 // Mobile-first home: photo, search, courses, how it works, help. One idea per section.
 export default function Home() {
+  const motionRoot = useHomeMotion();
   const location = useLocation();
   const { courses, loading, error } = usePublicCourses<PublicCourse>();
   const [quizOpen, setQuizOpen] = useState(false);
@@ -25,7 +27,7 @@ export default function Home() {
   }, [location.key]);
 
   return (
-    <div className="course-home">
+    <div className="course-home" ref={motionRoot}>
       <Header />
       <main>
         <Hero courses={courses} />

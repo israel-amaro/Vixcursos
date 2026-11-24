@@ -263,13 +263,13 @@ body { font-size: 16px; line-height: 1.5; }
 
 /* Editorial course home, inspired by the Heat reference supplied by the user. */
 .course-home {
-  --ink: #181916;
+  --ink: #221e1f;
   --ink-soft: #53564f;
-  --canvas: #f4f4ef;
+  --canvas: #f4f7f9;
   --line: #dedfd6;
-  --brand: #b43822;
-  --brand-press: #922b19;
-  --radius-card: 12px;
+  --brand: #006da8;
+  --brand-press: #005583;
+  --radius-card: 0px;
   --radius-control: 999px;
   --shadow-card: none;
   background: #fff;
@@ -320,7 +320,7 @@ body { font-size: 16px; line-height: 1.5; }
 .course-home #cursos-section article { border: 1px solid var(--line); }
 .course-home #cursos-section article h3 { font-size: 24px; letter-spacing: -.025em; }
 .course-home #cursos-section article > div:first-child { aspect-ratio: 4 / 3; }
-.course-home #como-funciona { background: #181916; --ink: #fff; --ink-soft: #c6c9bf; --canvas: #292b25; --brand: #ff987d; }
+.course-home #como-funciona { background: #00486c; --ink: #fff; --ink-soft: #e1edf2; --canvas: #135b7c; --brand: #d1ab66; }
 .course-home #como-funciona ol { gap: 32px; }
 .course-home #como-funciona li > span { background: transparent; font-family: "Barlow Condensed", sans-serif; font-size: 48px; border-radius: 0; }
 .course-home #ajuda { background: #fff; }
@@ -332,4 +332,74 @@ body { font-size: 16px; line-height: 1.5; }
 @media (max-width: 359px) {
   .course-hero h1 { font-size: 58px; }
   .course-hero-content { padding-inline: 16px; }
+}
+
+
+/* Digital approximations sampled from the supplied municipal manual, page 4. */
+:root {
+  --vitoria-blue: #007dc5;
+  --vitoria-green: #4fb747;
+  --vitoria-gold: #d1ab66;
+  --vitoria-red: #ed1c23;
+  --vitoria-black: #221e1f;
+  --vitoria-gray: #6c6e70;
+  --motion-ease: cubic-bezier(.16, 1, .3, 1);
+}
+.course-home { --gutter: clamp(1.25rem, .25rem + 3.4vw, 4rem); }
+.course-home ::selection { background: #006da8; color: #fff; }
+.course-home :focus-visible { outline: 2px solid var(--brand); outline-offset: 3px; }
+.course-home .site-header { border-bottom: 3px solid var(--vitoria-blue); transition: transform .5s var(--motion-ease); }
+.course-home .site-header[data-away="true"]:not(:focus-within) { transform: translateY(-100%); }
+.course-home .site-header nav > a, .course-home .site-header nav > button:not(.btn-primary) { position: relative; }
+.course-home .site-header nav > a::after, .course-home .site-header nav > button:not(.btn-primary)::after {
+  content: ""; position: absolute; left: 16px; right: 16px; bottom: 5px; height: 2px;
+  background: currentColor; transform: scaleX(0); transform-origin: right; transition: transform .5s var(--motion-ease);
+}
+.course-home input, .course-home select, .course-home .sheet, .course-home .responsive-dialog { border-radius: 0; }
+.course-home .sheet[open] { animation: municipal-dialog-in .6s var(--motion-ease); }
+.course-home #como-funciona { border-top: 6px solid var(--vitoria-gold); }
+.course-home #como-funciona li { border-top: 1px solid #ffffff40; padding-top: 24px; }
+.hero-extra-photo { display: none; }
+.hero-line { display: block; overflow: hidden; padding-bottom: .12em; margin-bottom: -.12em; }
+.hero-line > span { display: block; animation: municipal-line-up .95s both var(--motion-ease); }
+.hero-line:nth-child(2) > span { animation-delay: .12s; }
+.hero-line:nth-child(3) > span { animation-delay: .24s; }
+.course-hero-photos img { animation: municipal-frame-settle 1.8s both var(--motion-ease); }
+.course-hero-location { animation: municipal-enter .8s both var(--motion-ease); }
+.course-hero-description, .course-hero-action { animation: municipal-enter .8s .3s both var(--motion-ease); }
+.motion-entered { animation: municipal-enter .8s both var(--motion-ease); }
+.photo-curtain { position: absolute; inset: 0; display: flex; flex-direction: column; pointer-events: none; }
+.photo-curtain span { flex: 1; background: var(--canvas); transform-origin: right; margin-bottom: -1px; }
+.course-card-photo > img { transition: transform 1s var(--motion-ease); }
+.motion-pill { isolation: isolate; position: relative; overflow: hidden; transition: translate .2s var(--motion-ease), transform .2s; }
+.motion-pill::before { content: ""; position: absolute; inset: 0; background: #006da8; z-index: -1; transform: translateY(101%); transition: transform .5s var(--motion-ease); }
+.pill-label { position: relative; display: block; overflow: hidden; }
+.pill-label > span { display: block; transition: transform .5s var(--motion-ease); }
+.pill-label > span + span { position: absolute; inset: 0; transform: translateY(100%); }
+.motion-pill svg { position: relative; }
+@media (hover: hover) and (pointer: fine) {
+  .course-home .site-header nav > a:hover::after, .course-home .site-header nav > button:hover::after { transform: scaleX(1); transform-origin: left; }
+  .course-home article:hover .course-card-photo > img { transform: scale(1.05); }
+  .course-home .motion-pill:hover { color: #fff; }
+  .motion-pill:hover::before { transform: translateY(0); }
+  .motion-pill:hover .pill-label > span:first-child { transform: translateY(-100%); }
+  .motion-pill:hover .pill-label > span + span { transform: translateY(0); }
+}
+@media (min-width: 810px) {
+  .course-hero-photos { grid-template-columns: repeat(4, 1fr); }
+  .hero-extra-photo { display: block; }
+}
+@media (max-width: 1199px) {
+  .course-home #menu-celular { max-height: calc(100svh - 64px); overflow-y: auto; padding-block: 24px; animation: municipal-dialog-in .6s var(--motion-ease); }
+  .course-home #menu-celular > a, .course-home #menu-celular > button:not(.btn-primary) { font-family: "Barlow Condensed", sans-serif; font-size: clamp(32px, 8vw, 54px); text-transform: uppercase; min-height: 64px; }
+}
+@keyframes municipal-line-up { from { transform: translateY(105%); } to { transform: translateY(0); } }
+@keyframes municipal-frame-settle { from { transform: scale(1.12); } to { transform: scale(1); } }
+@keyframes municipal-enter { from { opacity: .01; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes municipal-dialog-in { from { opacity: 0; transform: translateY(28px) scale(.98); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .course-home *, .course-home *::before, .course-home *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  .course-home .site-header { transform: none !important; }
+  .photo-curtain { display: none; }
+  .course-home .course-card-photo > img, .course-home .motion-pill { transform: none !important; translate: none !important; }
 }
