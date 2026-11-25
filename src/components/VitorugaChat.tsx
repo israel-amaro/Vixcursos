@@ -19,6 +19,7 @@ interface ChatMessage {
   id: string;
   sender: 'bot' | 'user';
   text: string;
+  conversational?: boolean;
   extractedCourseId?: string | null;
   options?: { texto: string; valor: string }[];
 }
@@ -150,6 +151,24 @@ export default function VitorugaChat() {
   const [isDragging, setIsDragging] = useState(false);
   const dragOffset = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const buttonRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : triggerRef.current;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      (openerRef.current === document.body ? triggerRef.current : openerRef.current)?.focus();
+    };
+  }, [isOpen]);
 
   // Quiz State
   const [quiz, setQuiz] = useState<QuizState>({
@@ -896,12 +915,25 @@ export default function VitorugaChat() {
       return;
     }
 
+    const command = text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    if (['quiz', 'iniciar quiz', 'iniciar_quiz', 'fazer quiz'].includes(command)) {
+      setInputValue('');
+      startQuizFlow();
+      return;
+    }
+    if (['historico', 'consultar historico', 'consultar_historico', 'sugerir_cursos'].includes(command)) {
+      setInputValue('');
+      handleOptionClick(command === 'sugerir_cursos' ? command : 'consultar_historico', text);
+      return;
+    }
+
     // Standard Chatbot flow
     setMessages((prev) => [
       ...prev,
       {
         id: `user-${Date.now()}`,
         sender: 'user',
+        conversational: true,
         text,
       }
     ]);
@@ -910,48 +942,14 @@ export default function VitorugaChat() {
     setIsTyping(true);
 
     try {
-      // Check for help/FAQ requests
-      const cleanText = text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      
-      // Conversational responses for Módulo 6.1 (FAQ Flows)
-      let customReply = "";
-      if (cleanText.includes("como fazer inscricao") || cleanText.includes("como me inscrever") || cleanText.includes("quero me inscrever")) {
-        customReply = "Para fazer sua inscrição, basta navegar pelas turmas do catálogo principal na nossa página inicial e clicar em **Pré-inscrição**. O Vitoruga te guiará no chat de inscrição! 🐢";
-      } else if (cleanText.includes("status da inscricao") || cleanText.includes("status")) {
-        customReply = "Você pode consultar o status da sua inscrição digitando o seu **CPF** no início do fluxo de inscrição do curso desejado. O sistema recuperará o seu histórico completo de vaga garantida, lista de espera ou concluído! 📂";
-      } else if (cleanText.includes("documento") || cleanText.includes("documentos para matricula")) {
-        customReply = "Os documentos necessários para confirmação da matrícula presencial são:\n• **CPF** e **RG** (original e cópia)\n• **Comprovante de residência** em Vitória\n• Menores de 18 anos devem levar os documentos do responsável legal.";
-      } else if (cleanText.includes("localizacao") || cleanText.includes("onde e o curso") || cleanText.includes("polo")) {
-        customReply = "Os cursos são ministrados em diversos polos parceiros da PMV, incluindo o **Senac Bento Ferreira**, o **Senai** na Av. Mascarenhas de Moraes, e carretas móveis. A localização exata está destacada no catálogo e na confirmação da sua pré-inscrição!";
-      } else if (cleanText.includes("certificado") || cleanText.includes("emissao de certificado")) {
-        customReply = "Para emitir o seu certificado do Qualifica Vix, você deve comparecer à área do aluno no site, informar seu CPF, responder o questionário rápido pós-curso (Módulo 5) e fazer o download do PDF. Prático e rápido! 🎓";
-      } else if (cleanText.includes("deficiencia") || cleanText.includes("adaptacao") || cleanText.includes("pcd")) {
-        customReply = "Candidatos com deficiência têm reserva de vaga garantida e prioritária no Qualifica Vix! Durante a pré-inscrição, declare a sua necessidade especial para que a gestão providencie os recursos e adaptações assistivas necessárias.";
-      } else if (cleanText.includes("contato") || cleanText.includes("semcid") || cleanText.includes("falar com atendente") || cleanText.includes("humano")) {
-        customReply = "Você pode entrar em contato com a equipe de suporte da Semcid pelo e-mail **crassenaitcc@gmail.com** ou pelo telefone de atendimento municipal 156. Se desejar, posso encaminhar sua mensagem para um atendente humano! 📞";
-      }
-
-      if (customReply) {
-        await new Promise((r) => setTimeout(r, 600));
-        setIsTyping(false);
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `bot-${Date.now()}`,
-            sender: 'bot',
-            text: customReply,
-          }
-        ]);
-        speakText(customReply);
-        return;
-      }
-
       const response = await fetch('/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text }),
+        body: JSON.stringify({ message: text, history: messages.filter(m => m.conversational && !m.options)
+          .slice(-7).map(m => ({ role: m.sender === 'user' ? 'user' : 'assistant', content: m.text })) }),
       });
 
+      if (!response.ok) throw new Error('Chat indisponível');
       const data = await response.json();
       await new Promise((r) => setTimeout(r, 700));
       setIsTyping(false);
@@ -966,6 +964,7 @@ export default function VitorugaChat() {
         {
           id: `bot-${Date.now()}`,
           sender: 'bot',
+          conversational: true,
           text: botReply,
           extractedCourseId,
         }
@@ -980,6 +979,7 @@ export default function VitorugaChat() {
         {
           id: `bot-err-${Date.now()}`,
           sender: 'bot',
+          conversational: true,
           text: errReply,
         }
       ]);
@@ -1098,6 +1098,8 @@ export default function VitorugaChat() {
             <span className="w-0.5 h-3 rounded-full bg-white/25" />
           </div>
           <motion.button
+            ref={triggerRef}
+            aria-expanded={isOpen}
             onClick={() => {
               if (!isDragging) {
                 setIsOpen(!isOpen);

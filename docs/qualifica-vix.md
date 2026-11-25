@@ -1,6 +1,27 @@
 # Atualização Qualifica Vix
 
-O projeto está na branch `codex/qualifica-vix`. A configuração local fica em `.env.local`, ignorada pelo Git. A conta de serviço permanece fora do projeto, referenciada por `GOOGLE_APPLICATION_CREDENTIALS`.
+## Resumo para agentes — 25/11/2026
+
+- Checkout: `C:/Users/Porto/Documents/Codex/vixcursos-design-upgrade`, branch `feat/ficha-cpf-ia-chat`; sem commit ou push nesta etapa.
+- Vitoruga usa Groq pelo servidor, com catálogo público, mascaramento de identificadores, histórico limitado e fallback por regras.
+- As dúvidas no formulário preservam a etapa; respostas cadastrais não entram no histórico da IA.
+- Ficha existente exige código por e-mail ou sessão ainda válida; falha de SMTP permite iniciar preenchimento manual sem revelar dados salvos.
+- Escape fecha a gaveta e devolve foco; mensagens vazias são descartadas na inclusão e na renderização da pré-inscrição.
+- Verificação: build aprovado; Node com 40 aprovados e quatro integrações Firebase ignoradas; Playwright completo com 34 aprovados.
+- Groq simulada nos testes; nenhuma chamada real ao provedor foi feita para validar as respostas do modelo.
+- O Obsidian foi consultado, mas sua atualização está pendente porque a sessão só permite escrita no repositório. Este registro preserva as evidências para atualização posterior do cofre.
+
+## IA conversacional do Vitoruga
+
+Configure `GROQ_API_KEY` como segredo somente do servidor. `GROQ_MODEL` é opcional, com padrão `openai/gpt-oss-120b`. Não use prefixo `VITE_` nem publique credenciais. A integração usa `fetch` nativo e a [API de chat da Groq](https://console.groq.com/docs/api-reference), sem novas dependências, com limite de 400 tokens, temperatura 0,2 e timeout de 12 segundos.
+
+`POST /chat` recebe `{ message, history? }`. O histórico é uma lista de `{ role: 'user' | 'assistant', content }`. O servidor descarta entradas inválidas, mascara CPF, e-mails e telefones antes do envio e limita a conversa a oito mensagens incluindo a atual, com 500 caracteres cada. O contexto contém campos públicos selecionados do catálogo e regras do portal, incluindo o limite configurado de inscrições ativas (padrão: quatro). A IA não acessa fichas e o servidor não registra mensagens em logs. O mascaramento não equivale a anonimizar qualquer texto livre: evite inserir outros dados pessoais nas dúvidas.
+
+A resposta mantém `reply` e `resposta` e acrescenta `fonte: 'ia' | 'regras'`. Sem chave, em falha, timeout ou resposta vazia, usa `chatReply`. O rate limit permanece ativo. Quiz, histórico, sugestões e cadastro continuam nos fluxos existentes. Na pré-inscrição, dúvidas não avançam a etapa; somente perguntas e respostas livres entram no histórico da IA, nunca os dados do formulário.
+
+A recuperação de ficha continua exigindo localizar → código por e-mail → validar → `/api/cidadaos/me` com sessão autenticada. Uma sessão ainda válida pode ser reutilizada. Se o envio por e-mail estiver indisponível, o cidadão pode tentar novamente ou preencher manualmente. Preencher manualmente não libera dados salvos nem dispensa a autenticação exigida para reinscrever uma ficha existente.
+
+O projeto está na branch `feat/ficha-cpf-ia-chat`. A configuração local fica em `.env.local`, ignorada pelo Git. A conta de serviço permanece fora do projeto, referenciada por `GOOGLE_APPLICATION_CREDENTIALS`.
 
 ## Executar e configurar
 

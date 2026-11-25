@@ -31,6 +31,8 @@ interface Question {
 interface Message {
   id: string;
   sender: 'bot' | 'user';
+  conversational?: boolean;
+  courseId?: string;
   text: string;
   isDocument?: boolean;
   docName?: string;
@@ -524,6 +526,7 @@ export default function PreInscricao() {
   };
 
   const addUserMessage = (text: string, isDoc = false, docName?: string) => {
+    if (!text.trim() && !isDoc) return;
     setMessages((prev) => [
       ...prev,
       {
@@ -982,12 +985,40 @@ export default function PreInscricao() {
     }
   }, [etapaAtual]);
 
-  const handleTextSubmit = (e: React.FormEvent) => {
+  // Dúvidas não são respostas do formulário e nunca alteram a etapa ou a ficha.
+  const isQuestion = (text: string) => /[?]|^(como|por\s*que|pra\s*que|para que|onde|quando|qual|quais|quanto|quem|posso|preciso|tenho duvida|nao entendi|me ajude|me ajuda|ajuda|tem curso|quero saber|esse curso|o curso|e gratuito)\b/i.test(text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim());
+
+  const handleTextSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isTyping) return;
+    if (isTyping || responseInFlight.current) return;
     const val = inputValue.trim();
     if (!val) return;
-    prosseguirEtapa(val);
+    if (!isQuestion(val) && !(roteiro[etapaAtual].mascara && /[a-zá-ú]/i.test(val))) {
+      prosseguirEtapa(val);
+      return;
+    }
+    responseInFlight.current = true;
+    setInputValue('');
+    setIsTyping(true);
+    const history = messages.filter(m => m.conversational).slice(-7)
+      .map(m => ({ role: m.sender === 'user' ? 'user' : 'assistant', content: m.text }));
+    setMessages(prev => [...prev, { id: `duvida-${Date.now()}`, sender: 'user', text: val, conversational: true }]);
+    try {
+      const response = await fetch('/chat', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: cursoId ? `Pré-inscrição do curso ${cursoId}. Dúvida: ${val}` : val, history }),
+      });
+      if (!response.ok) throw new Error('Chat indisponível');
+      const data = await response.json();
+      const reply = data.reply || 'Não consegui responder agora. Você pode continuar o cadastro.';
+      setMessages(prev => [...prev, { id: `resposta-${Date.now()}`, sender: 'bot', text: reply,
+        conversational: true, courseId: reply.match(/\/pre-inscricao\/(\d+)/)?.[1] }]);
+    } catch {
+      await addBotMessage('Não consegui responder agora. Tente novamente ou continue o cadastro.', 0);
+    } finally {
+      await addBotMessage(roteiro[etapaAtual].pergunta.replace('{CURSO_NOME}', cursoNome), 0);
+      responseInFlight.current = false;
+    }
   };
 
   // Format inputs according to active masks
@@ -995,7 +1026,7 @@ export default function PreInscricao() {
     const q = roteiro[etapaAtual];
     let val = e.target.value;
 
-    if (q && q.mascara) {
+    if (q && q.mascara && !/[a-zá-ú?]/i.test(val)) {
       const digitos = val.replace(/\D/g, '');
       if (q.mascara === 'cpf') {
         val = formatarCpf(digitos);
@@ -1129,7 +1160,7 @@ export default function PreInscricao() {
 
         {/* Message Board */}
         <div data-lenis-prevent className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 sm:px-6 py-5 sm:py-6 flex flex-col gap-4">
-          {messages.map((msg) => (
+          {messages.filter(msg => msg.isDocument || msg.text.trim()).map((msg) => (
             <div
               key={msg.id}
               className={`max-w-[94%] sm:max-w-[85%] break-words rounded-2xl px-4 py-3 text-[14px] leading-relaxed shadow-lg transition-all animate-[popIn_0.35s_cubic-bezier(0.175,0.885,0.32,1.275)] ${
@@ -1144,7 +1175,10 @@ export default function PreInscricao() {
                   <span className="truncate">{msg.docName}</span>
                 </div>
               ) : (
-                <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(msg.text) }} />
+                <>
+                  {msg.conversational || msg.sender === 'user' ? <div className="whitespace-pre-wrap">{msg.text}</div> : <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(msg.text) }} />}
+                  {msg.courseId && <Link to={`/pre-inscricao/${msg.courseId}`} className="inline-flex mt-2 underline font-bold">Ver pré-inscrição</Link>}
+                </>
               )}
             </div>
           ))}
@@ -1414,9 +1448,17 @@ export default function PreInscricao() {
           {roteiro[etapaAtual]?.tipo === 'texto' && !aguardandoEscolhaCpf && !isOtpModalOpen && !aguardandoConfirmacaoCepForaVitoria && !aguardandoObjetivo2 && !dadosSalvosExito && (
             <form onSubmit={handleTextSubmit} className="flex gap-3 items-center">
               <input
-                type={roteiro[etapaAtual].chave === 'email' || roteiro[etapaAtual].chave === 'confirmacao_email' ? 'email' : 'text'}
+                type="text"
                 aria-label={roteiro[etapaAtual].chave === 'cep' ? 'CEP de residência' : roteiro[etapaAtual].chave === 'cpf' ? 'CPF' : 'Sua resposta'}
-                inputMode={['cpf', 'cep', 'numero', 'data_nascimento'].includes(roteiro[etapaAtual].chave) ? 'numeric' : roteiro[etapaAtual].chave.startsWith('telefone') ? 'tel' : roteiro[etapaAtual].chave.includes('email') ? 'email' : 'text'}
+                inputMode={
+                  roteiro[etapaAtual].mascara === 'cpf' || ['cpf', 'cep', 'numero', 'data_nascimento'].includes(roteiro[etapaAtual].chave)
+                    ? 'numeric'
+                    : roteiro[etapaAtual].chave.includes('telefone')
+                    ? 'tel'
+                    : roteiro[etapaAtual].chave.includes('email')
+                    ? 'email'
+                    : 'text'
+                }
                 value={inputValue}
                 onChange={handleInputChange}
                 disabled={enderecoValido === false || isTyping}

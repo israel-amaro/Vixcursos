@@ -141,7 +141,7 @@ function createCitizenRouter(db, { sendCode, notifyEnrollment = async () => ({})
             await db.mutate(s => { if (s.otp?.[digest(cpf)]?.nonce === nonce) s.otp[digest(cpf)].delivered = true; });
         } catch {
             await db.mutate(s => { if (s.otp?.[digest(cpf)]?.nonce === nonce) delete s.otp[digest(cpf)]; });
-            throw error(503, 'Não foi possível enviar o código. Tente novamente em alguns instantes.');
+            throw error(503, 'O envio de código por e-mail está indisponível. Tente novamente ou escolha preencher manualmente. Seus dados salvos só serão exibidos após validar o código.');
         }
         res.json({ sucesso: true, canal: 'email' });
     }));
