@@ -1,4 +1,5 @@
 import DOMPurify from 'dompurify';
+import { isOptionalStep, resolveStepIntent } from '../lib/stepIntent';
 import { readCitizenSession, saveCitizenSession } from '../lib/citizenSession';
 import MascotPicker from '../components/MascotPicker';
 import { getMascot, useMascotPreference, saveMascotPreference } from '../lib/mascots';
@@ -986,15 +987,24 @@ export default function PreInscricao() {
   }, [etapaAtual]);
 
   // Dúvidas não são respostas do formulário e nunca alteram a etapa ou a ficha.
-  const isQuestion = (text: string) => /[?]|^(como|por\s*que|pra\s*que|para que|onde|quando|qual|quais|quanto|quem|posso|preciso|tenho duvida|nao entendi|me ajude|me ajuda|ajuda|tem curso|quero saber|esse curso|o curso|e gratuito)\b/i.test(text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim());
-
   const handleTextSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isTyping || responseInFlight.current) return;
     const val = inputValue.trim();
     if (!val) return;
-    if (!isQuestion(val) && !(roteiro[etapaAtual].mascara && /[a-zá-ú]/i.test(val))) {
-      prosseguirEtapa(val);
+    const step = roteiro[etapaAtual];
+    if (!step) return;
+    const intent = resolveStepIntent(val, step);
+    if (intent.kind === 'answer' && step.opcoes?.length) {
+      responseInFlight.current = true;
+      setInputValue('');
+      addUserMessage(val);
+      try { await addBotMessage('Escolha uma das opções acima ou digite o texto de uma delas.', 0); }
+      finally { responseInFlight.current = false; }
+      return;
+    }
+    if (intent.kind !== 'question') {
+      await prosseguirEtapa(intent.value, val);
       return;
     }
     responseInFlight.current = true;
@@ -1006,13 +1016,19 @@ export default function PreInscricao() {
     try {
       const response = await fetch('/chat', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: cursoId ? `Pré-inscrição do curso ${cursoId}. Dúvida: ${val}` : val, history }),
+        body: JSON.stringify({ message: val, history, contexto: {
+          modo: 'pre-inscricao', curso: cursoNome, cursoId, etapa: step.chave,
+          pergunta_etapa: DOMPurify.sanitize(step.pergunta.replace('{CURSO_NOME}', cursoNome), { ALLOWED_TAGS: [], ALLOWED_ATTR: [] }),
+          opcional: isOptionalStep(step),
+          ...(step.opcoes ? { opcoes: step.opcoes.map(option => option.texto) } : {}),
+        } }),
       });
       if (!response.ok) throw new Error('Chat indisponível');
       const data = await response.json();
       const reply = data.reply || 'Não consegui responder agora. Você pode continuar o cadastro.';
+      const linkedCourseId = reply.match(/\/pre-inscricao\/(\d+)/)?.[1];
       setMessages(prev => [...prev, { id: `resposta-${Date.now()}`, sender: 'bot', text: reply,
-        conversational: true, courseId: reply.match(/\/pre-inscricao\/(\d+)/)?.[1] }]);
+        conversational: true, courseId: linkedCourseId === cursoId ? undefined : linkedCourseId }]);
     } catch {
       await addBotMessage('Não consegui responder agora. Tente novamente ou continue o cadastro.', 0);
     } finally {
@@ -1445,7 +1461,7 @@ export default function PreInscricao() {
           )}
 
           {/* Text Input Layout */}
-          {roteiro[etapaAtual]?.tipo === 'texto' && !aguardandoEscolhaCpf && !isOtpModalOpen && !aguardandoConfirmacaoCepForaVitoria && !aguardandoObjetivo2 && !dadosSalvosExito && (
+          {roteiro[etapaAtual] && roteiro[etapaAtual].chave !== 'confirmacao_final' && !aguardandoEscolhaCpf && !isOtpModalOpen && !aguardandoConfirmacaoCepForaVitoria && !aguardandoObjetivo2 && !dadosSalvosExito && (
             <form onSubmit={handleTextSubmit} className="flex gap-3 items-center">
               <input
                 type="text"
@@ -1476,7 +1492,7 @@ export default function PreInscricao() {
                 autoFocus={!smallScreen}
                 className="flex-1 min-w-0 bg-primary/5 border border-slate-200 rounded-full py-3 px-4 sm:px-5 text-base sm:text-sm text-primary focus:outline-none focus:border-accent focus:bg-slate-50 focus:ring-4 focus:ring-accent/10 placeholder-slate-400 transition-all font-sans disabled:opacity-50"
               />
-              {roteiro[etapaAtual].chave === 'telefone_alternativo' && (
+              {isOptionalStep(roteiro[etapaAtual]) && (
                 <button
                   type="button"
                   onClick={() => prosseguirEtapa('', 'Pular')}
