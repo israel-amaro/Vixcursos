@@ -62,14 +62,14 @@ export default function Header() {
       data-scrolled={scrolled}
       className="site-header sticky top-0 z-50 w-full"
     >
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-        <Link to="/" aria-label="Qualifica Vix, página inicial" className="flex items-center gap-4">
+      <div className="flex h-16 w-full items-center justify-between gap-4 min-[1200px]:grid min-[1200px]:grid-cols-[1fr_auto_1fr]" style={{ paddingInline: 'var(--gutter)' }}>
+        <Link to="/" aria-label="Qualifica Vix, página inicial" className="flex items-center gap-4 min-[1200px]:justify-self-start">
           <BrandLogo className="h-11 w-auto" />
           <span className="hidden h-7 w-px bg-[var(--line)] sm:block" />
           <img src="/imagem/prefeitura-preto-transparente.webp" alt="Prefeitura de Vitória" className="hidden h-9 w-auto sm:block" />
         </Link>
 
-        <nav className="hidden items-center gap-1 min-[1200px]:flex" aria-label="Principal">
+        <nav className="hidden items-center gap-1 whitespace-nowrap min-[1200px]:flex" aria-label="Principal">
           {links.map(l => (
             <button key={l.section} onClick={() => goTo(l.section)} className="btn-quiet editorial-link text-[var(--ink)] hover:bg-transparent">
               {l.label}
@@ -78,14 +78,17 @@ export default function Header() {
           <Link to="/sobre" className="btn-quiet editorial-link text-[var(--ink)] hover:bg-transparent">
             Sobre
           </Link>
+        </nav>
+
+        <div className="hidden justify-self-end min-[1200px]:block">
           <MotionPill
             onClick={() => goTo('cursos-section')}
             tone="brand"
-            className="ml-3 !min-h-11 !px-5 !text-[15px]"
+            className="!min-h-11 !px-5 !text-[15px]"
           >
             Encontrar curso
           </MotionPill>
-        </nav>
+        </div>
 
         <button
           onClick={() => setIsOpen(!isOpen)}
