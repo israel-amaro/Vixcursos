@@ -14,12 +14,22 @@ export default function Hero({ courses }: { courses: { vagas_disponiveis: number
       <div className="course-hero-shade" />
       <div className="course-hero-content">
         <p className="course-hero-location">Qualificação profissional · Vitória, ES</p>
-        <h1 id="hero-title"><span className="hero-line"><span>Seu próximo</span></span><span className="hero-line"><span>passo começa</span></span><span className="hero-line"><span>aqui.</span></span></h1>
+        <h1 id="hero-title">
+          <span className="hero-line"><span>Seu próximo</span></span>
+          <span className="hero-line"><span>passo começa</span></span>
+          <span className="hero-line"><span>aqui.</span></span>
+        </h1>
         <p className="course-hero-description">Aprenda uma profissão. Descubra novas possibilidades. Cursos gratuitos, com certificado.</p>
         <HeroAction />
       </div>
       <div className="course-hero-bottom">
-        <span>{open.length > 0 ? `${open.length} ${open.length === 1 ? 'curso com vagas abertas' : 'cursos com vagas abertas'}` : 'Conheça as oportunidades'}</span>
+        <span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-black/30 px-3.5 py-1.5 backdrop-blur-sm">
+          <span className="h-2 w-2 rounded-full bg-[var(--vitoria-green)]" aria-hidden="true" />
+          <span>{open.length > 0 ? `${open.length} ${open.length === 1 ? 'curso com vagas abertas' : 'cursos com vagas abertas'}` : 'Conheça as oportunidades'}</span>
+        </span>
+        <span className="hidden text-[13px] font-medium tracking-wide text-white/80 sm:inline" aria-hidden="true">
+          Role para explorar ↓
+        </span>
       </div>
     </section>
   );

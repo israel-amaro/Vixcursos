@@ -17,18 +17,43 @@ export default function Footer({ onOpenSurvey }: { onOpenSurvey?: () => void }) 
           <img src="/imagem/prefeitura-preto-transparente.webp" alt="Prefeitura de Vitória" className="h-10 w-auto" />
         </div>
 
-        <nav aria-label="Rodapé" className="mt-8 grid grid-cols-1 text-[16px] sm:grid-cols-4">
-          <Link to="/sobre" className="flex min-h-12 items-center text-[var(--ink)] hover:text-[var(--brand)]">Sobre o programa</Link>
-          {onOpenSurvey && <button onClick={onOpenSurvey} className="flex min-h-12 items-center text-left text-[var(--ink)] hover:text-[var(--brand)]">Avaliar o Qualifica Vix</button>}
-          <a href="https://vivacidade.vitoria.es.gov.br/" target="_blank" rel="noopener noreferrer" className="flex min-h-12 items-center text-[var(--ink)] hover:text-[var(--brand)]">Esporte e cultura: VIVAcidade ↗</a>
-          <a href="tel:+552731351000" className="flex min-h-12 items-center text-[var(--ink)] hover:text-[var(--brand)]">(27) 3135-1000</a>
+        <nav aria-label="Rodapé" className="mt-8 grid grid-cols-1 gap-1 text-[16px] sm:grid-cols-4 sm:gap-4">
+          <div>
+            <Link to="/sobre" className="editorial-link min-h-12 font-medium text-[var(--ink)] transition-colors hover:text-[var(--brand)]">
+              Sobre o programa
+            </Link>
+          </div>
+          {onOpenSurvey && (
+            <div>
+              <button onClick={onOpenSurvey} className="editorial-link min-h-12 text-left font-medium text-[var(--ink)] transition-colors hover:text-[var(--brand)]">
+                Avaliar o Qualifica Vix
+              </button>
+            </div>
+          )}
+          <div>
+            <a href="https://vivacidade.vitoria.es.gov.br/" target="_blank" rel="noopener noreferrer" className="editorial-link min-h-12 font-medium text-[var(--ink)] transition-colors hover:text-[var(--brand)]">
+              Esporte e cultura: VIVAcidade ↗
+            </a>
+          </div>
+          <div>
+            <a href="tel:+552731351000" className="editorial-link min-h-12 font-mono font-medium text-[var(--ink)] transition-colors hover:text-[var(--brand)]">
+              (27) 3135-1000
+            </a>
+          </div>
         </nav>
 
         <div className="mt-8 flex flex-col gap-6 border-t border-[var(--line)] pt-6 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-[15px] text-[var(--ink-soft)]">© 2026 Qualifica Vix · Prefeitura Municipal de Vitória</p>
           <div className="flex gap-2">
             {social.map(s => (
-              <a key={s.href} href={s.href} target="_blank" rel="noopener noreferrer" aria-label={s.label} className="grid h-11 w-11 place-items-center rounded-full bg-[var(--canvas)] text-[var(--ink)] hover:text-[var(--brand)]">
+              <a
+                key={s.href}
+                href={s.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={s.label}
+                className="grid h-11 w-11 place-items-center rounded-full border border-[var(--line)] bg-[var(--canvas)] text-[var(--ink)] transition-colors duration-300 hover:border-[var(--ink)] hover:bg-[var(--ink)] hover:text-white"
+              >
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={s.path} /></svg>
               </a>
             ))}
