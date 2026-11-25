@@ -8,6 +8,7 @@ const { createInterestedRouter } = require('./interested-router');
 const { createAdminAuth } = require('./admin-auth');
 const { createCitizenRouter } = require('./citizen-service');
 const { createStateAdminRouter } = require('./state-admin-router');
+const { aiChatReply } = require('./ai-chat');
 require("dotenv").config({ path: ['.env.local', '.env'] });
 
 const SERVER_PORT = Number(process.env.PORT) || 3000;
@@ -118,8 +119,13 @@ async function createApp(options = {}) {
         res.json({ vagasHoje: publicCourses(state).reduce((sum, c) => sum + Number(c.vagas_disponiveis || 0), 0), vagas2026: state.preInscricoes.filter(i => String(i.criado_em).startsWith('2026')).length });
     }));
     app.post('/chat', wrap(async (req, res) => {
-        const response = chatReply(publicCourses(await db.readState()), req.body.message || req.body.mensagem);
-        res.json({ reply: response, resposta: response });
+        const message = req.body?.message ?? req.body?.mensagem;
+        if (typeof message !== 'string' || !message.trim()) return res.status(400).json({ error: 'Digite uma mensagem.' });
+        const state = await db.readState();
+        const { reply, fonte } = await aiChatReply({ courses: publicCourses(state), message,
+            history: req.body.history, limit: state.configuracoes?.[0]?.limite_inscricoes_semestre || 4,
+            fallback: chatReply }, options.aiChat);
+        res.json({ reply, resposta: reply, fonte });
     }));
     app.get('*', (req, res, next) => {
         if (/^\/(api|public|admin|certificado|cursos|cursos-detalhes|inscritos|chat)(\/|$)/.test(req.path)) return next();
