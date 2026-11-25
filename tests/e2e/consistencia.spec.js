@@ -7,6 +7,51 @@ test.beforeEach(async ({ context, request, page }) => {
 });
 test.afterEach(async ({ page }) => expect(page.errors).toEqual([]));
 
+test('Header centraliza a navegação e preserva o espaço dos logos e ações', async ({ page }) => {
+    await page.goto('/');
+    await page.evaluate(() => document.fonts.ready);
+    const header = page.locator('.site-header');
+    const nav = header.getByRole('navigation', { name: 'Principal', exact: true });
+    const brand = header.getByRole('link', { name: 'Qualifica Vix, página inicial' });
+    const action = header.getByRole('button', { name: 'Encontrar curso', exact: true });
+
+    for (const width of [1200, 1280, 1366, 1440, 1920]) {
+        await page.setViewportSize({ width, height: 900 });
+        await expect(nav).toBeVisible();
+        await expect(action).toBeVisible();
+        const navBox = await nav.boundingBox();
+        const brandBox = await brand.boundingBox();
+        const actionBox = await action.boundingBox();
+        expect(Math.abs(navBox.x + navBox.width / 2 - width / 2)).toBeLessThanOrEqual(4);
+        expect(brandBox.x + brandBox.width).toBeLessThan(navBox.x);
+        expect(navBox.x + navBox.width).toBeLessThan(actionBox.x);
+        const linkBoxes = await nav.locator(':scope > *').evaluateAll(nodes => nodes.map(node => {
+            const rect = node.getBoundingClientRect();
+            return { y: rect.y, height: rect.height, scrollWidth: node.scrollWidth, width: node.clientWidth };
+        }));
+        expect(linkBoxes).toHaveLength(4);
+        for (const box of linkBoxes) {
+            expect(box.y).toBe(linkBoxes[0].y);
+            expect(box.height).toBe(44);
+            expect(box.scrollWidth).toBeLessThanOrEqual(box.width);
+        }
+    }
+
+    for (const width of [320, 375, 768, 1024]) {
+        await page.setViewportSize({ width, height: 900 });
+        const menu = header.getByRole('button', { name: 'Menu', exact: true });
+        await expect(menu).toBeVisible();
+        await expect(nav).toBeHidden();
+        await expect(action).toBeHidden();
+        const brandBox = await brand.boundingBox();
+        const menuBox = await menu.boundingBox();
+        expect(brandBox.x).toBeGreaterThanOrEqual(0);
+        expect(brandBox.x + brandBox.width).toBeLessThan(menuBox.x);
+        expect(menuBox.x + menuBox.width).toBeLessThanOrEqual(width);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    }
+});
+
 test('Todas as páginas compartilham o mesmo menu, ordem, ícones, posição e destino', async ({ page }) => {
     let reference;
     for (const file of ['menu', 'inscritos', 'cursos', 'interessados', 'relatorios', 'faq']) {
