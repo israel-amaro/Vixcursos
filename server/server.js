@@ -8,7 +8,7 @@ const { createInterestedRouter } = require('./interested-router');
 const { createAdminAuth } = require('./admin-auth');
 const { createCitizenRouter } = require('./citizen-service');
 const { createStateAdminRouter } = require('./state-admin-router');
-const { aiChatReply } = require('./ai-chat');
+const { aiChatReply, validateContexto } = require('./ai-chat');
 require("dotenv").config({ path: ['.env.local', '.env'] });
 
 const SERVER_PORT = Number(process.env.PORT) || 3000;
@@ -123,6 +123,7 @@ async function createApp(options = {}) {
         if (typeof message !== 'string' || !message.trim()) return res.status(400).json({ error: 'Digite uma mensagem.' });
         const state = await db.readState();
         const { reply, fonte } = await aiChatReply({ courses: publicCourses(state), message,
+            contexto: validateContexto(req.body.contexto),
             history: req.body.history, limit: state.configuracoes?.[0]?.limite_inscricoes_semestre || 4,
             fallback: chatReply }, options.aiChat);
         res.json({ reply, resposta: reply, fonte });

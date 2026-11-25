@@ -1,9 +1,52 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { aiChatReply, maskPersonalData, prepareMessages } = require('../server/ai-chat');
+const { aiChatReply, maskPersonalData, prepareMessages, validateContexto } = require('../server/ai-chat');
 const { chatReply } = require('../server/server');
 const courses = [{ id: 5, nome: 'Informática', categoria: 'Tecnologia', local: 'SENAI', vagas_disponiveis: 3, segredo: 'não enviar' }];
 const input = { courses, message: 'vagas', fallback: chatReply };
+const contexto = { modo: 'pre-inscricao', curso: 'Informática', cursoId: '5',
+    etapa: 'telefone_alternativo', pergunta_etapa: 'Deseja informar um Telefone Alternativo?', opcional: true };
+
+test('contexto: permite apenas chaves conhecidas, limita strings e mascara dados pessoais', () => {
+    const clean = validateContexto({ ...contexto, cpf: '52998224725', respostasUsuario: { nome: 'Ana' },
+        curso: 'x'.repeat(200), etapa: 'y'.repeat(100), pergunta_etapa: '<b>ana@example.com</b>' + 'z'.repeat(700),
+        opcional: 'true', opcoes: [null, 5, 'Não', 's'.repeat(200)] });
+    assert.deepEqual(Object.keys(clean).sort(), [...Object.keys(contexto), 'opcoes'].sort());
+    assert.equal(clean.curso.length, 160); assert.equal(clean.etapa.length, 80);
+    assert.equal(clean.pergunta_etapa.length, 600);
+    assert.doesNotMatch(clean.pergunta_etapa, /ana@example|<b>/);
+    assert.equal(clean.opcional, false);
+    assert.deepEqual(clean.opcoes, ['Não', 's'.repeat(120)]);
+    for (const bad of [null, [], 'texto', { ...contexto, modo: 'outro' }, { ...contexto, etapa: {} }]) {
+        assert.equal(validateContexto(bad), undefined);
+    }
+});
+
+test('IA: prompt contextual inclui etapa e proíbe link sem instrução conflitante', async () => {
+    await aiChatReply({ ...input, message: 'para que serve?', contexto }, {
+        env: { GROQ_API_KEY: 'teste' }, fetch: async (_url, options) => {
+            const prompt = JSON.parse(options.body).messages[0].content;
+            for (const text of ['JÁ está fazendo', 'Informática', 'telefone_alternativo', contexto.pergunta_etapa,
+                'é opcional', 'no máximo 2 frases curtas', 'NÃO envie link de pré-inscrição', 'NÃO liste o catálogo',
+                'diga em 1 frase como responder']) assert.ok(prompt.includes(text), text);
+            assert.doesNotMatch(prompt, /Ao indicar um curso inclua|oriente usar o botão de pré-inscrição/);
+            return { ok: true, json: async () => ({ choices: [{ message: { content: 'É um contato extra. É opcional.' } }] }) };
+        },
+    });
+});
+
+test('IA: fallback contextual não lista catálogo em ausência de chave ou falhas', async () => {
+    for (const options of [{ env: {} }, { env: { GROQ_API_KEY: 'teste' }, fetch: async () => ({ ok: false }) },
+        { env: { GROQ_API_KEY: 'teste' }, fetch: async () => { throw new Error('offline'); } }]) {
+        for (const opcional of [true, false]) {
+            const result = await aiChatReply({ ...input, contexto: { ...contexto, opcional },
+                fallback: () => assert.fail('Não deve listar catálogo') }, options);
+            assert.equal(result.fonte, 'regras'); assert.match(result.reply, /pergunta acima/);
+            assert.doesNotMatch(result.reply, /pre-inscricao|Informática/);
+            assert.equal(result.reply.includes('Pular'), opcional);
+        }
+    }
+});
 
 test('IA: mascara CPF, e-mail e telefones antes de truncar', () => {
     const text = '529.982.247-25 52998224725 ana.silva+vix@example.com +55 (27) 99999-1234 (27) 3333-4567 99999-1234';
@@ -100,6 +143,11 @@ test('POST /chat mantém contrato, valida mensagem e aceita histórico inválido
         const res = await send({ message: 'vagas', history: { role: 'system' } });
         assert.equal(res.status, 200);
         const data = await res.json(); assert.equal(data.fonte, 'regras'); assert.equal(data.reply, data.resposta);
+        const contextual = await send({ message: 'é obrigatório?', contexto: { ...contexto, cpf: '52998224725' } });
+        assert.equal(contextual.status, 200);
+        const contextualData = await contextual.json();
+        assert.match(contextualData.reply, /Pular/);
+        assert.doesNotMatch(contextualData.reply, /pre-inscricao|52998224725/);
         await db.mutate(state => { delete state.configuracoes; });
         const withoutSettings = await send({ message: 'vagas' });
         assert.equal(withoutSettings.status, 200);
