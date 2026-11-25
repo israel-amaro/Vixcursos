@@ -1,4 +1,5 @@
 import PhotoReveal from './PhotoReveal';
+import MotionPill from './MotionPill';
 import { CalendarDays, Clock, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { courseImage } from '../lib/courseImages';
@@ -59,7 +60,7 @@ export function availability(c: PublicCourse) {
   if (c.vagas_disponiveis <= 5) return { label: c.vagas_disponiveis === 1 ? 'Última vaga' : `Últimas ${c.vagas_disponiveis} vagas`, tone: 'wait' as const, action: 'Quero me inscrever' };
   return { label: `${c.vagas_disponiveis} vagas abertas`, tone: 'open' as const, action: 'Quero me inscrever' };
 }
-const toneClass = { open: 'bg-[var(--open-bg)] text-[var(--open)]', wait: 'bg-[var(--wait-bg)] text-[var(--wait)]', closed: 'bg-slate-100 text-slate-600' };
+const toneClass = { open: 'bg-[var(--open-bg)] text-[var(--open)]', wait: 'bg-[var(--wait-bg)] text-[var(--wait)]', closed: 'bg-slate-100 text-[var(--ink-soft)]' };
 
 export default function CourseCard({ course, onDetails }: { course: PublicCourse; onDetails: (c: PublicCourse, trigger: HTMLButtonElement) => void }) {
   const navigate = useNavigate();
@@ -67,36 +68,57 @@ export default function CourseCard({ course, onDetails }: { course: PublicCourse
   const status = availability(course);
 
   return (
-    <article className="flex flex-col overflow-hidden rounded-[var(--radius-card)] bg-white shadow-[var(--shadow-card)]">
-      <div className="course-card-photo relative aspect-[16/10] overflow-hidden bg-[var(--canvas)]">
-        <img src={image.src} srcSet={image.srcSet} sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 380px"
-          alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
+    <article className="group flex flex-col overflow-hidden border border-[var(--line)] bg-white transition-colors hover:border-[var(--ink)]">
+      <div
+        className="course-card-photo relative aspect-[4/3] overflow-hidden bg-[var(--canvas)] cursor-pointer"
+        onClick={e => {
+          const trigger = e.currentTarget.parentElement?.querySelector<HTMLButtonElement>('[data-details-trigger]');
+          if (trigger) onDetails(course, trigger);
+        }}
+      >
+        <img
+          src={image.src}
+          srcSet={image.srcSet}
+          sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 380px"
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="h-full w-full object-cover object-[50%_25%]"
+        />
         <PhotoReveal />
-        <span className={`absolute left-3 top-3 rounded-full px-3 py-1.5 text-[14px] font-bold ${toneClass[status.tone]}`}>
+        <span className={`absolute left-3 top-3 rounded-full px-3 py-1.5 text-[13px] font-bold tracking-tight ${toneClass[status.tone]}`}>
           {status.label}
         </span>
       </div>
 
       <div className="flex flex-1 flex-col p-5">
-        {course.categoria && course.categoria !== course.nome && <p className="mb-1 text-[14px] font-semibold text-[var(--ink-soft)]">{course.categoria}</p>}
-        <h3 className="text-[21px] font-bold leading-tight tracking-[-0.02em] text-[var(--ink)]">{course.nome}</h3>
+        {course.categoria && course.categoria !== course.nome && (
+          <p className="mb-1 text-[13px] font-semibold uppercase tracking-wide text-[var(--ink-soft)]">{course.categoria}</p>
+        )}
+        <h3 className="text-[22px] font-bold leading-tight tracking-[-0.02em] text-[var(--ink)]">
+          {course.nome}
+        </h3>
 
-        <ul className="mt-4 space-y-2.5 text-[16px] text-[var(--ink-soft)]">
-          <li className="flex gap-3"><CalendarDays className="mt-0.5 h-5 w-5 shrink-0 text-[var(--brand)]" aria-hidden="true" />{startText(course.data_inicio)}</li>
-          <li className="flex gap-3"><Clock className="mt-0.5 h-5 w-5 shrink-0 text-[var(--brand)]" aria-hidden="true" />{schedule(course)}</li>
-          <li className="flex gap-3"><MapPin className="mt-0.5 h-5 w-5 shrink-0 text-[var(--brand)]" aria-hidden="true" /><span className="min-w-0">{course.local || 'Local a definir'}</span></li>
+        <ul className="mt-4 space-y-2 text-[15px] text-[var(--ink-soft)]">
+          <li className="flex items-start gap-2.5"><CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-[var(--brand)]" aria-hidden="true" /><span>{startText(course.data_inicio)}</span></li>
+          <li className="flex items-start gap-2.5"><Clock className="mt-0.5 h-4 w-4 shrink-0 text-[var(--brand)]" aria-hidden="true" /><span className="font-mono">{schedule(course)}</span></li>
+          <li className="flex items-start gap-2.5"><MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[var(--brand)]" aria-hidden="true" /><span className="min-w-0">{course.local || 'Local a definir'}</span></li>
         </ul>
 
-        <div className="mt-auto pt-5">
-          <button
+        <div className="mt-auto flex flex-col gap-1.5 pt-5">
+          <MotionPill
             disabled={course.aceita_inscricoes === false}
             onClick={() => navigate(`/pre-inscricao/${course.id}`)}
             aria-label={`${status.action}: ${course.nome}`}
-            className="btn-primary w-full"
+            className="w-full"
           >
             {status.action}
-          </button>
-          <button onClick={e => onDetails(course, e.currentTarget)} className="btn-quiet mt-1 w-full">
+          </MotionPill>
+          <button
+            data-details-trigger
+            onClick={e => onDetails(course, e.currentTarget)}
+            className="btn-quiet editorial-link mx-auto mt-1 min-h-11 px-2 hover:bg-transparent"
+          >
             Ver detalhes do curso
           </button>
         </div>

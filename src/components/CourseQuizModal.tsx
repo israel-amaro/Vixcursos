@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { HelpCircle, X, RefreshCw } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import MotionPill from './MotionPill';
 
 interface CourseQuizModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ export default function CourseQuizModal({ isOpen, onClose, onSelectCategory }: C
   const [step, setStep] = useState<number>(1);
   const [objective, setObjective] = useState<string>('');
   const [, setAreaInterest] = useState<string>('');
+  const reduced = useReducedMotion();
 
   const objectives = [
     { id: 'emprego', title: 'Conseguir um Emprego (CLT)', desc: 'Profissões com vagas abertas e contratação rápida no mercado.', icon: '💼' },
@@ -39,7 +41,6 @@ export default function CourseQuizModal({ isOpen, onClose, onSelectCategory }: C
   const handleFinish = (cat: string) => {
     onSelectCategory(cat);
     onClose();
-    // Scroll smoothly to course list
     const el = document.getElementById('cursos-list-section');
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' });
@@ -50,24 +51,27 @@ export default function CourseQuizModal({ isOpen, onClose, onSelectCategory }: C
 
   return (
     <AnimatePresence>
-      <div data-lenis-prevent className="responsive-overlay fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/65 backdrop-blur-sm">
+      <div data-lenis-prevent className="responsive-overlay fixed inset-0 z-[9999] flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm">
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          role="dialog" aria-modal="true" aria-label="Assistente de escolha de curso" className="responsive-dialog bg-white rounded-3xl max-w-xl w-full p-5 sm:p-6 md:p-8 shadow-2xl relative border border-slate-100 overflow-y-auto overscroll-contain text-left"
+          initial={reduced ? false : { opacity: 0, y: 24, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={reduced ? undefined : { opacity: 0, y: 24, scale: 0.98 }}
+          transition={reduced ? { duration: 0 } : { duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Assistente de escolha de curso"
+          className="responsive-dialog relative w-full max-w-xl overflow-y-auto overscroll-contain border border-[var(--line)] bg-white p-5 text-left shadow-2xl sm:p-6 md:p-8"
         >
-          {/* Top header bar */}
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
+          <div className="mb-6 flex items-center justify-between border-b border-[var(--line)] pb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 shrink-0 rounded-2xl bg-accent/15 text-accent flex items-center justify-center font-bold">
-                <HelpCircle className="w-5 h-5 text-accent" />
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--canvas)] font-bold text-[var(--brand)]">
+                <HelpCircle className="h-5 w-5 text-[var(--brand)]" />
               </div>
               <div>
-                <h3 className="font-display font-extrabold text-slate-800 text-lg">
+                <h3 className="editorial-caps text-2xl text-[var(--ink)]">
                   Assistente de Escolha de Curso
                 </h3>
-                <p className="text-sm text-slate-400 font-medium">
+                <p className="text-sm font-medium text-[var(--ink-soft)]">
                   Responda 2 perguntas para encontrar seu curso ideal
                 </p>
               </div>
@@ -75,19 +79,18 @@ export default function CourseQuizModal({ isOpen, onClose, onSelectCategory }: C
             <button
               onClick={onClose}
               aria-label="Fechar quiz"
-              className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+              className="rounded-full p-2.5 text-[var(--ink-soft)] transition-colors hover:bg-[var(--canvas)] hover:text-[var(--ink)] cursor-pointer"
             >
-              <X className="w-5 h-5" />
+              <X className="h-5 w-5" />
             </button>
           </div>
 
-          {/* STEP 1: Objective */}
           {step === 1 && (
             <div>
-              <h4 className="text-sm font-bold uppercase tracking-normal text-slate-500 mb-4">
+              <h4 className="mb-4 text-sm font-bold uppercase tracking-wide text-[var(--ink-soft)]">
                 Pergunta 1 de 2: O que você mais procura no momento?
               </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+              <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {objectives.map((obj) => (
                   <button
                     key={obj.id}
@@ -95,17 +98,17 @@ export default function CourseQuizModal({ isOpen, onClose, onSelectCategory }: C
                       setObjective(obj.id);
                       setStep(2);
                     }}
-                    className={`p-4 rounded-2xl border text-left transition-all duration-300 cursor-pointer flex flex-col justify-between hover:border-accent hover:shadow-md ${
+                    className={`flex flex-col justify-between border p-4 text-left transition-colors duration-200 cursor-pointer hover:border-[var(--ink)] ${
                       objective === obj.id
-                        ? 'border-accent bg-accent/5 ring-2 ring-accent/30'
-                        : 'border-slate-200 bg-slate-50/50 hover:bg-white'
+                        ? 'border-[var(--brand)] bg-[var(--canvas)] ring-1 ring-[var(--brand)]'
+                        : 'border-[var(--line)] bg-white'
                     }`}
                   >
-                    <span className="text-2xl mb-2">{obj.icon}</span>
-                    <span className="font-bold text-slate-800 text-sm block mb-1">
+                    <span className="mb-2 text-2xl">{obj.icon}</span>
+                    <span className="mb-1 block text-sm font-bold text-[var(--ink)]">
                       {obj.title}
                     </span>
-                    <span className="text-sm text-slate-500 leading-snug">
+                    <span className="text-sm leading-snug text-[var(--ink-soft)]">
                       {obj.desc}
                     </span>
                   </button>
@@ -114,22 +117,21 @@ export default function CourseQuizModal({ isOpen, onClose, onSelectCategory }: C
             </div>
           )}
 
-          {/* STEP 2: Preference area */}
           {step === 2 && (
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-sm font-bold uppercase tracking-normal text-slate-500">
+              <div className="mb-4 flex items-center justify-between">
+                <h4 className="text-sm font-bold uppercase tracking-wide text-[var(--ink-soft)]">
                   Pergunta 2 de 2: Qual dessas áreas te chama mais atenção?
                 </h4>
                 <button
                   onClick={() => setStep(1)}
-                  className="text-sm text-accent font-bold hover:underline cursor-pointer"
+                  className="text-sm font-bold text-[var(--brand)] hover:underline cursor-pointer"
                 >
                   Voltar
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+              <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {interests.map((item) => (
                   <button
                     key={item.id}
@@ -137,29 +139,26 @@ export default function CourseQuizModal({ isOpen, onClose, onSelectCategory }: C
                       setAreaInterest(item.targetCat);
                       handleFinish(item.targetCat);
                     }}
-                    className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-accent/10 hover:border-accent text-center transition-all duration-300 cursor-pointer flex flex-col items-center justify-center gap-2 group hover:scale-[1.03]"
+                    className="group flex flex-col items-center justify-center gap-2 border border-[var(--line)] bg-white p-4 text-center transition-colors duration-200 hover:border-[var(--ink)] hover:bg-[var(--canvas)] cursor-pointer"
                   >
-                    <span className="text-3xl group-hover:scale-110 transition-transform">{item.icon}</span>
-                    <span className="font-bold text-slate-800 text-sm leading-tight">
+                    <span className="text-3xl transition-transform group-hover:scale-110">{item.icon}</span>
+                    <span className="text-sm font-bold leading-tight text-[var(--ink)]">
                       {item.name}
                     </span>
                   </button>
                 ))}
               </div>
 
-              <div className="flex justify-between items-center pt-2">
+              <div className="flex items-center justify-between border-t border-[var(--line)] pt-4">
                 <button
                   onClick={handleReset}
-                  className="text-sm text-slate-400 hover:text-slate-600 flex items-center gap-1 cursor-pointer"
+                  className="flex items-center gap-1.5 text-sm font-semibold text-[var(--ink-soft)] hover:text-[var(--ink)] cursor-pointer"
                 >
-                  <RefreshCw className="w-3.5 h-3.5" /> Recomeçar
+                  <RefreshCw className="h-4 w-4" /> Recomeçar
                 </button>
-                <button
-                  onClick={() => handleFinish('')}
-                  className="px-5 py-2.5 bg-primary hover:bg-primary-dark text-white font-bold text-sm rounded-xl uppercase tracking-normal transition-colors cursor-pointer"
-                >
+                <MotionPill onClick={() => handleFinish('')} className="!min-h-11 !px-5 !text-sm">
                   Ver Todos os Cursos
-                </button>
+                </MotionPill>
               </div>
             </div>
           )}

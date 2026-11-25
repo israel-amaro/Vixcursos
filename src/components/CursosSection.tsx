@@ -85,10 +85,10 @@ export default function CursosSection({ courses, loading, error, requestedCatego
             <input
               type="search" value={query} onChange={e => setQuery(e.target.value)}
               placeholder="Ex.: cozinha, costura"
-              className="h-14 w-full rounded-[var(--radius-control)] border border-[var(--line)] bg-white pl-12 pr-4 text-[17px] text-[var(--ink)] placeholder:text-slate-400 focus:border-[var(--brand)] focus:outline-none"
+              className="h-14 w-full border border-[var(--line)] bg-white pl-12 pr-4 text-[17px] text-[var(--ink)] placeholder:text-[var(--ink-soft)]/70 focus:border-[var(--brand)] focus:outline-none"
             />
           </label>
-          <button onClick={openSheet} className="relative flex h-14 shrink-0 items-center gap-2 rounded-[var(--radius-control)] border border-[var(--line)] bg-white px-4 text-[16px] font-semibold text-[var(--ink)]">
+          <button onClick={openSheet} className="relative flex h-14 shrink-0 items-center gap-2 rounded-full border border-[var(--line)] bg-white px-5 text-[16px] font-semibold text-[var(--ink)] transition-colors hover:border-[var(--ink)]">
             <SlidersHorizontal className="h-5 w-5" aria-hidden="true" />
             <span className="hidden sm:inline">Filtros</span>
             <span className="sr-only sm:hidden">Filtros</span>
@@ -97,7 +97,7 @@ export default function CursosSection({ courses, loading, error, requestedCatego
         </div>
 
         {categories.length > 1 && (
-          <div id="filtro-categoria" role="group" aria-label="Áreas" className="no-scrollbar -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
+          <div id="filtro-categoria" role="group" aria-label="Áreas" className="no-scrollbar mask-chip-scroll -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
             <button className="chip" aria-pressed={!category} onClick={() => setCategory('')}>Todas</button>
             {categories.map(name => (
               <button key={name} className="chip" aria-pressed={category === name} onClick={() => setCategory(category === name ? '' : name)}>{name}</button>
@@ -116,10 +116,10 @@ export default function CursosSection({ courses, loading, error, requestedCatego
 
         {loading && !courses.length ? (
           <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3" aria-hidden="true">
-            {[0, 1, 2].map(i => <div key={i} className="h-[420px] animate-pulse rounded-[var(--radius-card)] bg-white" />)}
+            {[0, 1, 2].map(i => <div key={i} className="h-[420px] animate-pulse border border-[var(--line)] bg-white" />)}
           </div>
         ) : error && !courses.length ? null : results.length === 0 ? (
-          <div className="mt-4 rounded-[var(--radius-card)] bg-white p-8 text-center shadow-[var(--shadow-card)]">
+          <div className="mt-4 border border-[var(--line)] bg-white p-8 text-center">
             <p className="text-xl font-bold text-[var(--ink)]">Nenhum curso encontrado</p>
             <p className="mx-auto mt-2 max-w-sm text-[16px] text-[var(--ink-soft)]">
               {hasAnyFilter ? 'Tente outra palavra ou limpe os filtros.' : 'No momento não há turmas abertas. Avisamos você quando abrir uma.'}
@@ -136,7 +136,7 @@ export default function CursosSection({ courses, loading, error, requestedCatego
               ))}
             </div>
             {visible < results.length && (
-              <button onClick={() => setVisible(v => v + PAGE)} className="mx-auto mt-8 flex min-h-[52px] w-full items-center justify-center rounded-[var(--radius-control)] border border-[var(--line)] bg-white text-[17px] font-semibold text-[var(--ink)] sm:w-auto sm:px-8">
+              <button onClick={() => setVisible(v => v + PAGE)} className="mx-auto mt-8 flex min-h-[52px] w-full items-center justify-center rounded-full border border-[var(--line)] bg-white text-[16px] font-semibold text-[var(--ink)] transition-colors hover:border-[var(--ink)] sm:w-auto sm:px-8">
                 Mostrar mais {Math.min(PAGE, results.length - visible)} cursos
               </button>
             )}

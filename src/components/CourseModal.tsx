@@ -2,7 +2,8 @@ import { startLabel } from '../lib/images';
 import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Calendar, Clock, MapPin, Award, BookOpen, CheckCircle2, Users, FileText, ArrowRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import MotionPill from './MotionPill';
 
 export interface CourseModalData {
   id: number;
@@ -43,8 +44,8 @@ export default function CourseModal({ course, isOpen, onClose, triggerRef, onInt
   const navigate = useNavigate();
   const modalRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const reduced = useReducedMotion();
 
-  // Lock body scroll and set up accessibility listeners (Escape key, Focus lock, Restore focus)
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -55,7 +56,6 @@ export default function CourseModal({ course, isOpen, onClose, triggerRef, onInt
           onClose();
         }
 
-        // Focus trap
         if (e.key === 'Tab' && modalRef.current) {
           const focusables = modalRef.current.querySelectorAll<HTMLElement>(
             'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
@@ -90,13 +90,14 @@ export default function CourseModal({ course, isOpen, onClose, triggerRef, onInt
   if (!isOpen || !course) return null;
 
   const isEsgotado = course.status === 'esgotado' || course.vagas_disponiveis <= 0;
-  const ementaTexto = course.ementa || course.competencias || "Conteúdo ainda não informado pela instituição.";
-  const requisitosTexto = course.pre_requisitos || "Nenhum pré-requisito adicional informado";
+  const ementaTexto = course.ementa || course.competencias || 'Conteúdo ainda não informado pela instituição.';
+  const requisitosTexto = course.pre_requisitos || 'Nenhum pré-requisito adicional informado';
 
   return (
     <AnimatePresence>
-      <div 
-        data-lenis-prevent className="responsive-overlay fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6 bg-black/75 backdrop-blur-sm overflow-y-auto"
+      <div
+        data-lenis-prevent
+        className="responsive-overlay fixed inset-0 z-[9999] flex items-center justify-center bg-black/65 p-4 backdrop-blur-sm sm:p-6 overflow-y-auto"
         onClick={onClose}
       >
         <motion.div
@@ -104,70 +105,69 @@ export default function CourseModal({ course, isOpen, onClose, triggerRef, onInt
           role="dialog"
           aria-modal="true"
           aria-labelledby="course-modal-title"
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 20 }}
-          transition={{ duration: 0.25, ease: 'easeOut' }}
-          className="responsive-dialog bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl relative border border-slate-200 overflow-hidden text-left my-auto"
+          initial={reduced ? false : { opacity: 0, y: 24, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={reduced ? undefined : { opacity: 0, y: 24, scale: 0.98 }}
+          transition={reduced ? { duration: 0 } : { duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          className="responsive-dialog relative my-auto flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden border border-[var(--line)] bg-white text-left shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="p-4 sm:p-6 shrink-0 border-b border-slate-100 bg-primary text-white flex items-start justify-between relative">
+          <div className="relative flex shrink-0 items-start justify-between border-b border-[var(--line)] bg-[#00486c] p-5 text-white sm:p-6">
             <div>
-              <span className="inline-block px-3 py-1 bg-accent/20 border border-accent/40 text-accent rounded-full text-sm font-extrabold uppercase tracking-normal mb-2">
-                {course.categoria} • {course.modalidade}
+              <span className="mb-2.5 inline-block rounded-full border border-white/25 bg-white/15 px-3 py-1 text-[13px] font-bold uppercase tracking-wide text-white">
+                {course.categoria} · {course.modalidade}
               </span>
-              <h2 id="course-modal-title" className="text-xl sm:text-2xl font-display font-extrabold text-white leading-tight">
+              <h2 id="course-modal-title" className="editorial-caps text-2xl leading-none text-white sm:text-3xl">
                 {course.nome}
               </h2>
             </div>
             <button
               ref={closeButtonRef}
               onClick={onClose}
-              className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white transition-colors cursor-pointer ml-4 flex-shrink-0"
+              className="ml-4 flex-shrink-0 rounded-full bg-white/15 p-2.5 text-white transition-colors hover:bg-white/25 cursor-pointer"
               aria-label="Fechar modal"
             >
-              <X className="w-5 h-5" />
+              <X className="h-5 w-5" />
             </button>
           </div>
 
-          {/* Content Body (Scrollable) */}
-          <div data-lenis-prevent className="p-4 sm:p-6 min-h-0 overflow-y-auto overscroll-contain space-y-6 text-slate-700 text-sm leading-relaxed">
-            
-            {/* Quick Metrics Badges */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col">
-                <span className="text-sm font-bold text-slate-400 uppercase tracking-normal flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-accent" /> Carga Horária
+          {/* Content Body */}
+          <div data-lenis-prevent className="min-h-0 space-y-6 overflow-y-auto overscroll-contain p-5 text-[15px] leading-relaxed text-[var(--ink)] sm:p-6">
+            {/* Quick Metrics */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="flex flex-col border border-[var(--line)] bg-[var(--canvas)] p-3.5">
+                <span className="flex items-center gap-1 text-[13px] font-bold uppercase text-[var(--ink-soft)]">
+                  <Clock className="h-3.5 w-3.5 text-[var(--brand)]" /> Carga Horária
                 </span>
-                <span className="font-extrabold text-slate-900 text-sm mt-0.5">
+                <span className="mt-1 font-mono text-sm font-extrabold text-[var(--ink)]">
                   {course.carga_horaria ? `${course.carga_horaria} horas` : 'A definir'}
                 </span>
               </div>
 
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col">
-                <span className="text-sm font-bold text-slate-400 uppercase tracking-normal flex items-center gap-1">
-                  <Users className="w-3 h-3 text-accent" /> Faixa Etária
+              <div className="flex flex-col border border-[var(--line)] bg-[var(--canvas)] p-3.5">
+                <span className="flex items-center gap-1 text-[13px] font-bold uppercase text-[var(--ink-soft)]">
+                  <Users className="h-3.5 w-3.5 text-[var(--brand)]" /> Faixa Etária
                 </span>
-                <span className="font-extrabold text-slate-900 text-sm mt-0.5">
+                <span className="mt-1 font-mono text-sm font-extrabold text-[var(--ink)]">
                   {course.idade_min || 'A definir'} a {course.idade_max || 'A definir'} anos
                 </span>
               </div>
 
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col">
-                <span className="text-sm font-bold text-slate-400 uppercase tracking-normal flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Vagas Livres
+              <div className="flex flex-col border border-[var(--line)] bg-[var(--canvas)] p-3.5">
+                <span className="flex items-center gap-1 text-[13px] font-bold uppercase text-[var(--ink-soft)]">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-[var(--open)]" /> Vagas Livres
                 </span>
-                <span className="font-extrabold text-slate-900 text-sm mt-0.5">
-                  {course.vagas_disponiveis} vagas livres de {course.vagas_totais}
+                <span className="mt-1 font-mono text-sm font-extrabold text-[var(--ink)]">
+                  {course.vagas_disponiveis} de {course.vagas_totais}
                 </span>
               </div>
 
-              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col">
-                <span className="text-sm font-bold text-slate-400 uppercase tracking-normal flex items-center gap-1">
-                  <MapPin className="w-3 h-3 text-accent" /> Modalidade
+              <div className="flex flex-col border border-[var(--line)] bg-[var(--canvas)] p-3.5">
+                <span className="flex items-center gap-1 text-[13px] font-bold uppercase text-[var(--ink-soft)]">
+                  <MapPin className="h-3.5 w-3.5 text-[var(--brand)]" /> Modalidade
                 </span>
-                <span className="font-extrabold text-slate-900 text-sm mt-0.5 truncate">
+                <span className="mt-1 truncate text-sm font-extrabold text-[var(--ink)]">
                   {course.modalidade}
                 </span>
               </div>
@@ -175,91 +175,95 @@ export default function CourseModal({ course, isOpen, onClose, triggerRef, onInt
 
             {/* Description */}
             <div>
-              <h3 className="text-sm font-bold uppercase tracking-normal text-slate-400 mb-2 flex items-center gap-1.5">
-                <FileText className="w-4 h-4 text-accent" /> Descrição Completa
+              <h3 className="mb-2 flex items-center gap-1.5 text-[13px] font-bold uppercase tracking-wide text-[var(--ink-soft)]">
+                <FileText className="h-4 w-4 text-[var(--brand)]" /> Descrição Completa
               </h3>
-              <p className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-slate-700 leading-relaxed font-medium">
-                {course.descricao || "Capacitação profissional presencial gratuita oferecida pela Prefeitura de Vitória, com foco em desenvolvimento prático e inserção no mercado de trabalho."}
+              <p className="border border-[var(--line)] bg-[var(--canvas)] p-4 font-medium leading-relaxed text-[var(--ink)]">
+                {course.descricao || 'Capacitação profissional presencial gratuita oferecida pela Prefeitura de Vitória, com foco em desenvolvimento prático e inserção no mercado de trabalho.'}
               </p>
             </div>
 
-            {/* Syllabus (Ementa) */}
+            {/* Syllabus */}
             <div>
-              <h3 className="text-sm font-bold uppercase tracking-normal text-slate-400 mb-2 flex items-center gap-1.5">
-                <BookOpen className="w-4 h-4 text-accent" /> O que você vai aprender
+              <h3 className="mb-2 flex items-center gap-1.5 text-[13px] font-bold uppercase tracking-wide text-[var(--ink-soft)]">
+                <BookOpen className="h-4 w-4 text-[var(--brand)]" /> O que você vai aprender
               </h3>
-              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 text-slate-700 leading-relaxed font-medium whitespace-pre-line">
+              <div className="whitespace-pre-line border border-[var(--line)] bg-[var(--canvas)] p-4 font-medium leading-relaxed text-[var(--ink)]">
                 {ementaTexto}
               </div>
             </div>
 
             {/* Competencies & Prerequisites */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div>
-                <h3 className="text-sm font-bold uppercase tracking-normal text-slate-400 mb-2 flex items-center gap-1.5">
-                  <Award className="w-4 h-4 text-accent" /> Competências
+                <h3 className="mb-2 flex items-center gap-1.5 text-[13px] font-bold uppercase tracking-wide text-[var(--ink-soft)]">
+                  <Award className="h-4 w-4 text-[var(--brand)]" /> Competências
                 </h3>
-                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-sm text-slate-700 font-semibold leading-normal">
-                  {course.competencias || "Desenvolvimento de habilidades técnicas específicas, postura profissional e prática supervisionada."}
+                <div className="border border-[var(--line)] bg-[var(--canvas)] p-4 text-sm font-semibold leading-normal text-[var(--ink)]">
+                  {course.competencias || 'Desenvolvimento de habilidades técnicas específicas, postura profissional e prática supervisionada.'}
                 </div>
               </div>
 
               <div>
-                <h3 className="text-sm font-bold uppercase tracking-normal text-slate-400 mb-2 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-accent" /> Pré-requisitos
+                <h3 className="mb-2 flex items-center gap-1.5 text-[13px] font-bold uppercase tracking-wide text-[var(--ink-soft)]">
+                  <CheckCircle2 className="h-4 w-4 text-[var(--brand)]" /> Pré-requisitos
                 </h3>
-                <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100 text-sm text-slate-700 font-semibold leading-normal">
+                <div className="border border-[var(--line)] bg-[var(--canvas)] p-4 text-sm font-semibold leading-normal text-[var(--ink)]">
                   {requisitosTexto}
                 </div>
               </div>
             </div>
 
-            {/* Logistics & Location */}
-            <div className="p-4 bg-slate-100/70 rounded-2xl border border-slate-200 space-y-2 text-sm">
-              <div className="flex items-center gap-2 font-bold text-slate-800">
-                <MapPin className="w-4 h-4 text-accent flex-shrink-0" />
-                <span>Local: <strong className="text-slate-900">{course.local}</strong></span>
+            {/* Logistics */}
+            <div className="space-y-2 border-l-4 border-[var(--vitoria-gold)] bg-[var(--canvas)] p-4 text-sm">
+              <div className="flex items-center gap-2 font-bold text-[var(--ink)]">
+                <MapPin className="h-4 w-4 flex-shrink-0 text-[var(--brand)]" />
+                <span>Local: <strong>{course.local}</strong></span>
               </div>
-              <div className="flex flex-wrap gap-4 text-slate-600 font-medium">
+              <div className="flex flex-wrap gap-4 font-medium text-[var(--ink-soft)]">
                 <span className="flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                  <Calendar className="h-4 w-4 text-[var(--brand)]" />
                   {startLabel(course.data_inicio)} a {course.data_termino || 'A definir'}
                 </span>
-                <span className="flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-slate-400" />
+                <span className="flex items-center gap-1.5 font-mono">
+                  <Clock className="h-4 w-4 text-[var(--brand)]" />
                   Horário: {course.horario_inicio || 'A definir'} às {course.horario_termino || 'A definir'}
                 </span>
               </div>
             </div>
-
           </div>
 
           {/* Footer Actions */}
-          <div className="p-4 sm:p-6 shrink-0 border-t border-slate-100 bg-slate-50 flex flex-col sm:flex-row items-center justify-between gap-3">
-            {onInterest && <button onClick={() => onInterest(course)} className="w-full sm:w-auto px-4 py-3 rounded-xl border border-accent text-accent font-bold text-sm">Tenho interesse</button>}
+          <div className="flex shrink-0 flex-col items-center justify-between gap-3 border-t border-[var(--line)] bg-[var(--canvas)] p-4 sm:flex-row sm:p-5">
+            {onInterest && (
+              <button
+                onClick={() => onInterest(course)}
+                className="w-full rounded-full border border-[var(--brand)] px-5 py-3 text-sm font-bold text-[var(--brand)] transition-colors hover:bg-[var(--brand)] hover:text-white sm:w-auto cursor-pointer"
+              >
+                Tenho interesse
+              </button>
+            )}
             <button
               onClick={() => {
                 onClose();
                 navigate(`/detalhes/${course.id}`);
               }}
-              className="w-full sm:w-auto px-5 py-3 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-200 transition-all font-bold text-sm flex items-center justify-center gap-2 cursor-pointer"
+              className="flex w-full items-center justify-center gap-2 rounded-full border border-[var(--line)] bg-white px-5 py-3 text-sm font-bold text-[var(--ink)] transition-colors hover:border-[var(--ink)] sm:w-auto cursor-pointer"
             >
               <span>Ver Detalhes Completos</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="h-4 w-4" />
             </button>
 
-            <button
+            <MotionPill
               onClick={() => {
                 onClose();
                 navigate(`/pre-inscricao/${course.id}`);
               }}
               disabled={course.aceita_inscricoes === false}
-              className={`w-full sm:w-auto px-8 py-3.5 rounded-xl font-extrabold text-sm uppercase tracking-normal text-white transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 ${
-                isEsgotado ? 'bg-orange-500 hover:bg-orange-600' : 'bg-accent hover:bg-accent/90'
-              }`}
+              className={`w-full sm:w-auto ${isEsgotado ? '!bg-[var(--wait)]' : ''}`}
             >
-              {course.aceita_inscricoes === false ? course.situacao_label : isEsgotado ? 'Entrar na Lista de Espera' : 'Fazer Pré-Inscrição Agora'}
-            </button>
+              {course.aceita_inscricoes === false ? course.situacao_label : isEsgotado ? 'Entrar na Lista de Espera' : 'Fazer Pré-Inscrição'}
+            </MotionPill>
           </div>
         </motion.div>
       </div>
